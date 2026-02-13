@@ -112,7 +112,7 @@ This Learning Management System (LMS) is built to provide a comprehensive educat
 
 ---
 
-## 📁 Project Structure
+## 📁 Project Structure 1
 
 ```
 ai-lms-project/
@@ -180,6 +180,11 @@ ai-lms-project/
 ---
 
 
+---
+
+## 📁 Project Structure 2
+
+```
 
 edusmartai-lms/
 │
@@ -614,7 +619,8 @@ edusmartai-lms/
 ├── 📄 tailwind.config.ts
 ├── 📄 next.config.js
 └── 📄 README.md
-
+```
+---
 
 ## 🚀 Getting Started
 
