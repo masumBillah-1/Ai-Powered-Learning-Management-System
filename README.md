@@ -179,6 +179,443 @@ ai-lms-project/
 
 ---
 
+
+
+edusmartai-lms/
+│
+├── 📂 src/
+│   │
+│   ├── 📂 app/                              # Next.js 14 App Router
+│   │   │
+│   │   ├── 📂 (auth)/                       # Authentication Routes
+│   │   │   ├── login/
+│   │   │   │   └── page.tsx
+│   │   │   └── register/
+│   │   │       └── page.tsx
+│   │   │
+│   │   ├── 📂 (public)/                     # Public Routes
+│   │   │   ├── page.tsx                     # Home Page
+│   │   │   │                                # - Hero Banner
+│   │   │   │                                # - Featured Courses (6 cards)
+│   │   │   │                                # - How It Works
+│   │   │   │                                # - Student Feedback Carousel
+│   │   │   │                                # - Popular Instructors
+│   │   │   │                                # - AI Course Suggestions
+│   │   │   │
+│   │   │   ├── courses/
+│   │   │   │   ├── page.tsx                 # All Courses (3-column grid)
+│   │   │   │   └── [id]/
+│   │   │   │       └── page.tsx             # Course Details (Private)
+│   │   │   │                                # - Video/Image, Title, Description
+│   │   │   │                                # - Category, Level, Duration, Start Date
+│   │   │   │                                # - Enroll Button (Students only)
+│   │   │   │
+│   │   │   ├── about/
+│   │   │   │   └── page.tsx
+│   │   │   │
+│   │   │   └── contact/
+│   │   │       └── page.tsx
+│   │   │
+│   │   ├── 📂 enrollment/                   # Enrollment System
+│   │   │   └── [courseId]/
+│   │   │       └── page.tsx                 # Enrollment Form
+│   │   │                                    # - Student Email (auto-fill)
+│   │   │                                    # - Course Title (read-only)
+│   │   │                                    # - Payment Info/Price
+│   │   │                                    # - First Name, Last Name
+│   │   │                                    # - Contact Number
+│   │   │                                    # - Additional Notes
+│   │   │
+│   │   ├── 📂 dashboard/                    # Dashboard Routes
+│   │   │   ├── layout.tsx                   # Dashboard Layout with Sidebar
+│   │   │   │
+│   │   │   ├── 📂 admin/                    # Admin Dashboard
+│   │   │   │   ├── page.tsx                 # Admin Overview
+│   │   │   │   │                            # - Analytics: Courses, Enrollments, Users
+│   │   │   │   │                            # - Bar, Line, Pie Charts
+│   │   │   │   │
+│   │   │   │   ├── manage-users/
+│   │   │   │   │   └── page.tsx             # User Management
+│   │   │   │   │                            # - Add/Update/Delete Users
+│   │   │   │   │                            # - Approve/Suspend Instructors/Students
+│   │   │   │   │                            # - Search & Pagination
+│   │   │   │   │
+│   │   │   │   ├── all-courses/
+│   │   │   │   │   └── page.tsx             # Course Management
+│   │   │   │   │                            # - Show/Hide courses on homepage
+│   │   │   │   │                            # - Search & Pagination
+│   │   │   │   │
+│   │   │   │   ├── all-enrollments/
+│   │   │   │   │   └── page.tsx             # Enrollment Management
+│   │   │   │   │                            # - View all enrollments
+│   │   │   │   │                            # - Suspend feedback collection
+│   │   │   │   │
+│   │   │   │   └── analytics/
+│   │   │   │       └── page.tsx             # Instructor Effectiveness Report
+│   │   │   │                                # - Instructor analytics
+│   │   │   │                                # - Engagement metrics
+│   │   │   │
+│   │   │   ├── 📂 instructor/               # Instructor Dashboard
+│   │   │   │   ├── page.tsx                 # Instructor Overview
+│   │   │   │   │
+│   │   │   │   ├── add-course/
+│   │   │   │   │   └── page.tsx             # Add New Course
+│   │   │   │   │                            # - Name, Description, Level
+│   │   │   │   │                            # - Category, Price
+│   │   │   │   │                            # - Video/PDF Upload
+│   │   │   │   │
+│   │   │   │   ├── manage-courses/
+│   │   │   │   │   └── page.tsx             # Manage Courses
+│   │   │   │   │                            # - Update/Delete courses
+│   │   │   │   │                            # - Add lesson progress tracking
+│   │   │   │   │
+│   │   │   │   ├── pending-enrollments/
+│   │   │   │   │   └── page.tsx             # Pending Enrollment Requests
+│   │   │   │   │                            # - Approve/Reject students
+│   │   │   │   │
+│   │   │   │   ├── approved-enrollments/
+│   │   │   │   │   └── page.tsx             # Approved Enrollments
+│   │   │   │   │                            # - View enrolled students
+│   │   │   │   │
+│   │   │   │   └── profile/
+│   │   │   │       └── page.tsx             # Instructor Profile
+│   │   │   │
+│   │   │   └── 📂 student/                  # Student Dashboard
+│   │   │       ├── page.tsx                 # Student Overview
+│   │   │       │                            # - Learning streak
+│   │   │       │                            # - Points & badges (Gamification)
+│   │   │       │                            # - Leaderboard position
+│   │   │       │
+│   │   │       ├── my-courses/
+│   │   │       │   └── page.tsx             # My Enrolled Courses
+│   │   │       │                            # - View all courses
+│   │   │       │                            # - Cancel if status = Pending
+│   │   │       │
+│   │   │       ├── track-progress/
+│   │   │       │   └── [courseId]/
+│   │   │       │       └── page.tsx         # Track Course Progress
+│   │   │       │                            # - Lesson completion
+│   │   │       │                            # - Quiz scores
+│   │   │       │                            # - Timeline of progress
+│   │   │       │                            # - Performance Analytics Dashboard
+│   │   │       │                            # - Adaptive Learning Path
+│   │   │       │
+│   │   │       ├── achievements/
+│   │   │       │   └── page.tsx             # Badges & Achievements
+│   │   │       │                            # - Unlocked badges
+│   │   │       │                            # - Points system
+│   │   │       │
+│   │   │       ├── leaderboard/
+│   │   │       │   └── page.tsx             # Gamification Leaderboard
+│   │   │       │
+│   │   │       ├── certificates/
+│   │   │       │   └── page.tsx             # My Certificates
+│   │   │       │                            # - Download certificates
+│   │   │       │                            # - QR code verification
+│   │   │       │
+│   │   │       └── profile/
+│   │   │           └── page.tsx             # Student Profile
+│   │   │
+│   │   ├── 📂 api/                          # API Routes (Next.js)
+│   │   │   │
+│   │   │   ├── 📂 auth/                     # Authentication APIs
+│   │   │   │   ├── login/
+│   │   │   │   │   └── route.ts             # POST login (JWT)
+│   │   │   │   ├── register/
+│   │   │   │   │   └── route.ts             # POST register
+│   │   │   │   └── logout/
+│   │   │   │       └── route.ts             # POST logout
+│   │   │   │
+│   │   │   ├── 📂 courses/                  # Course APIs
+│   │   │   │   ├── route.ts                 # GET all, POST create
+│   │   │   │   ├── [id]/
+│   │   │   │   │   └── route.ts             # GET, PUT, DELETE
+│   │   │   │   └── featured/
+│   │   │   │       └── route.ts             # GET featured (6 cards)
+│   │   │   │
+│   │   │   ├── 📂 enrollments/              # Enrollment APIs
+│   │   │   │   ├── route.ts                 # GET all, POST enroll
+│   │   │   │   ├── [id]/
+│   │   │   │   │   └── route.ts             # GET, PUT (approve/reject), DELETE
+│   │   │   │   └── student/
+│   │   │   │       └── route.ts             # GET student enrollments
+│   │   │   │
+│   │   │   ├── 📂 users/                    # User Management APIs
+│   │   │   │   ├── route.ts                 # GET all, POST create
+│   │   │   │   └── [id]/
+│   │   │   │       └── route.ts             # GET, PUT, DELETE
+│   │   │   │
+│   │   │   ├── 📂 progress/                 # Progress Tracking APIs
+│   │   │   │   ├── route.ts                 # POST update progress
+│   │   │   │   └── [courseId]/
+│   │   │   │       └── route.ts             # GET course progress
+│   │   │   │
+│   │   │   ├── 📂 quiz/                     # Quiz & Assignment APIs
+│   │   │   │   ├── route.ts                 # GET all quizzes
+│   │   │   │   ├── [id]/
+│   │   │   │   │   └── route.ts             # GET quiz, POST submit
+│   │   │   │   └── evaluate/
+│   │   │   │       └── route.ts             # POST - Automated Quiz Evaluation
+│   │   │   │
+│   │   │   ├── 📂 certificates/             # Certificate APIs
+│   │   │   │   ├── generate/
+│   │   │   │   │   └── route.ts             # POST - Generate Certificate
+│   │   │   │   └── verify/
+│   │   │   │       └── route.ts             # GET - Verify with QR code
+│   │   │   │
+│   │   │   ├── 📂 gamification/             # Gamification APIs
+│   │   │   │   ├── points/
+│   │   │   │   │   └── route.ts             # GET/POST points
+│   │   │   │   ├── badges/
+│   │   │   │   │   └── route.ts             # GET badges
+│   │   │   │   └── leaderboard/
+│   │   │   │       └── route.ts             # GET leaderboard
+│   │   │   │
+│   │   │   ├── 📂 analytics/                # Analytics APIs
+│   │   │   │   ├── student/
+│   │   │   │   │   └── route.ts             # Student Performance Analytics
+│   │   │   │   ├── instructor/
+│   │   │   │   │   └── route.ts             # Instructor Effectiveness Report
+│   │   │   │   └── admin/
+│   │   │   │       └── route.ts             # Admin Analytics
+│   │   │   │
+│   │   │   └── 📂 ai/                       # AI Feature APIs
+│   │   │       ├── recommendations/
+│   │   │       │   └── route.ts             # AI Course Recommendations
+│   │   │       │
+│   │   │       ├── adaptive-path/
+│   │   │       │   └── route.ts             # Adaptive Learning Path
+│   │   │       │
+│   │   │       ├── summarize/
+│   │   │       │   ├── video/
+│   │   │       │   │   └── route.ts         # Video Content Summarization
+│   │   │       │   └── pdf/
+│   │   │       │       └── route.ts         # PDF Summarization
+│   │   │       │
+│   │   │       └── evaluate-essay/
+│   │   │           └── route.ts             # AI Essay Assessment (NLP)
+│   │   │
+│   │   ├── layout.tsx                       # Root Layout
+│   │   ├── globals.css                      # Global Styles
+│   │   ├── not-found.tsx                    # 404 Page
+│   │   └── error.tsx                        # Error Page
+│   │
+│   ├── 📂 components/                       # Reusable Components
+│   │   │
+│   │   ├── 📂 ui/                           # Base UI Components (Reusable)
+│   │   │   ├── Button.tsx                   # Reusable Button
+│   │   │   ├── Input.tsx                    # Reusable Input
+│   │   │   ├── Textarea.tsx
+│   │   │   ├── Select.tsx
+│   │   │   ├── Card.tsx
+│   │   │   ├── Modal.tsx
+│   │   │   ├── Badge.tsx                    # For badges/achievements
+│   │   │   ├── Avatar.tsx
+│   │   │   ├── Dropdown.tsx
+│   │   │   ├── Tabs.tsx
+│   │   │   ├── Table.tsx                    # For data tables
+│   │   │   ├── Pagination.tsx               # Pagination component
+│   │   │   ├── Spinner.tsx                  # Loading spinner
+│   │   │   ├── Toast.tsx                    # Toast notifications
+│   │   │   ├── ProgressBar.tsx              # Progress bars
+│   │   │   └── Chart.tsx                    # Chart wrapper
+│   │   │
+│   │   ├── 📂 layout/                       # Layout Components
+│   │   │   ├── Navbar.tsx                   # Main Navbar
+│   │   │   │                                # Before Login: Logo, Home, Courses, About, Contact, Login, Register
+│   │   │   │                                # After Login: Logo, Home, Courses, Dashboard, Avatar, Logout
+│   │   │   ├── Footer.tsx                   # Footer with links
+│   │   │   ├── Sidebar.tsx                  # Dashboard Sidebar
+│   │   │   └── DashboardLayout.tsx          # Dashboard wrapper
+│   │   │
+│   │   ├── 📂 forms/                        # Form Components
+│   │   │   ├── LoginForm.tsx
+│   │   │   ├── RegisterForm.tsx             # Name, Email, Password, Role, Photo URL
+│   │   │   ├── CourseForm.tsx               # Add/Edit course
+│   │   │   ├── EnrollmentForm.tsx           # Enrollment/booking form
+│   │   │   ├── ProfileForm.tsx
+│   │   │   └── QuizForm.tsx
+│   │   │
+│   │   ├── 📂 home/                         # Home Page Components
+│   │   │   ├── HeroSection.tsx              # Hero Banner
+│   │   │   ├── FeaturedCourses.tsx          # 6 Featured Course Cards
+│   │   │   ├── HowItWorks.tsx               # Step-by-step process
+│   │   │   ├── TestimonialCarousel.tsx      # Student Feedback Carousel
+│   │   │   ├── PopularInstructors.tsx       # Instructor showcase
+│   │   │   └── AIRecommendations.tsx        # AI Course Suggestions
+│   │   │
+│   │   ├── 📂 courses/                      # Course Components
+│   │   │   ├── CourseCard.tsx               # Course card with image, name, level
+│   │   │   ├── CourseGrid.tsx               # 3-column grid layout
+│   │   │   ├── CourseDetails.tsx            # Full course details
+│   │   │   ├── CourseFilters.tsx            # Filter by category/level
+│   │   │   ├── VideoPlayer.tsx              # Video player for lectures
+│   │   │   ├── CourseCurriculum.tsx         # Lesson list
+│   │   │   └── EnrollButton.tsx             # Enroll CTA
+│   │   │
+│   │   ├── 📂 dashboard/                    # Dashboard Components
+│   │   │   │
+│   │   │   ├── 📂 admin/                    # Admin Components
+│   │   │   │   ├── UserManagementTable.tsx  # User CRUD table
+│   │   │   │   ├── CourseManagementTable.tsx
+│   │   │   │   ├── EnrollmentTable.tsx
+│   │   │   │   ├── AnalyticsCharts.tsx      # Bar, Line, Pie charts
+│   │   │   │   └── AdminStats.tsx           # Stats cards
+│   │   │   │
+│   │   │   ├── 📂 instructor/               # Instructor Components
+│   │   │   │   ├── MyCoursesList.tsx
+│   │   │   │   ├── EnrollmentRequests.tsx   # Approve/Reject UI
+│   │   │   │   ├── StudentProgressTable.tsx
+│   │   │   │   └── EffectivenessReport.tsx  # Instructor analytics
+│   │   │   │
+│   │   │   ├── 📂 student/                  # Student Components
+│   │   │   │   ├── MyCoursesGrid.tsx
+│   │   │   │   ├── ProgressTracker.tsx      # Timeline & progress bars
+│   │   │   │   ├── PerformanceChart.tsx     # Student analytics dashboard
+│   │   │   │   ├── AdaptivePath.tsx         # Adaptive learning UI
+│   │   │   │   ├── LeaderboardTable.tsx     # Gamification leaderboard
+│   │   │   │   ├── AchievementBadges.tsx    # Badge showcase
+│   │   │   │   ├── PointsCounter.tsx        # Points display
+│   │   │   │   └── CertificateCard.tsx      # Certificate display
+│   │   │   │
+│   │   │   └── 📂 shared/                   # Shared Dashboard Components
+│   │   │       ├── StatsCard.tsx            # Stat cards
+│   │   │       ├── QuickActions.tsx
+│   │   │       ├── RecentActivity.tsx
+│   │   │       └── NotificationPanel.tsx
+│   │   │
+│   │   ├── 📂 ai/                           # AI Feature Components
+│   │   │   ├── PersonalizedRecommendations.tsx
+│   │   │   ├── ContentSummarizer.tsx        # Video/PDF summarization UI
+│   │   │   ├── QuizEvaluator.tsx            # Automated grading UI
+│   │   │   ├── EssayAssessment.tsx          # NLP essay feedback
+│   │   │   └── AdaptiveLearning.tsx         # Adaptive path visualization
+│   │   │
+│   │   ├── 📂 video/                        # Video Features
+│   │   │   ├── LiveClassPlayer.tsx          # Live class integration
+│   │   │   ├── RecordedClassPlayer.tsx      # Recorded sessions
+│   │   │   ├── VideoTimestamps.tsx          # AI timestamps
+│   │   │   └── SearchableTranscript.tsx     # Searchable transcript
+│   │   │
+│   │   └── 📂 certificates/                 # Certificate Components
+│   │       ├── CertificateTemplate.tsx      # Certificate design
+│   │       ├── QRCodeGenerator.tsx          # QR code for verification
+│   │       └── VerificationBadge.tsx        # Verification UI
+│   │
+│   ├── 📂 lib/                              # Utility Functions
+│   │   ├── mongodb.ts                       # MongoDB connection
+│   │   ├── auth.ts                          # Auth helpers (JWT)
+│   │   ├── jwt.ts                           # JWT encode/decode
+│   │   ├── bcrypt.ts                        # Password hashing
+│   │   ├── validation.ts                    # Form validation
+│   │   ├── formatters.ts                    # Date/number formatting
+│   │   ├── constants.ts                     # App constants
+│   │   ├── uploadFile.ts                    # File upload (Cloudinary/AWS S3)
+│   │   └── utils.ts                         # General utilities
+│   │
+│   ├── 📂 models/                           # MongoDB Models (Mongoose)
+│   │   ├── User.ts                          # User model (Student/Instructor/Admin)
+│   │   ├── Course.ts                        # Course model
+│   │   ├── Enrollment.ts                    # Enrollment model
+│   │   ├── Quiz.ts                          # Quiz model
+│   │   ├── Progress.ts                      # Student progress
+│   │   ├── Achievement.ts                   # Badges & achievements
+│   │   ├── Certificate.ts                   # Certificate model
+│   │   ├── Leaderboard.ts                   # Leaderboard data
+│   │   └── VideoRecording.ts                # Live class recordings
+│   │
+│   ├── 📂 types/                            # TypeScript Types
+│   │   ├── index.ts                         # Re-export all types
+│   │   ├── user.types.ts
+│   │   ├── course.types.ts
+│   │   ├── enrollment.types.ts
+│   │   ├── quiz.types.ts
+│   │   ├── progress.types.ts
+│   │   ├── gamification.types.ts
+│   │   ├── analytics.types.ts
+│   │   └── api.types.ts
+│   │
+│   ├── 📂 hooks/                            # Custom React Hooks
+│   │   ├── useAuth.ts                       # Auth state management
+│   │   ├── useCourses.ts
+│   │   ├── useEnrollment.ts
+│   │   ├── useProgress.ts
+│   │   ├── useGamification.ts               # Points/badges hook
+│   │   ├── useAnalytics.ts
+│   │   ├── useDebounce.ts
+│   │   ├── useLocalStorage.ts
+│   │   └── useToast.ts
+│   │
+│   ├── 📂 context/                          # React Context
+│   │   ├── AuthContext.tsx                  # Auth context provider
+│   │   ├── ThemeContext.tsx                 # Dark/Light mode
+│   │   └── ToastContext.tsx                 # Toast notifications
+│   │
+│   ├── 📂 config/                           # Configuration
+│   │   ├── site.ts                          # Site metadata
+│   │   ├── navigation.ts                    # Nav links
+│   │   ├── dashboardMenus.ts                # Dashboard menus
+│   │   └── roles.ts                         # User role definitions
+│   │
+│   ├── 📂 services/                         # API Service Layer
+│   │   ├── authService.ts                   # Auth API calls
+│   │   ├── courseService.ts
+│   │   ├── enrollmentService.ts
+│   │   ├── userService.ts
+│   │   ├── quizService.ts
+│   │   ├── progressService.ts
+│   │   ├── gamificationService.ts
+│   │   ├── certificateService.ts
+│   │   ├── analyticsService.ts
+│   │   └── aiService.ts                     # AI feature API calls
+│   │
+│   └── 📂 middleware/                       # Middleware
+│       ├── authMiddleware.ts                # JWT verification
+│       └── roleMiddleware.ts                # Role-based access control
+│
+├── 📂 public/                               # Static Assets
+│   ├── 📂 images/
+│   │   ├── logo.svg
+│   │   ├── hero-bg.jpg
+│   │   ├── placeholder-course.png
+│   │   └── badges/                          # Badge images
+│   │       ├── beginner.svg
+│   │       ├── intermediate.svg
+│   │       └── expert.svg
+│   │
+│   ├── 📂 icons/
+│   │   ├── dashboard.svg
+│   │   ├── course.svg
+│   │   ├── user.svg
+│   │   └── certificate.svg
+│   │
+│   └── 📂 certificates/                     # Certificate templates
+│       └── template.png
+│
+├── 📂 scripts/                              # Utility Scripts
+│   ├── seed.ts                              # Database seeding
+│   └── generateCertificate.ts               # Certificate generation script
+│
+├── 📄 .env.local                            # Environment Variables
+│                                            # - MONGODB_URI
+│                                            # - JWT_SECRET
+│                                            # - NEXT_PUBLIC_API_URL
+│                                            # - CLOUDINARY_URL (or AWS S3)
+│                                            # - AWS_ACCESS_KEY (if using AWS)
+│                                            # - AWS_SECRET_KEY
+│                                            # - AWS_REGION
+│
+├── 📄 .env.example                          # Example env file
+├── 📄 .gitignore
+├── 📄 .eslintrc.json
+├── 📄 .prettierrc
+├── 📄 package.json
+├── 📄 tsconfig.json
+├── 📄 tailwind.config.ts
+├── 📄 next.config.js
+└── 📄 README.md
+
+
 ## 🚀 Getting Started
 
 ### Prerequisites
