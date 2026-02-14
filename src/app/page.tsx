@@ -1,11 +1,10 @@
 
-
 export default function Home() {
   return (
     <div>
 
 
-      <h2>Hello World</h2>
+      <h2>Home Page Content</h2>
 
 
     </div>
