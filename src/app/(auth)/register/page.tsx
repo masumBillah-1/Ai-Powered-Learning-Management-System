@@ -1,3 +1,4 @@
+import Title from '@/components/ui/Title';
 import React from 'react';
 
 const register = () => {
@@ -5,7 +6,7 @@ const register = () => {
         <div>
 
 
-            <h2>Register Page</h2>
+            <Title>This is a Register Page</Title>
             
         </div>
     );
