@@ -114,7 +114,7 @@ This Learning Management System (LMS) is built to provide a comprehensive educat
 
 ---
 
-## 📁 Project Structure 2
+## 📁 Project Structure
 
 ```
 edusmartai-lms/
