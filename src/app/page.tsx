@@ -1,9 +1,12 @@
-import PricingSection from "@/components/Pricingsection/Pricingsection";
+
 
 export default function Home() {
   return (
     <div>
-      <PricingSection></PricingSection>
+
+
+      <h2>content Area</h2>
+
     </div>
   );
 }
