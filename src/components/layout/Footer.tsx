@@ -1,48 +1,88 @@
-import React from 'react';
+"use client";
+import React from "react";
+import Link from "next/link";
+import { FaFacebook, FaInstagram, FaLinkedin, FaYoutube } from "react-icons/fa";
+import Logo from "./Logo";
 
 const Footer = () => {
-    return (
-        <footer className="footer sm:footer-horizontal bg-base-200 text-base-content p-10">
-  <aside>
-    <svg
-      width="50"
-      height="50"
-      viewBox="0 0 24 24"
-      xmlns="http://www.w3.org/2000/svg"
-      fillRule="evenodd"
-      clipRule="evenodd"
-      className="fill-current">
-      <path
-        d="M22.672 15.226l-2.432.811.841 2.515c.33 1.019-.209 2.127-1.23 2.456-1.15.325-2.148-.321-2.463-1.226l-.84-2.518-5.013 1.677.84 2.517c.391 1.203-.434 2.542-1.831 2.542-.88 0-1.601-.564-1.86-1.314l-.842-2.516-2.431.809c-1.135.328-2.145-.317-2.463-1.229-.329-1.018.211-2.127 1.231-2.456l2.432-.809-1.621-4.823-2.432.808c-1.355.384-2.558-.59-2.558-1.839 0-.817.509-1.582 1.327-1.846l2.433-.809-.842-2.515c-.33-1.02.211-2.129 1.232-2.458 1.02-.329 2.13.209 2.461 1.229l.842 2.515 5.011-1.677-.839-2.517c-.403-1.238.484-2.553 1.843-2.553.819 0 1.585.509 1.85 1.326l.841 2.517 2.431-.81c1.02-.33 2.131.211 2.461 1.229.332 1.018-.21 2.126-1.23 2.456l-2.433.809 1.622 4.823 2.433-.809c1.242-.401 2.557.484 2.557 1.838 0 .819-.51 1.583-1.328 1.847m-8.992-6.428l-5.01 1.675 1.619 4.828 5.011-1.674-1.62-4.829z"></path>
-    </svg>
-    <p>
-      ACME Industries Ltd.
-      <br />
-      Providing reliable tech since 1992
-    </p>
-  </aside>
-  <nav>
-    <h6 className="footer-title">Services</h6>
-    <a className="link link-hover">Branding</a>
-    <a className="link link-hover">Design</a>
-    <a className="link link-hover">Marketing</a>
-    <a className="link link-hover">Advertisement</a>
-  </nav>
-  <nav>
-    <h6 className="footer-title">Company</h6>
-    <a className="link link-hover">About us</a>
-    <a className="link link-hover">Contact</a>
-    <a className="link link-hover">Jobs</a>
-    <a className="link link-hover">Press kit</a>
-  </nav>
-  <nav>
-    <h6 className="footer-title">Legal</h6>
-    <a className="link link-hover">Terms of use</a>
-    <a className="link link-hover">Privacy policy</a>
-    <a className="link link-hover">Cookie policy</a>
-  </nav>
-</footer>
-    );
+  return (
+    <footer className="bg-[#0b1120] text-gray-400 py-16 px-4">
+      <div className="max-w-[1440px] mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 lg:gap-8 px-4 sm:px-6 lg:px-12">
+        
+        {/* Section 1: Brand & Logo */}
+        <div className="space-y-6">
+          <Link href="/" className="flex items-center gap-3">
+             <div 
+                className="w-10 h-10 flex items-center justify-center rounded-xl shadow-lg"
+                style={{ background: "linear-gradient(135deg, #C81D77, #6710C2)" }}
+              >
+                <span className="text-white text-xl font-black">B</span>
+              </div>
+            <span className="text-2xl font-bold text-white tracking-tighter">
+              Brain<span style={{ color: "#6710C2" }}>Boost</span>
+            </span>
+          </Link>
+         
+          <p className="text-sm leading-relaxed max-w-xs">
+            Office: Level-4, 34, Awal Centre, Banani, Dhaka <br />
+            Support: web@brainboost.com <br />
+            Helpline: 01322810867 (Available : Sat - Thu, 10:00 AM to 7:00 PM)
+          </p>
+        </div>
+
+        {/* Section 2: Quick Links */}
+        <div className="space-y-4">
+          <h3 className="text-white font-bold text-lg mb-6">Explore</h3>
+          <ul className="space-y-3 text-sm">
+            <li><Link href="/courses" className="hover:text-white transition">Success Stories</Link></li>
+            <li><Link href="/blog" className="hover:text-white transition">Our Blog</Link></li>
+            <li><Link href="/about" className="hover:text-white transition">About Us</Link></li>
+            <li><Link href="/contact" className="hover:text-white transition">Contact Us</Link></li>
+          </ul>
+        </div>
+
+        {/* Section 3: Legal */}
+        <div className="space-y-4">
+          <h3 className="text-white font-bold text-lg mb-6">Policy</h3>
+          <ul className="space-y-3 text-sm">
+            <li><Link href="/refund" className="hover:text-white transition">Refund Policy</Link></li>
+            <li><Link href="/terms" className="hover:text-white transition">Terms and Conditions</Link></li>
+            <li><Link href="/privacy" className="hover:text-white transition">Privacy Policy</Link></li>
+          </ul>
+        </div>
+
+        {/* Section 4: Social & App */}
+        <div className="space-y-6">
+          <h3 className="text-white font-bold text-lg mb-6">Follow Us</h3>
+          <div className="flex gap-4">
+            <Link href="#" className="p-3 bg-gray-800 rounded-full hover:bg-[#1877F2]
+ transition duration-300">
+              <FaFacebook size={20} className="text-white" />
+            </Link>
+            <Link href="#" className="p-3 bg-gray-800 rounded-full hover:bg-gradient-to-br from-[#405DE6] via-[#C13584] to-[#FCAF45]
+ transition duration-300">
+              <FaInstagram size={20} className="text-white" />
+            </Link>
+            <Link href="#" className="p-3 bg-gray-800 rounded-full hover:bg-blue-600 transition duration-300">
+              <FaLinkedin size={20} className="text-white" />
+            </Link>
+            <Link href="#" className="p-3 bg-gray-800 rounded-full hover:bg-red-600 transition duration-300">
+              <FaYoutube size={20} className="text-white" />
+            </Link>
+          </div>
+          <div className="pt-4">
+             <p className="text-xs text-gray-500">Copyright © 2026 BrainBoost</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Bottom Border Gradient */}
+      <div 
+        className="mt-12 h-1 w-full opacity-30"
+        style={{ background: "linear-gradient(90deg, #FF0F7B, #F89B29)" }}
+      ></div>
+    </footer>
+  );
 };
 
 export default Footer;
