@@ -1,5 +1,5 @@
 import HeroSection from "../components/Home/HeroSection"
-// import ImpactSection from "../components/Home/ImpactSection"
+import ImpactSection from "../components/Home/ImpactSection"
 // import ProblemSolution from "../components/Home/ProblemSolution"
 
 export default function Home() {
@@ -7,6 +7,7 @@ export default function Home() {
     
       <div className="container mx-auto px-6 py-10">
          <HeroSection/>
+         <ImpactSection/>
       </div>
   
   );
