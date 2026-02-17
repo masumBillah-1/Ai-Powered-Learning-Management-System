@@ -278,12 +278,12 @@ const Navbar = () => {
 
               {!isLoggedIn ? (
                 <div className="flex items-center gap-4">
-                  <button className="bg-[#2D2D2D] hover:bg-gray-50 transition-all border-2 hover:border-[#FF0F7B] hover:text-[#FF0F7B] dark:bg-gray-700 text-white px-7 py-2.5 rounded-xl font-bold text-sm">Login</button>
-                  <button style={{ background: "linear-gradient(90deg, #FF0F7B, #F89B29)" }} className="text-white px-8 py-2.5 rounded-xl font-extrabold text-sm shadow-md">Enroll Now</button>
+                  <Link href="/login" className="bg-[#2D2D2D] hover:bg-gray-50 transition-all border-2 hover:border-[#FF0F7B] hover:text-[#FF0F7B] dark:bg-gray-700 text-white px-7 py-2.5 rounded-xl font-bold text-sm">Login</Link>
+                  <button style={{ background: "linear-gradient(90deg, #FF0F7B, #F89B29)" }} className="text-white px-8 py-2.5 rounded-xl font-extrabold text-sm shadow-md hover:scale-105 transition-all active:scale-95 animate-shimmer relative overflow-hidden group">Enroll Now</button>
                 </div>
               ) : (
                 <div className="flex items-center gap-4">
-                  <button style={{ background: "linear-gradient(90deg, #FF0F7B, #F89B29)" }} className="hidden xl:block text-white px-8 py-2.5 rounded-xl font-extrabold text-sm shadow-lg">Enroll Now</button>
+                  <button style={{ background: "linear-gradient(90deg, #FF0F7B, #F89B29)" }} className="hidden xl:block text-white px-8 py-2.5 rounded-xl font-extrabold text-sm shadow-lg hover:scale-105 transition-all active:scale-95 animate-shimmer relative overflow-hidden group">Enroll Now</button>
 
                   <div className="relative" ref={menuRef}>
                     <button onClick={() => setShowMenu(!showMenu)} className="flex items-center p-0.5 rounded-full border-2 border-[#6710C2] hover:scale-105 transition-transform">
