@@ -24,7 +24,7 @@ const LoginPage = () => {
 
   return (
     <div className="mt-5 mb-9 relative flex items-center justify-center overflow-hidden px-2">
-      {/* Background */}
+
       <div className="absolute inset-0" />
       <div className="absolute inset-0 backdrop-blur-3xl" />
 
