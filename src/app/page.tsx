@@ -1,12 +1,13 @@
-
+import HeroSection from "../components/Home/HeroSection"
+// import ImpactSection from "../components/Home/ImpactSection"
+// import ProblemSolution from "../components/Home/ProblemSolution"
 
 export default function Home() {
   return (
-    <div>
-
-
-      <h2>content Area</h2>
-
-    </div>
+    
+      <div className="container mx-auto px-6 py-10">
+         <HeroSection/>
+      </div>
+  
   );
 }
