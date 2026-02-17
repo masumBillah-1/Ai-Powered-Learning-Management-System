@@ -106,7 +106,7 @@ const LoginPage = () => {
               )}
             </div>
 
-            {/* Remember / Forgot */}
+           
             <div className="flex items-center justify-between text-sm text-gray-300">
               <label className="flex items-center gap-2 cursor-pointer">
                 <input type="checkbox" className="checkbox checkbox-xs" />
