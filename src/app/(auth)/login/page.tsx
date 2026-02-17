@@ -117,7 +117,7 @@ const LoginPage = () => {
               </a>
             </div>
 
-            {/* Submit */}
+       
             <button
               type="submit"
               className="w-full py-2.5 rounded-lg font-medium text-white bg-gradient-to-r from-[#832388] via-[#E3436B] to-[#F0772F] hover:opacity-90 transition"
