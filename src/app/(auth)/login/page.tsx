@@ -2,6 +2,8 @@
 
 import React, { useState } from "react";
 import { useForm } from "react-hook-form";
+import { FiEye, FiEyeOff } from "react-icons/fi";
+
 type LoginFormData = {
   email: string;
   password: string;
@@ -21,16 +23,13 @@ const LoginPage = () => {
   };
 
   return (
-    <div className="mt-5 mb-9 relative flex items-center justify-center overflow-hidden  px-2">
-
-      {/* 🌈 Background Gradient */}
+    <div className="mt-5 mb-9 relative flex items-center justify-center overflow-hidden px-2">
+      {/* Background */}
       <div className="absolute inset-0" />
       <div className="absolute inset-0 backdrop-blur-3xl" />
 
-      {/* Wrapper */}
       <div className="relative z-10 w-full max-w-lg text-center">
-
-        {/* Top Text */}
+        {/* Header */}
         <p className="text-sm text-gray-300 mb-1">Welcome Back</p>
         <h1 className="text-2xl sm:text-3xl font-semibold text-white">
           Sign In your account
@@ -40,14 +39,7 @@ const LoginPage = () => {
         </p>
 
         {/* Card */}
-        <div
-          className="
-            bg-white/10 backdrop-blur-xl
-            border border-white/20
-            rounded-2xl shadow-2xl
-            p-6 sm:p-8 text-left
-          "
-        >
+        <div className="bg-white/10 backdrop-blur-xl border border-white/20 rounded-2xl shadow-2xl p-6 sm:p-8 text-left">
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
 
             {/* Email */}
@@ -61,6 +53,10 @@ const LoginPage = () => {
                 className="input w-full bg-white/5 border-white/20 text-white placeholder-gray-400"
                 {...register("email", {
                   required: "Email is required",
+                  pattern: {
+                    value: /^\S+@\S+$/i,
+                    message: "Invalid email address",
+                  },
                 })}
               />
               {errors.email && (
@@ -89,12 +85,17 @@ const LoginPage = () => {
                     },
                   })}
                 />
+
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white"
                 >
-                  {/* {showPassword ? <EyeOff size={18} /> : <Eye size={18} />} */}
+                  {showPassword ? (
+                    <FiEyeOff size={18} />
+                  ) : (
+                    <FiEye size={18} />
+                  )}
                 </button>
               </div>
 
@@ -116,20 +117,14 @@ const LoginPage = () => {
               </a>
             </div>
 
-            {/* Button */}
+            {/* Submit */}
             <button
               type="submit"
-              className="
-                w-full py-2.5 rounded-lg font-medium text-white
-               bg-gradient-to-r from-[#832388] via-[#E3436B] to-[#F0772F] 
-                hover:opacity-90 transition
-              "
+              className="w-full py-2.5 rounded-lg font-medium text-white bg-gradient-to-r from-[#832388] via-[#E3436B] to-[#F0772F] hover:opacity-90 transition"
             >
               Sign In
             </button>
           </form>
-
-          {/* Footer */}
           <p className="text-center text-sm text-gray-400 mt-6">
             Don&apos;t have an account?
             <a
