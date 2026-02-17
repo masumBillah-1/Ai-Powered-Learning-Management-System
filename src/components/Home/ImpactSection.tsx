@@ -32,38 +32,40 @@ const ImpactSection = () => {
     },
   ];
 
-  // প্রজেক্টের থিম গ্রাডিয়েন্ট
   const phGradient = "linear-gradient(to right, #832388, #E3436B, #F0772F)";
 
   return (
-    <section className="py-20 bg-white dark:bg-slate-950 overflow-hidden">
+    <section className="py-24 bg-white dark:bg-slate-950 overflow-hidden">
       <div className="container mx-auto px-6 max-w-6xl">
         <motion.div 
           initial={{ opacity: 0, y: 40 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          transition={{ duration: 0.8, ease: "easeOut" }}
-          className="relative group"
+          transition={{ duration: 0.8 }}
+          className="relative p-[2px] rounded-[38px] overflow-hidden" // বর্ডারের জন্য কন্টেইনার
         >
           
-          {/* Updated Partial Gradient Border with your project colors */}
-          <div 
-            className="absolute inset-0 rounded-[35px] pointer-events-none border-2 border-transparent"
-            style={{
-              backgroundImage: phGradient,
-              WebkitMask: 'linear-gradient(#fff 0 0) padding-box, linear-gradient(#fff 0 0)',
-              WebkitMaskComposite: 'destination-out',
-              maskImage: 'linear-gradient(to right, black 80%, transparent 100%)' 
+          {/* --- Animated Moving Border Magic --- */}
+          <motion.div
+            animate={{
+              rotate: [0, 360],
             }}
-          ></div>
+            transition={{
+              duration: 4,
+              repeat: Infinity,
+              ease: "linear",
+            }}
+            style={{
+              backgroundImage: `conic-gradient(from 0deg, transparent 60%, #832388, #E3436B, #F0772F)`,
+            }}
+            className="absolute inset-[-100%] z-0"
+          />
 
-          <div className="relative bg-white dark:bg-slate-900 rounded-[35px] py-16 px-4 shadow-[0_10px_40px_-15px_rgba(0,0,0,0.1)]">
+          {/* Inner Content Area */}
+          <div className="relative z-10 bg-white dark:bg-slate-900 rounded-[36px] py-16 px-4 shadow-2xl">
             
-            {/* Section Title with Gradient Text */}
+            {/* Section Title */}
             <motion.h2 
-              initial={{ opacity: 0 }}
-              whileInView={{ opacity: 1 }}
-              transition={{ delay: 0.2 }}
               className="text-2xl md:text-3xl font-black text-center text-slate-800 dark:text-white mb-16"
             >
               আমাদের <span className="text-transparent bg-clip-text" style={{ backgroundImage: phGradient }}>হিরোদের</span> ক্যারিয়ারে ব্রেইন-বুস্ট এর ইমপ্যাক্ট
@@ -76,17 +78,15 @@ const ImpactSection = () => {
                   key={item.id}
                   initial={{ opacity: 0, scale: 0.8 }}
                   whileInView={{ opacity: 1, scale: 1 }}
-                  transition={{ delay: index * 0.1 + 0.3, type: "spring", stiffness: 100 }}
+                  transition={{ delay: index * 0.1 }}
                   whileHover={{ y: -8 }}
                   className="flex flex-col items-center relative"
                 >
-                  
-                  {/* Vertical Divider for Desktop */}
                   {index !== 0 && (
                     <div className="hidden lg:block absolute left-0 h-16 w-[1px] bg-gray-100 dark:bg-slate-800"></div>
                   )}
 
-                  <div className="mb-4 transform transition-transform group-hover:scale-110">
+                  <div className="mb-4 transform transition-transform duration-300">
                     {item.icon}
                   </div>
 
