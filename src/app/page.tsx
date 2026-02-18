@@ -1,3 +1,4 @@
+
 import HeroSection from "../components/Home/HeroSection"
 import ImpactSection from "../components/Home/ImpactSection"
 import ProblemSolution from "../components/Home/ProblemSolution"
@@ -9,7 +10,10 @@ export default function Home() {
          <HeroSection/>
          <ImpactSection/>
          <ProblemSolution/>
+      <FAQ />
+    <JoinNow />
       </div>
   
+
   );
 }
