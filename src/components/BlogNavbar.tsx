@@ -1,11 +1,29 @@
 "use client";
 import React from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation"; // Pathname ট্র্যাক করার জন্য
 import { FaSearch } from "react-icons/fa";
 import Logo from "./layout/Logo";
 
 
 const BlogNavbar = () => {
+  const pathname = usePathname(); // বর্তমান URL পাথ গেট করা
+
+  // লিঙ্কের জন্য একটি কমন স্টাইল ফাংশন
+  const getLinkStyle = (path: string) => {
+    const isActive = pathname === path;
+    return isActive 
+      ? "text-[#a123cc] font-bold" // অ্যাক্টিভ হলে এই কালার থাকবে
+      : "text-gray-700 hover:text-[#a123cc] transition-colors font-bold"; // না হলে এই কালার
+  };
+
+  const navLinks = [
+    { name: "Home", path: "/" },
+    { name: "PH Books", path: "/books" },
+    { name: "Courses", path: "/courses", hasDropdown: true },
+    { name: "Blogs", path: "/blog", hasDropdown: true },
+  ];
+
   return (
     <nav className="bg-[#fdf2ff] py-4 border-b border-purple-100 sticky top-0 z-50">
       <div className="max-w-[1200px] mx-auto px-4 flex justify-between items-center">
@@ -13,11 +31,16 @@ const BlogNavbar = () => {
         <Logo />
 
         {/* Middle: Links */}
-        <div className="hidden md:flex items-center space-x-8 font-bold text-gray-700">
-          <Link href="/" className="text-[#a123cc] hover:text-purple-800">Home</Link>
-          <Link href="#" className="hover:text-[#a123cc]">PH Books</Link>
-          <Link href="#" className="hover:text-[#a123cc]">Courses ▾</Link>
-          <Link href="#" className="hover:text-[#a123cc]">Blogs ▾</Link>
+        <div className="hidden md:flex items-center space-x-8">
+          {navLinks.map((link) => (
+            <Link 
+              key={link.name} 
+              href={link.path} 
+              className={getLinkStyle(link.path)}
+            >
+              {link.name} {link.hasDropdown && "▾"}
+            </Link>
+          ))}
         </div>
 
         {/* Right: Search Bar */}
@@ -25,7 +48,7 @@ const BlogNavbar = () => {
           <input 
             type="text" 
             placeholder="Search..." 
-            className="w-full bg-white border border-gray-200 py-2 px-4 pr-10 rounded-lg focus:outline-none focus:ring-1 focus:ring-purple-400"
+            className="w-full bg-white border border-gray-200 py-2 px-4 pr-10 rounded-lg focus:outline-none focus:ring-1 focus:ring-purple-400 text-gray-700"
           />
           <FaSearch className="absolute right-3 top-3 text-blue-400" />
         </div>
