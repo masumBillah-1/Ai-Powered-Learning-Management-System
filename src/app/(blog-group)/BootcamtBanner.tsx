@@ -42,7 +42,7 @@ const BootcampBanner = () => {
             {/* White card container like the image */}
             <div className="bg-white rounded-3xl overflow-hidden shadow-2xl transition-transform duration-500 group-hover:-rotate-1">
               <img 
-                src="https://i.ibb.co.com/XRxmYVf7/hero-image.png" // এখানে আপনার পছন্দের ইমেজ দিন
+                src="https://i.ibb.co.com/xqm5NbG6/thalia-tran-d1-Wj9q-U5-C-o-unsplash.jpg" 
                 alt="Bootcamp" 
                 className="w-full h-auto object-cover"
               />

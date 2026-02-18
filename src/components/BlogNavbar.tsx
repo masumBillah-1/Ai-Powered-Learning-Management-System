@@ -1,25 +1,24 @@
 "use client";
 import React from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation"; // Pathname ট্র্যাক করার জন্য
+import { usePathname } from "next/navigation"; 
 import { FaSearch } from "react-icons/fa";
 import Logo from "./layout/Logo";
 
 
 const BlogNavbar = () => {
-  const pathname = usePathname(); // বর্তমান URL পাথ গেট করা
+  const pathname = usePathname(); 
 
-  // লিঙ্কের জন্য একটি কমন স্টাইল ফাংশন
+
   const getLinkStyle = (path: string) => {
     const isActive = pathname === path;
     return isActive 
-      ? "text-[#a123cc] font-bold" // অ্যাক্টিভ হলে এই কালার থাকবে
-      : "text-gray-700 hover:text-[#a123cc] transition-colors font-bold"; // না হলে এই কালার
+      ? "text-[#a123cc] font-bold" 
+      : "text-gray-700 hover:text-[#a123cc] transition-colors font-bold"; 
   };
 
   const navLinks = [
     { name: "Home", path: "/" },
-    { name: "PH Books", path: "/books" },
     { name: "Courses", path: "/courses", hasDropdown: true },
     { name: "Blogs", path: "/blog", hasDropdown: true },
   ];

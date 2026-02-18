@@ -2,6 +2,7 @@ import BlogNavbar from "@/components/BlogNavbar";
 import Footer from "@/components/layout/Footer";
 import PopularBlogs from "./PopularBlogs";
 import BootcampBanner from "./BootcamtBanner";
+import BlogSection from "./BlogSection";
 
 
 
@@ -13,6 +14,7 @@ export default function BlogLayout({ children }: { children: React.ReactNode }) 
       <main className="min-h-screen">{children}</main>
       <PopularBlogs />
       <BootcampBanner />
+      <BlogSection/>
       <Footer />
     </div>
   );
