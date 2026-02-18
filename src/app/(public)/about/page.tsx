@@ -5,7 +5,7 @@ import { motion } from 'framer-motion';
 
 const About = () => {
   const team = [
-    { name: "Akhi Akter", role: "Chief Executive Officer (CEO)", image: "https://i.ibb.co/L64Mcy0/jhankar.png" },
+    { name: "Akhi Akter", role: "Chief Executive Officer (CEO)", image: "https://i.ibb.co.com/qFkzk520/Chat-GPT-Image-Dec-17-2025-05-24-43-PM.png" },
     { name: "Juma Islam", role: "Chief Product Officer (CPO)", image: "https://i.ibb.co.com/krjgJw0/saree-removebg-preview.png" },
     { name: "Sayma Ahmed Shimu", role: "Chief Operating Officer (COO)", image: "https://i.ibb.co.com/nND6Jbrz/mine-removebg-preview.png" },
     { name: "Sakib Al Hasan", role: "Lead Developer", image: "https://i.ibb.co.com/RpFQKWTh/473419070-1296272228367678-2831504883843112837-n.jpg" },
