@@ -1,7 +1,7 @@
 
 
 "use client";
-import React, { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { 
   FaBars, 
@@ -11,8 +11,7 @@ import {
   FaThLarge, 
   FaUser, 
   FaSignOutAlt, 
-  FaChevronRight,
-  FaBookOpen 
+  FaChevronRight
 } from "react-icons/fa";
 import Logo from "./Logo";
 

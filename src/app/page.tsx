@@ -7,7 +7,7 @@ export default function Home() {
     <div>
 
 
-      <h2>content Area</h2>
+    
       <FAQ />
     <JoinNow />
     </div>
