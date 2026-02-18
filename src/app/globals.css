@@ -1,7 +1,9 @@
 @import "tailwindcss";
 @plugin "daisyui";
 
-/* Light Theme Variables */
+/* Tailwind-ke dark mode er strategy bole deya */
+@custom-variant dark (&:where(.dark, [data-theme="dark"], .dark *));
+
 :root {
   --background: #ffffff;
   --foreground: #171717;
@@ -9,8 +11,7 @@
   --border-color: #f3f4f6;
 }
 
-/* Dark Theme Variables - Jakhon HTML e .dark class thakbe */
-.dark {
+.dark, [data-theme="dark"] {
   --background: #0b1120;
   --foreground: #ededed;
   --nav-bg: #0b1120;
@@ -20,15 +21,10 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
 }
 
-/* Base Body Styles */
 body {
   background-color: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
-  transition-property: background-color, color;
-  transition-duration: 300ms;
 }
+
