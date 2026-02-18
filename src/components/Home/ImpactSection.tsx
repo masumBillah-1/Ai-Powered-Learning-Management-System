@@ -9,25 +9,25 @@ const ImpactSection = () => {
     {
       id: 1,
       icon: <FaGlobeAmericas className="text-4xl text-[#832388]" />,
-      count: "৬০+",
+ 
       label: "দেশে",
     },
     {
       id: 2,
       icon: <FaBuilding className="text-4xl text-[#E3436B]" />,
-      count: "৫৪০০+",
+  
       label: "গ্লোবাল জব প্লেসমেন্ট",
     },
     {
       id: 3,
       icon: <FaHeadset className="text-4xl text-[#F0772F]" />,
-      count: "১৯০০+",
+    
       label: "রিমোট জব",
     },
     {
       id: 4,
       icon: <FaTrophy className="text-4xl text-[#832388]" />,
-      count: "৮৫-৯০%",
+  
       label: "জব সাকসেস রেশিও",
     },
   ];
@@ -89,10 +89,6 @@ const ImpactSection = () => {
                   <div className="mb-4 transform transition-transform duration-300">
                     {item.icon}
                   </div>
-
-                  <h3 className="text-3xl md:text-4xl font-black text-slate-800 dark:text-white mb-1">
-                    {item.count}
-                  </h3>
 
                   <p className="text-gray-500 dark:text-gray-400 font-bold text-xs md:text-sm tracking-wide">
                     {item.label}
