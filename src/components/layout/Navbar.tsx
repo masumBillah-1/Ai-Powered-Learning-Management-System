@@ -83,6 +83,14 @@ const Navbar = () => {
                     My Classes
                  </Link>
                )}
+               {isLoggedIn && (
+                 <Link 
+                   href="/help" 
+                   className="flex items-center gap-2 text-gray-700 dark:text-gray-300 hover:text-[#C81D77] transition-colors"
+                 >
+                    Hepldesk
+                 </Link>
+               )}
             </div>
 
             <div className="flex items-center gap-5 border-l border-gray-200 dark:border-gray-700 pl-6">
