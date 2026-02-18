@@ -1,112 +1,3 @@
-// "use client";
-
-// import { useState } from "react";
-// import VideoModal from "./VideoModal";
-// import { updateProgress } from "@/components/ui/Api";
-
-// const videos = [
-//   {
-//     title: "HTML Full Course",
-//     id: "WTmXc2xGwY4",
-//   },
-//   {
-//     title: "JavaScript Full Course",
-//     id: "pJQXGmMofro",
-//   },
-//   {
-//     title: "React JS Full Course",
-//     id: "Z-EkslDJTJI",
-//   },
-// ];
-
-// export default function CourseCard() {
-//   const [currentIndex, setCurrentIndex] = useState<number | null>(null);
-//   const [progress, setProgress] = useState(0);
-
-//   const handleComplete = async () => {
-//     const newProgress =
-//       ((currentIndex! + 1) / videos.length) * 100;
-
-//     await updateProgress(newProgress);
-//     setProgress(newProgress);
-//     setCurrentIndex(null);
-//   };
-
-//   return (
-//     <div>
-//       {/* Top Headline */}
-//       <div className="text-center mb-6">
-//         <h1 className="text-3xl md:text-4xl font-extrabold tracking-wide">
-//           Welcome Back! Ready for Your Next Lesson?
-//         </h1>
-//       </div>
-
-//       {/* Course Card */}
-//       <div
-//         className="p-8 rounded-2xl text-white"
-//         style={{
-//           background:
-//             "linear-gradient(90deg, #832388, #E3436B, #F0772F)",
-//         }}
-//       >
-//         <h1 className="text-2xl font-bold mb-4">
-//           All Over Web Development Creative Coders Course Level 1
-//         </h1>
-
-//         {/* Progress Bar */}
-//         <div className="bg-black/40 h-3 rounded-full mb-3">
-//           <div
-//             className="h-3 rounded-full transition-all duration-500"
-//             style={{
-//               width: `${progress}%`,
-//               background:
-//                 "linear-gradient(90deg, #C81D77, #6710C2)",
-//             }}
-//           ></div>
-//         </div>
-
-//         <p className="mb-4">
-//           {progress.toFixed(0)}% Completed
-//         </p>
-
-//         <button
-//           onClick={() => {
-//             const nextIndex = Math.floor(
-//               (progress / 100) * videos.length
-//             );
-//             setCurrentIndex(
-//               Math.min(nextIndex, videos.length - 1)
-//             );
-//           }}
-//           className="px-6 py-2 rounded-lg"
-//           style={{
-//             background:
-//               "linear-gradient(90deg, #FF0F7B, #F89B29)",
-//           }}
-//         >
-//           Continue Course
-//         </button>
-
-//         {currentIndex !== null && (
-//           <VideoModal
-//             videoId={videos[currentIndex].id}
-//             title={videos[currentIndex].title}
-//             onClose={() => setCurrentIndex(null)}
-//             onComplete={handleComplete}
-//           />
-//         )}
-
-//         {progress === 100 && (
-//           <h2 className="mt-4 text-green-300 text-xl">
-//             🎉 Course Completed!
-//           </h2>
-//         )}
-//       </div>
-//     </div>
-//   );
-// }
-
-
 "use client";
 
 import React, { useState } from "react";
@@ -176,18 +67,30 @@ export default function MyClassas() {
   const getCurrentVideo = () => videos.find(v => v.id === activeVideo);
 
   return (
-    <div className="min-h-screen bg-[#0F0F1A] text-white font-sans pb-20">
-      {/* Top Navigation Bar Simulation */}
-      {/* Top Navigation Bar Removed - Using Global Navbar */}
+    
+    <div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-8">
         {/* Welcome Section */}
         <div className="mb-8 animate-fade-in-down">
-          <h1 className="text-2xl md:text-3xl font-bold">
-            Welcome Back <span className="text-transparent bg-clip-text
-             bg-gradient-to-r from-[#C81D77] to-[#6710C2]"></span>, Ready For Your Next Lesson?
-          </h1>
+     <h1 className="text-2xl md:text-4xl font-extrabold tracking-wide leading-snug">
+  <span className="bg-gradient-to-r from-[#C81D77] to-[#6710C2] text-transparent bg-clip-text">
+    Welcome Back,
+  </span>{" "}
+  <span className="text-black">Ready for Your</span>{" "}
+  <span className="bg-gradient-to-r from-[#832388] via-[#E3436B] to-[#F0772F] text-transparent bg-clip-text">
+    Next Lesson?
+  </span>
+</h1>
+
         </div>
+
+    </div>
+    
+    <div className="min-h-screen bg-[#0F0F1A] text-white font-sans pb-20">
+      {/* Top Navigation Bar Simulation */}
+      {/* Top Navigation Bar Removed - Using Global Navbar */}
+
 
         {/* Tabs */}
         <div className="flex border-b border-gray-800 mb-8 overflow-x-auto">
@@ -235,10 +138,7 @@ export default function MyClassas() {
             <div className="md:col-span-12 lg:col-span-7 flex flex-col justify-center space-y-6">
               <div>
                 <h2 className="text-2xl md:text-3xl font-bold text-white mb-2 leading-tight">Complete Web Development Course With Creative Coders</h2>
-                <div className="flex items-center gap-2 text-gray-400 text-sm">
-                  <span>Instructor:</span>
-                  <span className="text-white font-medium">Jhankar Mahbub</span>
-                </div>
+               
               </div>
 
               {/* Progress Bar */}
@@ -271,7 +171,7 @@ export default function MyClassas() {
                    hover:shadow-purple-600/50 hover:scale-105 active:scale-95 transition-all duration-300 flex items-center gap-2"
                   style={{ background: 'linear-gradient(90deg, #C81D77, #6710C2)' }}
                 >
-                  <FaPlay className="w-4 h-4 fill-current" />
+                  <FaPlay className="w-4 h-5 fill-current" />
                   {progress === 100 ? 'Course Completed' : progress > 0 ? 'Continue Course' : 'Start Course'}
                 </button>
                 <button className="px-8 py-3 rounded-full font-bold text-gray-300 border border-gray-700
@@ -287,23 +187,23 @@ export default function MyClassas() {
         {/* Recommended Course Card (Secondary) */}
         <div className="mt-8 bg-[#151521] rounded-2xl p-6 border border-gray-800 flex flex-col md:flex-row items-center
          gap-6 opacity-80 hover:opacity-100 transition duration-300 hover:border-gray-700">
-          <div className="w-full md:w-1/3 h-48 rounded-xl overflow-hidden relative group">
+          <div className="w-full md:w-1/3 h-40 rounded-xl overflow-hidden relative group">
             <div className="absolute inset-0 bg-gradient-to-r from-[#832388] to-[#E3436B] opacity-20 group-hover:opacity-10 transition"></div>
             <img src="https://i.ytimg.com/vi/Z-EkslDJTJI/maxresdefault.jpg" className="w-full h-full object-cover" alt="Recommended" />
             <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
-              <span className="bg-[#F89B29] text-black font-bold px-3 py-1 rounded text-sm shadow-xl">Recommended Bootcamp</span>
+             
             </div>
           </div>
           <div className="flex-1 w-full">
             <h3 className="text-xl font-bold text-white mb-2">Recommended for Complete Web Development Course</h3>
             <p className="text-gray-400 mb-4 text-sm">Creative Coders • Web Development</p>
             <div className="flex items-center gap-4 mb-6">
-              <div className="flex-1 bg-gray-800 h-2.5 rounded-full overflow-hidden">
-                <div className="h-full w-[27%] bg-gradient-to-r from-[#FF0F7B] to-[#F89B29] rounded-full relative">
+              <div className="flex-1 bg-gray-700 h-2.5 rounded-full overflow-hidden">
+                <div className="h-full w-[37%] bg-gradient-to-r from-[#FF0F7B] to-[#F89B29] rounded-full relative">
                   <div className="absolute inset-0 bg-white/10"></div>
                 </div>
               </div>
-              <span className="font-bold text-gray-400 text-sm">0%</span>
+              <span className="font-bold text-gray-400 text-sm">27%</span>
             </div>
             <button
               className="px-8 py-3 rounded-full font-bold text-white shadow-lg hover:shadow-orange-500/30
@@ -381,8 +281,22 @@ export default function MyClassas() {
             </div>
 
             {/* Playlist Sidebar */}
-            <div className="w-full lg:w-96 border-l border-gray-800 bg-[#151521] flex flex-col h-1/3 lg:h-auto">
-              <div className="p-5 border-b border-gray-800 bg-[#151521] shadow-sm relative z-10">
+<div
+  className="w-full lg:w-96 border-l border-gray-800 flex flex-col h-1/3 lg:h-auto"
+  style={{
+    background:
+      "linear-gradient(90deg, #832388, #E3436B, #F0772F)",
+  }}
+>
+  <div
+    className="p-5 border-b border-gray-800 shadow-sm relative z-10"
+    style={{
+      background:
+        "linear-gradient(90deg, #832388, #E3436B, #F0772F)",
+    }}
+  >
+
+
                 <h3 className="font-bold text-white mb-1 flex items-center gap-2">
                   <FaBookOpen className="w-4 h-4 text-[#C81D77]" /> Course Content
                 </h3>
@@ -408,8 +322,8 @@ export default function MyClassas() {
                     >
                       <div className="flex gap-3">
                         <div className="relative w-28 h-16 rounded-lg overflow-hidden bg-black flex-shrink-0">
-                          {/* <img src={video.thumbnail} alt="" className={`w-full h-full 
-                            object-cover transition ${isActive ? 'opacity-100' : 'opacity-70 group-hover:opacity-100'}`} /> */}
+                          <img src={video.thumbnail} alt="" className={`w-full h-full 
+                            object-cover transition ${isActive ? 'opacity-100' : 'opacity-70 group-hover:opacity-100'}`} />
 
                           {/* Status overlay on thumbnail */}
                           <div className="absolute inset-0 flex items-center justify-center">
@@ -446,5 +360,3 @@ export default function MyClassas() {
     </div>
   );
 }
-
-
