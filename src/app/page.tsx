@@ -7,6 +7,7 @@ import BootcampFeatures from "@/components/Ctasection/Ctasection";
 import StepSection from "@/components/StepSection/StepSection";
 import SuccessSection from "@/components/SuccessSection/SuccessSection";
 
+
 export default function Home() {
   return (
     <div className="container mx-auto px-6 py-10">
@@ -18,6 +19,8 @@ export default function Home() {
       <StepSection />
       <FAQ />
       <JoinNow />
+
+
     </div>
   );
 }
