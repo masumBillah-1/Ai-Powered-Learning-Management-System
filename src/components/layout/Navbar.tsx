@@ -1,117 +1,189 @@
+
+"use client";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
-import React from "react";
+import { 
+  FaBars, 
+  FaTimes, 
+  FaSun, 
+  FaMoon, 
+  FaThLarge, 
+  FaUser, 
+  FaSignOutAlt, 
+  FaChevronRight
+} from "react-icons/fa";
+import Logo from "./Logo";
 
 const Navbar = () => {
-  const menuLinks = [
-    { name: "Home", path: "/" },
-    { name: "About", path: "/about" },
-    { name: "Contact", path: "/contact" },
+  const [mounted, setMounted] = useState(false);
+  const [theme, setTheme] = useState("light");
+  const [isOpen, setIsOpen] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(true); 
+  const [showMenu, setShowMenu] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    setMounted(true);
+    const savedTheme = localStorage.getItem("theme") || "light";
+    setTheme(savedTheme);
+  }, []);
+
+  const toggleTheme = () => {
+    const newTheme = theme === "light" ? "dark" : "light";
+    setTheme(newTheme);
+    localStorage.setItem("theme", newTheme);
+    document.documentElement.setAttribute("data-theme", newTheme);
+    
+    if (newTheme === "dark") {
+      document.documentElement.classList.add("dark");
+    } else {
+      document.documentElement.classList.remove("dark");
+    }
+  };
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        setShowMenu(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  if (!mounted) return null;
+
+  const navLinks = [
+    { name: "Course Details", href: "/courses" },
+    { name: "Student Feedback", href: "/feedback" },
+    { name: "Blog", href: "/blog" },
   ];
 
   return (
-    <div className="navbar bg-base-100 shadow-sm">
-      <div className="navbar-start">
-        <div className="dropdown">
-          <div tabIndex={0} role="button" className="btn btn-ghost lg:hidden">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              className="h-5 w-5"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              {" "}
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="2"
-                d="M4 6h16M4 12h8m-8 6h16"
-              />{" "}
-            </svg>
-          </div>
-          <ul
-            tabIndex={-1}
-            className="menu menu-sm dropdown-content bg-base-100 rounded-box z-1 mt-3 w-52 p-2 shadow"
-          >
-            {menuLinks.map((item) => (
-              <li key={item.path}>
-                <Link href={item.path}>{item.name}</Link>
-              </li>
-            ))}
-          </ul>
-        </div>
-        <a className="btn btn-ghost text-xl">daisyUI</a>
-      </div>
-      <div className="navbar-center hidden lg:flex">
-        <ul className="menu menu-horizontal px-1">
-          {menuLinks.map((item) => (
-            <li key={item.path}>
-              <Link href={item.path}>{item.name}</Link>
-            </li>
-          ))}
-        </ul>
-      </div>
-      <div className="navbar-end ">
-        {/* profile area  */}
+    <nav className="bg-[var(--nav-bg)] border-b border-[var(--border-color)] sticky top-0 z-[100] shadow-sm transition-all duration-300">
+      <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-12">
+        <div className="flex justify-between items-center h-20">
+          
+          <Logo />
 
-        <a className="btn">Button</a>
+          {/* --- DESKTOP NAVIGATION --- */}
+          <div className="hidden lg:flex items-center space-x-8">
+            <div className="flex items-center space-x-7 font-bold text-[15px] text-gray-700 dark:text-gray-300">
+               {navLinks.map((link) => (
+                 <Link key={link.name} href={link.href} className="hover:text-[#C81D77] transition-colors">
+                   {link.name}
+                 </Link>
+               ))}
+               
+               {isLoggedIn && (
+                 <Link 
+                   href="/dashboard/my-classes" 
+                   className="flex items-center gap-2 text-gray-700 dark:text-gray-300 hover:text-[#C81D77] transition-colors"
+                 >
+                    My Classes
+                 </Link>
+               )}
+            </div>
 
-        <div className="dropdown dropdown-end">
-          <div
-            tabIndex={0}
-            role="button"
-            className="btn btn-ghost btn-circle avatar"
-          >
-            <div className="w-10 rounded-full">
-              <img
-                alt="Tailwind CSS Navbar component"
-                src="https://img.daisyui.com/images/stock/photo-1534528741775-53994a69daeb.webp"
-              />
+            <div className="flex items-center gap-5 border-l border-gray-200 dark:border-gray-700 pl-6">
+              
+              <button 
+                onClick={toggleTheme}
+                className="p-3 rounded-xl bg-gray-100 dark:bg-gray-800 text-purple-500 dark:text-sky-400 hover:scale-110 transition-all"
+              >
+                {theme === "dark" ? <FaSun size={18} /> : <FaMoon size={18} />}
+              </button>
+
+              {!isLoggedIn ? (
+                <div className="flex items-center gap-4">
+                  <Link href="/login" className="bg-[#2D2D2D] hover:bg-gray-50 transition-all border-2 hover:border-[#FF0F7B] hover:text-[#FF0F7B] dark:bg-gray-700 text-white px-7 py-2.5 rounded-xl font-bold text-sm">Login</Link>
+                  <button style={{ background: "linear-gradient(90deg, #FF0F7B, #F89B29)" }} className="text-white px-8 py-2.5 rounded-xl font-extrabold text-sm shadow-md hover:scale-105 transition-all active:scale-95 animate-shimmer relative overflow-hidden group">Enroll Now</button>
+                </div>
+              ) : (
+                <div className="flex items-center gap-4">
+                  <button style={{ background: "linear-gradient(90deg, #FF0F7B, #F89B29)" }} className="hidden xl:block text-white px-8 py-2.5 rounded-xl font-extrabold text-sm shadow-lg hover:scale-105 transition-all active:scale-95 animate-shimmer relative overflow-hidden group">Enroll Now</button>
+
+                  <div className="relative" ref={menuRef}>
+                    <button onClick={() => setShowMenu(!showMenu)} className="flex items-center p-0.5 rounded-full border-2 border-[#6710C2] hover:scale-105 transition-transform">
+                      <img src="https://img.freepik.com/free-vector/blue-circle-with-white-user_78370-4707.jpg" alt="User" className="w-10 h-10 rounded-full object-cover" />
+                    </button>
+
+                    {showMenu && (
+                      <div className="absolute right-0 mt-3 w-60 bg-white dark:bg-[#161d2f] rounded-2xl shadow-2xl border border-gray-100 dark:border-gray-800 py-3 z-50 animate-in fade-in zoom-in duration-200">
+                        <Link href="/dashboard" className="flex items-center gap-3 px-5 py-3 hover:bg-gray-50 dark:hover:bg-gray-800 font-bold dark:text-gray-200 text-gray-700"><FaThLarge className="text-[#6710C2]" /> Dashboard</Link>
+                        <Link href="/dashboard/my-profile" className="flex items-center gap-3 px-5 py-3 hover:bg-gray-50 dark:hover:bg-gray-800 font-bold dark:text-gray-200 text-gray-700"><FaUser className="text-[#6710C2]" /> My Profile</Link>
+                        <button onClick={() => setIsLoggedIn(false)} className="w-full flex items-center gap-3 px-5 py-3 text-red-600 font-bold hover:bg-red-50 border-t dark:border-gray-700 mt-2"><FaSignOutAlt /> Logout</button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
-          <ul
-            tabIndex={-1}
-            className="menu menu-sm dropdown-content bg-base-100 rounded-box z-1 mt-3 w-52 p-2 shadow"
-          >
-            <li>
-              <a className="justify-between">
-                Profile
-                <span className="badge">New</span>
-              </a>
-            </li>
-            <li>
-              <a>Settings</a>
-            </li>
-            <li>
-              <a>Logout</a>
-            </li>
-          </ul>
+
+          {/* --- MOBILE & TABLET --- */}
+          <div className="lg:hidden flex items-center gap-3">
+             <button onClick={toggleTheme} className="p-2 rounded-lg bg-gray-100 dark:bg-gray-800">
+                {theme === "dark" ? <FaSun size={20} className="text-yellow-500" /> : <FaMoon size={20} className="text-gray-600" />}
+             </button>
+             <button onClick={() => setIsOpen(!isOpen)} className="text-gray-800 dark:text-white p-2">
+               {isOpen ? <FaTimes size={28} /> : <FaBars size={28} />}
+             </button>
+          </div>
         </div>
-
-        <label className="swap swap-rotate">
-          {/* this hidden checkbox controls the state */}
-          <input type="checkbox" />
-
-          {/* sun icon */}
-          <svg
-            className="swap-on h-10 w-10 fill-current"
-            xmlns="http://www.w3.org/2000/svg"
-            viewBox="0 0 24 24"
-          >
-            <path d="M5.64,17l-.71.71a1,1,0,0,0,0,1.41,1,1,0,0,0,1.41,0l.71-.71A1,1,0,0,0,5.64,17ZM5,12a1,1,0,0,0-1-1H3a1,1,0,0,0,0,2H4A1,1,0,0,0,5,12Zm7-7a1,1,0,0,0,1-1V3a1,1,0,0,0-2,0V4A1,1,0,0,0,12,5ZM5.64,7.05a1,1,0,0,0,.7.29,1,1,0,0,0,.71-.29,1,1,0,0,0,0-1.41l-.71-.71A1,1,0,0,0,4.93,6.34Zm12,.29a1,1,0,0,0,.7-.29l.71-.71a1,1,0,1,0-1.41-1.41L17,5.64a1,1,0,0,0,0,1.41A1,1,0,0,0,17.66,7.34ZM21,11H20a1,1,0,0,0,0,2h1a1,1,0,0,0,0-2Zm-9,8a1,1,0,0,0-1,1v1a1,1,0,0,0,2,0V20A1,1,0,0,0,12,19ZM18.36,17A1,1,0,0,0,17,18.36l.71.71a1,1,0,0,0,1.41,0,1,1,0,0,0,0-1.41ZM12,6.5A5.5,5.5,0,1,0,17.5,12,5.51,5.51,0,0,0,12,6.5Zm0,9A3.5,3.5,0,1,1,15.5,12,3.5,3.5,0,0,1,12,15.5Z" />
-          </svg>
-
-          {/* moon icon */}
-          <svg
-            className="swap-off h-10 w-10 fill-current"
-            xmlns="http://www.w3.org/2000/svg"
-            viewBox="0 0 24 24"
-          >
-            <path d="M21.64,13a1,1,0,0,0-1.05-.14,8.05,8.05,0,0,1-3.37.73A8.15,8.15,0,0,1,9.08,5.49a8.59,8.59,0,0,1,.25-2A1,1,0,0,0,8,2.36,10.14,10.14,0,1,0,22,14.05,1,1,0,0,0,21.64,13Zm-9.5,6.69A8.14,8.14,0,0,1,7.08,5.22v.27A10.15,10.15,0,0,0,17.22,15.63a9.79,9.79,0,0,0,2.1-.22A8.11,8.11,0,0,1,12.14,19.73Z" />
-          </svg>
-        </label>
       </div>
-    </div>
+
+      {/* --- MOBILE NAVIGATION DRAWER --- */}
+      <div className={`fixed inset-0 bg-black/50 backdrop-blur-sm z-[101] lg:hidden transition-opacity duration-300 ${isOpen ? "opacity-100 visible" : "opacity-0 invisible"}`} onClick={() => setIsOpen(false)}>
+        <div 
+          className={`absolute top-0 right-0 h-full w-[80%] max-w-[350px] bg-white dark:bg-[#0b1120] shadow-2xl transition-transform duration-300 transform ${isOpen ? "translate-x-0" : "translate-x-full"}`}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div className="p-6 flex flex-col h-full">
+            <div className="flex justify-between items-center mb-8">
+              <Logo />
+              <button onClick={() => setIsOpen(false)} className="p-2 text-gray-500"><FaTimes size={24} /></button>
+            </div>
+
+            <div className="space-y-3 flex-grow overflow-y-auto">
+              {navLinks.map((link) => (
+                <Link key={link.name} href={link.href} className="flex justify-between items-center p-4 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-800 text-gray-800 dark:text-gray-200 font-bold" onClick={() => setIsOpen(false)}>
+                  {link.name} <FaChevronRight size={12} className="text-gray-400" />
+                </Link>
+              ))}
+              
+              {isLoggedIn && (
+                <Link 
+                  href="/dashboard/my-classes" 
+                  className="flex justify-between items-center p-4 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-800 text-gray-800 dark:text-gray-200 font-bold"
+                  onClick={() => setIsOpen(false)}
+                >
+                  <span className="flex items-center gap-2"> My Classes</span>
+                  <FaChevronRight size={12} />
+                </Link>
+              )}
+            </div>
+
+            <div className="pt-6 border-t border-gray-100 dark:border-gray-700 space-y-4">
+               {isLoggedIn ? (
+                 <>
+                   <Link href="/dashboard" className="flex items-center justify-center gap-2 w-full bg-[#f3f4f6] dark:bg-gray-800 text-gray-800 dark:text-white py-4 rounded-2xl font-bold" onClick={() => setIsOpen(false)}>
+                     <FaThLarge /> Dashboard
+                   </Link>
+                   <button style={{ background: "linear-gradient(90deg, #FF0F7B, #F89B29)" }} className="w-full text-white py-4 rounded-2xl font-bold shadow-lg">Enroll Now</button>
+                   <button onClick={() => {setIsLoggedIn(false); setIsOpen(false);}} className="w-full text-red-600 font-bold py-2">Logout</button>
+                 </>
+               ) : (
+                 <>
+                   <button className="w-full bg-[#2D2D2D] dark:bg-gray-700 text-white py-4 rounded-2xl font-bold">Login</button>
+                   <button style={{ background: "linear-gradient(90deg, #FF0F7B, #F89B29)" }} className="w-full text-white py-4 rounded-2xl font-bold shadow-lg">Enroll Now</button>
+                 </>
+               )}
+            </div>
+          </div>
+        </div>
+      </div>
+    </nav>
   );
 };
 
