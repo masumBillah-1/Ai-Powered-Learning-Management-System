@@ -79,7 +79,7 @@ export default function MyClassas() {
   </span>{" "}
   <span className="text-black">Ready for Your</span>{" "}
   <span className="bg-gradient-to-r from-[#832388] via-[#E3436B] to-[#F0772F] text-transparent bg-clip-text">
-    Next Lesson?
+    Next Lessons?
   </span>
 </h1>
 
