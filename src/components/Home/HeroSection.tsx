@@ -8,7 +8,7 @@ import { HiSparkles } from 'react-icons/hi2';
 const HeroSection = () => {
   const [isPlaying, setIsPlaying] = useState(false);
 
-  // আপনার প্রজেক্টের নির্দিষ্ট গ্রাডিয়েন্ট কালার
+  
   const phGradient = "bg-gradient-to-r from-[#832388] via-[#E3436B] to-[#F0772F]";
   const phTextGradient = "text-transparent bg-clip-text bg-gradient-to-r from-[#832388] via-[#E3436B] to-[#F0772F]";
 
