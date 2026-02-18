@@ -11,7 +11,7 @@ const FeaturedBlog = () => {
           {/* Left: Image with Purple Wave */}
           <div className="w-full md:w-1/2 relative h-[300px] md:h-[400px]">
             <img 
-              src="https://heroblog.netlify.app/static/media/best-web-dev.887b2866.png" 
+              src="https://i.ibb.co.com/zH75B27y/Gemini-Generated-Image-4de9wp4de9wp4de9.png" 
               alt="Featured Blog" 
               className="w-full h-full object-cover"
             />
@@ -26,7 +26,7 @@ const FeaturedBlog = () => {
           {/* Right: Content */}
           <div className="w-full md:w-1/2 p-8 md:p-12">
             <h1 className="text-3xl md:text-4xl font-black text-gray-900 mb-4 leading-tight">
-              Best Web Development Course in Bangladesh
+              Best Learning Management Course in Bangladesh
             </h1>
             
             <div className="flex items-center gap-4 text-sm text-gray-500 font-bold mb-6">
@@ -36,7 +36,7 @@ const FeaturedBlog = () => {
             </div>
 
             <p className="text-gray-600 text-lg leading-relaxed mb-8 line-clamp-4">
-              Web Development, আপনি কি ভেবেছেন প্রতিদিনের জীবনটা ওয়েব ডেভেলপমেন্ট ছাড়া কেমন হতো? 
+              Learning Management, আপনি কি ভেবেছেন প্রতিদিনের জীবনটা প্রোগ্রামিং ছাড়া কেমন হতো? 
               সকালে ঘুম থেকে উঠে YouTube-এ গান শুনতে চান, কিন্তু অ্যাপই নেই! দুপুরে Daraz থেকে হেডফোন কিনতে গিয়েও দেখলেন সাইট লোড হয় না...
             </p>
 
@@ -50,6 +50,7 @@ const FeaturedBlog = () => {
 
         </div>
       </div>
+      
     </section>
   );
 };
