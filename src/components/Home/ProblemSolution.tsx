@@ -41,26 +41,24 @@ const ProblemSolution = () => {
   ];
 
   return (
-    /* py-12 add kora hoyeche jeno rounded kona bojha jay */
-    <section className="py-12 bg-white dark:bg-[#020617] overflow-hidden relative">
+    <section className="py-8 md:py-12 bg-white dark:bg-[#020617] overflow-hidden relative">
       
-      {/* --- Main Rounded Background Wrapper --- */}
-      <div className="mx-auto max-w-[1440px] px-4 sm:px-6 lg:px-10">
-        <div className="bg-[#0b1120] text-white py-24 px-6 lg:px-16 rounded-[4rem] relative overflow-hidden shadow-2xl border border-white/5">
+      <div className="mx-auto max-w-[1440px] px-3 sm:px-6 lg:px-10">
+        <div className="bg-[#0b1120] text-white py-12 md:py-24 px-4 sm:px-8 lg:px-16 rounded-[2.5rem] md:rounded-[4rem] relative overflow-hidden shadow-2xl border border-white/5">
           
-          {/* Background Glows (Inside the rounded box) */}
-          <div className="absolute top-0 left-1/4 w-96 h-96 bg-[#832388]/15 blur-[120px] rounded-full pointer-events-none" />
-          <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-[#F0772F]/15 blur-[120px] rounded-full pointer-events-none" />
+          {/* Background Glows */}
+          <div className="absolute top-0 left-1/4 w-64 md:w-96 h-64 md:h-96 bg-[#832388]/15 blur-[80px] md:blur-[120px] rounded-full pointer-events-none" />
+          <div className="absolute bottom-0 right-1/4 w-64 md:w-96 h-64 md:h-96 bg-[#F0772F]/15 blur-[80px] md:blur-[120px] rounded-full pointer-events-none" />
 
           <div className="relative z-10">
             {/* Animated Headers */}
-            <div className="flex flex-col md:flex-row justify-center items-center gap-6 mb-24">
+            <div className="flex flex-col md:flex-row justify-center items-center gap-4 md:gap-6 mb-12 md:mb-24">
               <motion.div 
-                initial={{ x: -50, opacity: 0 }}
+                initial={{ x: -30, opacity: 0 }}
                 whileInView={{ x: 0, opacity: 1 }}
-                className="bg-slate-900/80 backdrop-blur-xl border border-slate-700/50 px-12 py-5 rounded-full shadow-2xl"
+                className="bg-slate-900/80 backdrop-blur-xl border border-slate-700/50 px-6 md:px-12 py-3 md:py-5 rounded-full shadow-2xl w-full md:w-auto text-center"
               >
-                <h2 className="text-xl md:text-3xl font-black tracking-tight text-rose-500">
+                <h2 className="text-lg md:text-3xl font-black tracking-tight text-rose-500">
                     তোমার প্যারা <span className="inline-block animate-bounce">😒</span>
                 </h2>
               </motion.div>
@@ -68,51 +66,53 @@ const ProblemSolution = () => {
               <motion.div 
                 initial={{ scale: 0.8, opacity: 0 }}
                 whileInView={{ scale: 1, opacity: 1 }}
-                className="text-2xl font-black text-slate-700 hidden md:block"
+                className="text-xl font-black text-slate-700 hidden md:block"
               > VS </motion.div>
 
               <motion.div 
-                initial={{ x: 50, opacity: 0 }}
+                initial={{ x: 30, opacity: 0 }}
                 whileInView={{ x: 0, opacity: 1 }}
-                className="bg-slate-900/80 backdrop-blur-xl border border-slate-700/50 px-12 py-5 rounded-full shadow-2xl"
+                className="bg-slate-900/80 backdrop-blur-xl border border-slate-700/50 px-6 md:px-12 py-3 md:py-5 rounded-full shadow-2xl w-full md:w-auto text-center"
               >
-                <h2 className="text-xl md:text-3xl font-black tracking-tight text-emerald-500">
+                <h2 className="text-lg md:text-3xl font-black tracking-tight text-emerald-500">
                     আমাদের সমাধান <span className="inline-block animate-pulse">😃</span>
                 </h2>
               </motion.div>
             </div>
 
-            {/* 4-Column Grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 lg:gap-10 relative">
+            {/* Grid Configuration */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8 lg:gap-10 relative">
               
-              {/* Central Dashed Connector */}
+              {/* Central Dashed Connector (Visible only on Desktop) */}
               <div className="hidden lg:block absolute top-1/2 left-0 w-full h-[2px] border-t-2 border-dashed border-slate-800/30 -translate-y-1/2 z-0" />
 
               {data.map((item, index) => (
-                <div key={index} className="flex flex-col gap-12 lg:gap-16 relative z-10">
+                <div key={index} className="flex flex-col gap-6 md:gap-12 lg:gap-16 relative z-10">
                   
                   {/* Problem Card */}
                   <motion.div 
-                    whileHover={{ y: -8, scale: 1.02 }}
-                    initial={{ opacity: 0, y: -40 }}
+                    whileHover={{ y: -5, scale: 1.02 }}
+                    initial={{ opacity: 0, y: -20 }}
                     whileInView={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.6, delay: index * 0.1 }}
-                    className={`bg-gradient-to-br ${item.pColor} p-8 rounded-[3.5rem] min-h-[220px] flex flex-col items-center justify-center text-center shadow-2xl border border-white/5 group`}
+                    viewport={{ once: true }}
+                    transition={{ duration: 0.5, delay: index * 0.1 }}
+                    className={`bg-gradient-to-br ${item.pColor} p-6 md:p-8 rounded-[2rem] md:rounded-[3.5rem] min-h-[160px] md:min-h-[220px] flex flex-col items-center justify-center text-center shadow-2xl border border-white/5`}
                   >
-                    <span className="text-5xl mb-4 drop-shadow-2xl">{item.problemEmoji}</span>
-                    <p className="text-[15px] font-bold leading-relaxed px-1">{item.problem}</p>
+                    <span className="text-3xl md:text-5xl mb-3 md:mb-4 drop-shadow-2xl">{item.problemEmoji}</span>
+                    <p className="text-sm md:text-[15px] font-bold leading-relaxed px-1">{item.problem}</p>
                   </motion.div>
 
                   {/* Solution Card */}
                   <motion.div 
-                    whileHover={{ y: 8, scale: 1.02 }}
-                    initial={{ opacity: 0, y: 40 }}
+                    whileHover={{ y: 5, scale: 1.02 }}
+                    initial={{ opacity: 0, y: 20 }}
                     whileInView={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.6, delay: index * 0.1 + 0.2 }}
-                    className={`bg-gradient-to-br ${item.sColor} p-8 rounded-[3.5rem] min-h-[220px] flex flex-col items-center justify-center text-center shadow-2xl border border-white/5 group`}
+                    viewport={{ once: true }}
+                    transition={{ duration: 0.5, delay: index * 0.1 + 0.1 }}
+                    className={`bg-gradient-to-br ${item.sColor} p-6 md:p-8 rounded-[2rem] md:rounded-[3.5rem] min-h-[160px] md:min-h-[220px] flex flex-col items-center justify-center text-center shadow-2xl border border-white/5`}
                   >
-                    <span className="text-5xl mb-4 drop-shadow-2xl">{item.solutionEmoji}</span>
-                    <p className="text-[15px] font-bold leading-relaxed px-1">{item.solution}</p>
+                    <span className="text-3xl md:text-5xl mb-3 md:mb-4 drop-shadow-2xl">{item.solutionEmoji}</span>
+                    <p className="text-sm md:text-[15px] font-bold leading-relaxed px-1">{item.solution}</p>
                   </motion.div>
 
                 </div>
