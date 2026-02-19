@@ -40,7 +40,7 @@ export default function MyClassas() {
   const [completedVideos, setCompletedVideos] = useState<string[]>([]);
   const [showVideoPlayer, setShowVideoPlayer] = useState(false);
 
-  // Calculate progress
+  // Calculate progres jirtgii rigujnio 
   const progress = Math.round((completedVideos.length / videos.length) * 100);
 
   const handleVideoComplete = (videoId: string) => {
@@ -50,7 +50,7 @@ export default function MyClassas() {
   };
 
   const handleContinueCourse = () => {
-    // Find first uncompleted video
+    // Find first  video
     const nextVideo = videos.find((v) => !completedVideos.includes(v.id)) || videos[0];
     if (nextVideo) {
       setActiveVideo(nextVideo.id);
@@ -75,7 +75,7 @@ export default function MyClassas() {
         <div className="mb-8 animate-fade-in-down">
      <h1 className="text-2xl md:text-4xl font-extrabold tracking-wide leading-snug">
   <span className="bg-gradient-to-r from-[#C81D77] to-[#6710C2] text-transparent bg-clip-text">
-    Welcome Back,
+    Welcome Back 
   </span>{" "}
   <span className="text-black">Ready for Your</span>{" "}
   <span className="bg-gradient-to-r from-[#832388] via-[#E3436B] to-[#F0772F] text-transparent bg-clip-text">
