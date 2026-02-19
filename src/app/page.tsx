@@ -6,6 +6,7 @@ import JoinNow from "@/components/ui/JoinNow";
 import BootcampFeatures from "@/components/Ctasection/Ctasection";
 import StepSection from "@/components/StepSection/StepSection";
 import SuccessSection from "@/components/SuccessSection/SuccessSection";
+import LearnSection from "@/components/Home/LearnSection";
 
 
 export default function Home() {
@@ -17,6 +18,7 @@ export default function Home() {
       <BootcampFeatures />
       <SuccessSection />
       <StepSection />
+      <LearnSection/>
       <FAQ />
       <JoinNow />
 
