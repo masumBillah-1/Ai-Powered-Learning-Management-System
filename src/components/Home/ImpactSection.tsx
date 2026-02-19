@@ -8,26 +8,26 @@ const ImpactSection = () => {
   const stats = [
     {
       id: 1,
-      icon: <FaGlobeAmericas className="text-3xl md:text-4xl text-[#832388]" />,
-      count: "৬০+",
+      icon: <FaGlobeAmericas className="text-4xl text-[#832388]" />,
+ 
       label: "দেশে",
     },
     {
       id: 2,
-      icon: <FaBuilding className="text-3xl md:text-4xl text-[#E3436B]" />,
-      count: "৫৪০০+",
+      icon: <FaBuilding className="text-4xl text-[#E3436B]" />,
+  
       label: "গ্লোবাল জব প্লেসমেন্ট",
     },
     {
       id: 3,
-      icon: <FaHeadset className="text-3xl md:text-4xl text-[#F0772F]" />,
-      count: "১৯০০+",
+      icon: <FaHeadset className="text-4xl text-[#F0772F]" />,
+    
       label: "রিমোট জব",
     },
     {
       id: 4,
-      icon: <FaTrophy className="text-3xl md:text-4xl text-[#832388]" />,
-      count: "৮৫-৯০%",
+      icon: <FaTrophy className="text-4xl text-[#832388]" />,
+  
       label: "জব সাকসেস রেশিও",
     },
   ];
@@ -91,11 +91,7 @@ const ImpactSection = () => {
                     {item.icon}
                   </div>
 
-                  <h3 className="text-2xl md:text-4xl font-black text-slate-800 dark:text-white mb-1">
-                    {item.count}
-                  </h3>
-
-                  <p className="text-gray-500 dark:text-gray-400 font-bold text-[10px] md:text-sm tracking-wide uppercase leading-tight max-w-[120px] md:max-w-none">
+                  <p className="text-gray-500 dark:text-gray-400 font-bold text-xs md:text-sm tracking-wide">
                     {item.label}
                   </p>
                 </motion.div>
