@@ -4,15 +4,13 @@ import React from 'react';
 import { motion } from 'framer-motion';
 
 const ProblemSolution = () => {
-  // আপনার প্রজেক্টের কোর গ্রাডিয়েন্ট
-  const phGradientText = "text-transparent bg-clip-text bg-gradient-to-r from-[#832388] via-[#E3436B] to-[#F0772F]";
-
+  
   const data = [
     {
       problem: "কী শিখব, কতটুকু শিখব, কোথা থেকে শুরু করব কিছুই বুঝি না।",
       problemEmoji: "😒",
       solution: "আমরা পুরো আউটলাইন, গাইডলাইন, কনটেন্ট রেডি করেই তোমার সাথে আছি।",
-      solutionEmoji: "😀",
+      solutionEmoji: "😊",
       pColor: "from-[#2d0b2e] to-[#4c0519]",
       sColor: "from-[#064e3b] to-[#022c22]"
     },
@@ -20,7 +18,7 @@ const ProblemSolution = () => {
       problem: "স্কিল ও নলেজ নেই।",
       problemEmoji: "😒",
       solution: "৬ মাসে লার্নিং জার্নিতে যদি সিরিয়াস হও - নিজের নলেজ ও স্কিল দুইটাই পাবে।",
-      solutionEmoji: "😀",
+      solutionEmoji: "😊",
       pColor: "from-[#1e1b4b] to-[#312e81]",
       sColor: "from-[#14532d] to-[#064e3b]"
     },
@@ -28,7 +26,7 @@ const ProblemSolution = () => {
       problem: "ইন্টার্নশিপ বা চাকরি পর্যন্ত পৌঁছানোর আগেই হার মেনে যাই।",
       problemEmoji: "😒",
       solution: "তোমার জব ইন্টার্ন নিশ্চিত না হওয়া পর্যন্ত আমরা তোমাকে ছাড়ব না।",
-      solutionEmoji: "😀",
+      solutionEmoji: "😊",
       pColor: "from-[#4c0519] to-[#832388]/20",
       sColor: "from-[#065f46] to-[#064e3b]"
     },
@@ -36,89 +34,92 @@ const ProblemSolution = () => {
       problem: "রেগুলারিটি বজায় রাখতে পারি না - মাঝপথেই থেমে যাই।",
       problemEmoji: "😒",
       solution: "ডেডিকেটেড লাইভ সাপোর্ট, গাইডলাইন, ২৪/৭ কমিউনিটি সাপোর্টে থেমে যাওয়ার চান্স নেই।",
-      solutionEmoji: "😀",
+      solutionEmoji: "😊",
       pColor: "from-[#312e81] to-[#1e1b4b]",
       sColor: "from-[#064e3b] to-[#0f766e]"
     },
   ];
 
   return (
-    <section className="py-24 bg-[#0b1120] text-white overflow-hidden relative">
-      {/* Background Glows (Matching your theme) */}
-      <div className="absolute top-0 left-1/4 w-96 h-96 bg-[#832388]/10 blur-[120px] rounded-full pointer-events-none" />
-      <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-[#F0772F]/10 blur-[120px] rounded-full pointer-events-none" />
-
-      {/* container matching max-w-7xl with Hero/Navbar */}
-      <div className="container mx-auto px-6 lg:px-16 max-w-7xl relative z-10">
-        
-        {/* Animated Headers */}
-        <div className="flex flex-col md:flex-row justify-center items-center gap-6 mb-24">
-          <motion.div 
-            initial={{ x: -50, opacity: 0 }}
-            whileInView={{ x: 0, opacity: 1 }}
-            className="bg-slate-900/80 backdrop-blur-xl border border-slate-700/50 px-10 py-4 rounded-3xl shadow-2xl"
-          >
-            <h2 className="text-xl md:text-3xl font-black tracking-tight text-rose-500">
-                তোমার প্যারা <span className="inline-block animate-bounce">😒</span>
-            </h2>
-          </motion.div>
+    <section className="py-8 md:py-12 bg-white dark:bg-[#020617] overflow-hidden relative">
+      
+      <div className="mx-auto max-w-[1440px] px-3 sm:px-6 lg:px-10">
+        <div className="bg-[#0b1120] text-white py-12 md:py-24 px-4 sm:px-8 lg:px-16 rounded-[2.5rem] md:rounded-[4rem] relative overflow-hidden shadow-2xl border border-white/5">
           
-          <motion.div 
-            initial={{ scale: 0.8, opacity: 0 }}
-            whileInView={{ scale: 1, opacity: 1 }}
-            className="text-2xl font-black text-slate-700 hidden md:block"
-          > VS </motion.div>
+          {/* Background Glows */}
+          <div className="absolute top-0 left-1/4 w-64 md:w-96 h-64 md:h-96 bg-[#832388]/15 blur-[80px] md:blur-[120px] rounded-full pointer-events-none" />
+          <div className="absolute bottom-0 right-1/4 w-64 md:w-96 h-64 md:h-96 bg-[#F0772F]/15 blur-[80px] md:blur-[120px] rounded-full pointer-events-none" />
 
-          <motion.div 
-            initial={{ x: 50, opacity: 0 }}
-            whileInView={{ x: 0, opacity: 1 }}
-            className="bg-slate-900/80 backdrop-blur-xl border border-slate-700/50 px-10 py-4 rounded-3xl shadow-2xl"
-          >
-            <h2 className="text-xl md:text-3xl font-black tracking-tight text-emerald-500">
-                আমাদের সমাধান <span className="inline-block animate-pulse">😀</span>
-            </h2>
-          </motion.div>
-        </div>
-
-        {/* 4-Column Grid matched with your design */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 lg:gap-10 relative">
-          
-          {/* Central Dashed Connector (Desktop Only) */}
-          <div className="hidden lg:block absolute top-1/2 left-0 w-full h-[2px] border-t-2 border-dashed border-slate-800/30 -translate-y-1/2 z-0" />
-
-          {data.map((item, index) => (
-            <div key={index} className="flex flex-col gap-12 lg:gap-16 relative z-10">
+          <div className="relative z-10">
+            {/* Animated Headers */}
+            <div className="flex flex-col md:flex-row justify-center items-center gap-4 md:gap-6 mb-12 md:mb-24">
+              <motion.div 
+                initial={{ x: -30, opacity: 0 }}
+                whileInView={{ x: 0, opacity: 1 }}
+                className="bg-slate-900/80 backdrop-blur-xl border border-slate-700/50 px-6 md:px-12 py-3 md:py-5 rounded-full shadow-2xl w-full md:w-auto text-center"
+              >
+                <h2 className="text-lg md:text-3xl font-black tracking-tight text-rose-500">
+                    তোমার প্যারা <span className="inline-block animate-bounce">😒</span>
+                </h2>
+              </motion.div>
               
-              {/* Problem Card (Top) */}
               <motion.div 
-                whileHover={{ y: -8, scale: 1.02 }}
-                initial={{ opacity: 0, y: -40 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6, delay: index * 0.1 }}
-                className={`bg-gradient-to-br ${item.pColor} p-6 lg:p-8 rounded-[2.5rem] min-h-[200px] flex flex-col items-center justify-center text-center shadow-2xl border border-white/5 relative overflow-hidden group`}
-              >
-                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                <span className="text-4xl lg:text-5xl mb-4 drop-shadow-2xl">{item.problemEmoji}</span>
-                <p className="text-sm font-bold leading-relaxed px-1 relative z-10">{item.problem}</p>
-              </motion.div>
+                initial={{ scale: 0.8, opacity: 0 }}
+                whileInView={{ scale: 1, opacity: 1 }}
+                className="text-xl font-black text-slate-700 hidden md:block"
+              > VS </motion.div>
 
-              {/* Solution Card (Bottom) */}
               <motion.div 
-                whileHover={{ y: 8, scale: 1.02 }}
-                initial={{ opacity: 0, y: 40 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6, delay: index * 0.1 + 0.2 }}
-                className={`bg-gradient-to-br ${item.sColor} p-6 lg:p-8 rounded-[2.5rem] min-h-[200px] flex flex-col items-center justify-center text-center shadow-2xl border border-white/5 relative overflow-hidden group`}
+                initial={{ x: 30, opacity: 0 }}
+                whileInView={{ x: 0, opacity: 1 }}
+                className="bg-slate-900/80 backdrop-blur-xl border border-slate-700/50 px-6 md:px-12 py-3 md:py-5 rounded-full shadow-2xl w-full md:w-auto text-center"
               >
-                <div className="absolute inset-0 bg-white/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                <span className="text-4xl lg:text-5xl mb-4 drop-shadow-2xl">{item.solutionEmoji}</span>
-                <p className="text-sm font-bold leading-relaxed px-1 relative z-10">{item.solution}</p>
+                <h2 className="text-lg md:text-3xl font-black tracking-tight text-emerald-500">
+                    আমাদের সমাধান <span className="inline-block animate-pulse">😃</span>
+                </h2>
               </motion.div>
-
             </div>
-          ))}
-        </div>
 
+            {/* Grid Configuration */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8 lg:gap-10 relative">
+              
+              {/* Central Dashed Connector (Visible only on Desktop) */}
+              <div className="hidden lg:block absolute top-1/2 left-0 w-full h-[2px] border-t-2 border-dashed border-slate-800/30 -translate-y-1/2 z-0" />
+
+              {data.map((item, index) => (
+                <div key={index} className="flex flex-col gap-6 md:gap-12 lg:gap-16 relative z-10">
+                  
+                  {/* Problem Card */}
+                  <motion.div 
+                    whileHover={{ y: -5, scale: 1.02 }}
+                    initial={{ opacity: 0, y: -20 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ duration: 0.5, delay: index * 0.1 }}
+                    className={`bg-gradient-to-br ${item.pColor} p-6 md:p-8 rounded-[2rem] md:rounded-[3.5rem] min-h-[160px] md:min-h-[220px] flex flex-col items-center justify-center text-center shadow-2xl border border-white/5`}
+                  >
+                    <span className="text-3xl md:text-5xl mb-3 md:mb-4 drop-shadow-2xl">{item.problemEmoji}</span>
+                    <p className="text-sm md:text-[15px] font-bold leading-relaxed px-1">{item.problem}</p>
+                  </motion.div>
+
+                  {/* Solution Card */}
+                  <motion.div 
+                    whileHover={{ y: 5, scale: 1.02 }}
+                    initial={{ opacity: 0, y: 20 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ duration: 0.5, delay: index * 0.1 + 0.1 }}
+                    className={`bg-gradient-to-br ${item.sColor} p-6 md:p-8 rounded-[2rem] md:rounded-[3.5rem] min-h-[160px] md:min-h-[220px] flex flex-col items-center justify-center text-center shadow-2xl border border-white/5`}
+                  >
+                    <span className="text-3xl md:text-5xl mb-3 md:mb-4 drop-shadow-2xl">{item.solutionEmoji}</span>
+                    <p className="text-sm md:text-[15px] font-bold leading-relaxed px-1">{item.solution}</p>
+                  </motion.div>
+
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
       </div>
     </section>
   );
