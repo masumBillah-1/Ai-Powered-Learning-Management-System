@@ -80,7 +80,7 @@ const Logo = () => {
                 fontFamily: "'Poppins', 'Inter', sans-serif",
                 textShadow: "2px 2px 0 rgba(0,0,0,0.1)"
               }}>
-              B
+              s
             </span>
             <div className="absolute -top-1 -right-1 w-3 h-3 bg-white rounded-full border-2 border-white shadow-lg"></div>
             <div className="absolute -bottom-1 -left-1 w-2 h-2 bg-yellow-300 rounded-full border border-white animate-pulse"></div>
@@ -95,10 +95,10 @@ const Logo = () => {
               className="text-2xl font-[1000] tracking-tighter transition-colors duration-300"
               style={{ color: "var(--foreground)" }}
             >
-              Brain
+              Smartlms-
             </span>
             <span className="text-2xl font-[1000] tracking-tighter bg-gradient-to-r from-[#FF0F7B] to-[#F89B29] bg-clip-text text-transparent">
-              Boost
+              Pro
             </span>
           </div>
 
