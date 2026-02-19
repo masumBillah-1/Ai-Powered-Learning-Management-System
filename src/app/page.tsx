@@ -8,6 +8,7 @@ import StepSection from "@/components/StepSection/StepSection";
 import SuccessSection from "@/components/SuccessSection/SuccessSection";
 import LearnSection from "@/components/Home/LearnSection";
 
+
 export default function Home() {
   return (
     <div className="container mx-auto px-6 py-10">
@@ -20,6 +21,8 @@ export default function Home() {
       <LearnSection/>
       <FAQ />
       <JoinNow />
+
+
     </div>
   );
 }
