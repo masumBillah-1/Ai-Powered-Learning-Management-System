@@ -52,15 +52,15 @@ const SuccessSection = () => {
 
       {/* Left Content - The Success Stats */}
       <div className="w-full md:w-1/2 z-10 text-left">
-        <h2 className="text-[28px] md:text-[40px] font-bold leading-[1.3] text-white">
-          ৬০টি দেশের বিভিন্ন <br />
-          কোম্পানিতে <span className="text-[#10b981]">৫৪০০+</span> <br />
-          স্টুডেন্ট জব পেয়েছে আর <br />
-          <span className="text-[#10b981]">১৯০০+</span> শিক্ষার্থী পেয়েছে <br />
-          <span className="text-[#10b981] text-4xl md:text-5xl font-black">
-            রিমোট জব
-          </span>
-        </h2>
+        <p className="mt-6 text-slate-400 text-base md:text-lg leading-relaxed max-w-lg">
+          শুধু কোড শেখানোই নয়, আমরা শেখাই সমস্যা সমাধান, টিমওয়ার্ক এবং
+          বাস্তব প্রজেক্টে কাজ করার দক্ষতা।
+        </p>
+
+        <p className="mt-4 text-slate-500 text-sm md:text-base max-w-lg">
+          ধারাবাহিক প্র্যাকটিস ও সঠিক গাইডলাইনের মাধ্যমে তুমি তৈরি হতে পারো
+          আগামী দিনের দক্ষ ডেভেলপার হিসেবে।
+        </p>
 
         <div className="flex flex-wrap gap-2 mt-8">
           {["রিমোট জব", "লোকাল জব", "ইন্টারন্যাশনাল জব"].map((label) => (
