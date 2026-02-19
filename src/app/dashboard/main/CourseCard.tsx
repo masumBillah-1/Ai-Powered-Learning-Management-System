@@ -63,7 +63,7 @@ export default function MyClassas() {
     setActiveVideo(null);
   };
 
-  // Helper function to safely get current video object
+  // Helper function jhi g hjh fuyh f current video object
   const getCurrentVideo = () => videos.find(v => v.id === activeVideo);
 
   return (
