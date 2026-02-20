@@ -9,6 +9,11 @@
   --foreground: #171717;
   --nav-bg: #ffffff;
   --border-color: #f3f4f6;
+  
+  /* Font variables */
+  --font-geist-sans: "Geist", sans-serif;
+  --font-geist-mono: "Geist Mono", monospace;
+  --font-hind-siliguri: "Hind Siliguri", sans-serif;
 }
 
 .dark, [data-theme="dark"] {
@@ -26,5 +31,17 @@
 body {
   background-color: var(--background);
   color: var(--foreground);
+  font-family: var(--font-hind-siliguri), var(--font-geist-sans), sans-serif;
+}
+
+/* Bangla text specific styling */
+.bangla-text {
+  font-family: var(--font-hind-siliguri), sans-serif;
+  font-weight: 500;
+}
+
+/* English text specific styling */
+.english-text {
+  font-family: var(--font-geist-sans), sans-serif;
 }
 
