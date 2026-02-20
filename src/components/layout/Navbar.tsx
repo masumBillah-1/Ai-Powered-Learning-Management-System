@@ -1,5 +1,4 @@
 
-
 "use client";
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
@@ -58,6 +57,7 @@ const Navbar = () => {
     { name: "Course Details", href: "/courses" },
     { name: "Student Feedback", href: "/feedback" },
     { name: "Blog", href: "/blog" },
+    { name: "About", href: "/about" },
   ];
 
   return (
@@ -82,6 +82,14 @@ const Navbar = () => {
                    className="flex items-center gap-2 text-gray-700 dark:text-gray-300 hover:text-[#C81D77] transition-colors"
                  >
                     My Classes
+                 </Link>
+               )}
+               {isLoggedIn && (
+                 <Link 
+                   href="/help" 
+                   className="flex items-center gap-2 text-gray-700 dark:text-gray-300 hover:text-[#C81D77] transition-colors"
+                 >
+                    Hepldesk
                  </Link>
                )}
             </div>
