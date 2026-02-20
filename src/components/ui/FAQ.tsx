@@ -9,33 +9,33 @@ const FAQ = () => {
   const faqData = [
     {
       id: "01",
-      question: "Who is this course for?",
-      answer: "This course is designed for absolute beginners who want to start their journey in web development and eventually work as professional developers in top companies. Whether you are from a CSE background or non-CSE, if you are willing to work hard, this course is for you.",
+      question: "What exactly will I learn in this multidisciplinary bootcamp?",
+      answer: "This bootcamp is a complete power-pack. You will master Graphics Design (UI/UX & Branding), Digital Marketing (Social Media, SEO & Ads), and Full-Stack Web Development. We ensure you become a versatile digital professional who can handle any project from start to finish.",
     },
     {
       id: "02",
-      question: "How do you guarantee a job or internship?",
-      answer: "We provide extensive support through our placement cell, resume building workshops, and mock interviews. If you complete the course with good marks and finish all assignments on time, we will push your profile to our partner companies.",
+      question: "Do I need prior experience in design or coding?",
+      answer: "Not at all! We start from absolute zero in all three sectors. Whether it's picking your first color palette in Graphics, running your first ad in Marketing, or writing your first line of code in Web—we guide you every step of the way.",
     },
     {
       id: "03",
-      question: "Will AI replace web developers?",
-      answer: "AI is a tool to make developers more productive, not a replacement. Our course teaches you how to leverage AI tools to build better applications faster, keeping you ahead in the job market.",
+      question: "Will I get real-world projects to build my portfolio?",
+      answer: "Yes! You will complete 10+ professional projects, including Brand Identity design, live Ad Campaign strategies, and fully functional Web Applications. By the end of the course, you'll have a world-class portfolio to show clients or employers.",
     },
     {
       id: "04",
-      question: "Can non-CSE students get a job in web development?",
-      answer: "Yes, absolutely! Most tech companies care about your skills and portfolio rather than your degree. We have many successful students from various backgrounds working as professional developers.",
+      question: "How does the job placement support work?",
+      answer: "Our dedicated placement cell works 1-on-1 with you. We help you build a professional presence on LinkedIn/Behance, conduct mock interviews, and share your profile with our network of creative agencies and tech firms.",
     },
     {
       id: "05",
-      question: "Can I do this course while working or studying?",
-      answer: "Yes, the course is self-paced with specific deadlines. You can manage your time effectively between your studies/job and the course modules.",
+      question: "Is the course schedule flexible for students/professionals?",
+      answer: "Absolutely. The modules are structured so you can learn at your own pace. While there are weekly deadlines to keep you on track, the recorded sessions and 24/7 support allow you to balance this with your study or job.",
     },
     {
       id: "06",
-      question: "Can I complete this course alongside my exams?",
-      answer: "The course is structured to be flexible. If you have exams, you can plan ahead and complete your assignments early or use the buffer time we provide.",
+      question: "What tools and software will be covered?",
+      answer: "You will master industry-standard tools like Figma and Adobe Suite for Design; Meta Business Suite and Google Analytics for Marketing; and React, Next.js, and Tailwind CSS for Web Development.",
     },
   ];
 
@@ -119,17 +119,17 @@ const FAQ = () => {
           ))}
         </div>
 
- {/* Bottom Button with Gradient 2 */}
-<div className="mt-16 text-center">
-  <Link href="/faq"> {/* href-e folder name-ta hobe */}
-    <button 
-      style={{ background: "linear-gradient(90deg, #FF0F7B, #F89B29)" }}
-      className="text-white px-10 py-4 rounded-2xl font-black text-lg shadow-2xl hover:scale-105 transition-all active:scale-95 animate-shimmer relative overflow-hidden"
-    >
-      More Questions <span>→</span>
-    </button>
-  </Link>
-</div>
+        {/* Bottom Button with Gradient 2 */}
+        <div className="mt-16 text-center">
+          <Link href="/faq">
+            <button 
+              style={{ background: "linear-gradient(90deg, #FF0F7B, #F89B29)" }}
+              className="text-white px-10 py-4 rounded-2xl font-black text-lg shadow-2xl hover:scale-105 transition-all active:scale-95 animate-shimmer relative overflow-hidden"
+            >
+              More Questions <span>→</span>
+            </button>
+          </Link>
+        </div>
 
       </div>
     </section>
