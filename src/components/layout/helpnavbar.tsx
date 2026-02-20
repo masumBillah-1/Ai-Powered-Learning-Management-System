@@ -15,91 +15,95 @@ import {
 const HelpNavbar = () => {
   const pathname = usePathname();
   
-  const [darkMode, setDarkMode] = useState<boolean>(true);
+  // DaisyUI থিম স্টেট (Default dark রাখা হয়েছে আপনার কোড অনুযায়ী)
+  const [theme, setTheme] = useState<string>("dark");
 
-  // 3. Effect to handle Theme Switching
   useEffect(() => {
-    const root = window.document.documentElement;
-    if (darkMode) {
-      root.classList.add('dark');
+    // DaisyUI data-theme সেট করা
+    const html = document.documentElement;
+    html.setAttribute("data-theme", theme);
+    
+    // Tailwind dark class ও বজায় রাখা হলো যাতে কাস্টম dark: ক্লাসগুলো কাজ করে
+    if (theme === "dark") {
+      html.classList.add("dark");
     } else {
-      root.classList.remove('dark');
+      html.classList.remove("dark");
     }
-  }, [darkMode]);
+  }, [theme]);
+
+  const toggleTheme = () => {
+    setTheme(theme === "dark" ? "light" : "dark");
+  };
 
   const subLinks = [
-    { label: "All Post", href: "/help", icon: <LuFileText /> },
+    { label: "All Post", href: "/help/allpost", icon: <LuFileText /> },
     { label: "Roadmap", href: "/help/roadmap", icon: <LuMap /> },
     { label: "Release log", href: "/help/release", icon: <LuRocket /> },
     { label: "Feature Requests", href: "/help/feature", icon: <LuListTodo /> },
   ];
 
   return (
-    <header className="w-full bg-white dark:bg-[#05010d] text-black dark:text-white select-none border-b border-gray-200 dark:border-gray-900 transition-colors duration-300">
+    // DaisyUI classes: bg-base-100 (সাদা/কালো থিম অনুযায়ী অটো চেঞ্জ হবে)
+    <header className="w-full text-base-content select-none border-b border-base-300 transition-colors duration-300">
       
       {/* --- TOP SECTION --- */}
       <div className="flex items-center justify-between px-6 py-4">
         
         {/* Logo */}
         <div className="flex flex-col leading-none">
-          <h1 className="text-[22px] font-black tracking-tight text-[#A855F7]">
+          <h1 className="text-[22px] font-black tracking-tight text-primary">
             HELP DESK
           </h1>
-          <span className="text-[10px] text-gray-500 dark:text-gray-400 font-medium">
+          <span className="text-[10px] opacity-60 font-medium">
             Brain Boost
           </span>
         </div>
 
         {/* Right Actions */}
         <div className="flex items-center gap-6">
-          <span className="text-sm font-medium text-gray-600 dark:text-gray-300 cursor-pointer hover:text-black dark:hover:text-white transition-colors">
+          <span className="text-sm font-medium opacity-70 cursor-pointer hover:opacity-100 transition-opacity">
             My Classes
           </span>
 
           <div className="flex items-center gap-5">
             {/* Notification Icon */}
-            <div className="relative cursor-pointer">
-              <FiBell className="text-xl text-gray-600 dark:text-gray-300" />
-              <span className="absolute -top-2 -right-2 bg-[#EF4444] text-white text-[10px] font-bold h-4 w-4 flex items-center justify-center rounded-full">
+            <div className="indicator cursor-pointer">
+              <span className="indicator-item badge badge-error badge-xs text-white border-none font-bold">
                 7
               </span>
+              <FiBell className="text-xl opacity-70" />
             </div>
 
-            <FiBookmark className="text-xl text-gray-600 dark:text-gray-300 cursor-pointer" />
+            <FiBookmark className="text-xl opacity-70 cursor-pointer" />
 
             {/* Profile Section */}
-            <div className="flex items-center gap-2 pl-2 border-l border-gray-200 dark:border-gray-800">
-              <div className="w-8 h-8 rounded-full overflow-hidden border border-gray-300 dark:border-gray-700">
-                <Image
-                  src="https://i.pravatar.cc/150?u=sakib"
-                  alt="Sakib"
-                  width={32}
-                  height={32}
-                  className="object-cover"
-                />
+            <div className="flex items-center gap-2 pl-2 border-l border-base-300">
+              <div className="avatar">
+                <div className="w-8 h-8 rounded-full overflow-hidden border border-base-300">
+                  <Image
+                    src="https://i.pravatar.cc/150?u=sakib"
+                    alt="Sakib"
+                    width={32}
+                    height={32}
+                    className="object-cover"
+                  />
+                </div>
               </div>
               <span className="text-sm font-semibold">Hi, Sakib</span>
             </div>
 
-            {/* --- TOGGLE BUTTON --- */}
-            <div 
-              onClick={() => setDarkMode(!darkMode)}
-              className={`flex items-center w-12 h-6 rounded-full relative cursor-pointer p-1 transition-all duration-300 ${
-                darkMode ? "bg-purple-600" : "bg-gray-300"
-              }`}
-            >
-              <div 
-                className={`w-4 h-4 bg-white rounded-full flex items-center justify-center shadow-md transform transition-transform duration-300 ${
-                  darkMode ? "translate-x-6" : "translate-x-0"
-                }`}
-              >
-                {darkMode ? (
-                  <FiMoon className="text-[10px] text-purple-600" />
-                ) : (
-                  <FiSun className="text-[10px] text-orange-500" />
-                )}
-              </div>
-            </div>
+            {/* --- TOGGLE BUTTON (DaisyUI Swap) --- */}
+            <label className="swap swap-rotate btn btn-ghost btn-circle btn-sm">
+              <input 
+                type="checkbox" 
+                onChange={toggleTheme} 
+                checked={theme === "light"} 
+              />
+              {/* Sun Icon */}
+              <FiSun className="swap-on text-orange-500 text-xl" />
+              {/* Moon Icon */}
+              <FiMoon className="swap-off text-purple-500 text-xl" />
+            </label>
 
           </div>
         </div>
@@ -115,11 +119,11 @@ const HelpNavbar = () => {
               href={link.href}
               className={`flex items-center gap-2 pb-3 border-b-2 transition-all duration-300 group ${
                 isActive
-                  ? "border-[#D946EF] text-[#D946EF]"
-                  : "border-transparent text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200"
+                  ? "border-secondary text-secondary"
+                  : "border-transparent opacity-60 hover:opacity-100"
               }`}
             >
-              <span className={`text-lg ${isActive ? "text-[#D946EF]" : "text-gray-400 group-hover:text-gray-600 dark:group-hover:text-gray-300"}`}>
+              <span className={`text-lg ${isActive ? "text-secondary" : "opacity-70 group-hover:opacity-100"}`}>
                 {link.icon}
               </span>
               <span className="text-[15px] font-semibold">
