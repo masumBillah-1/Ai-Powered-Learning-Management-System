@@ -33,6 +33,50 @@ const videos = [
     type: "React",
     thumbnail: "https://i.ytimg.com/vi/ljfh0dtEAjg/hqdefault.jpg"
   },
+
+  // 🔥 তোমার শেষ দেওয়া ভিডিওগুলো
+  {
+    id: "5ZgKoO-RhzE",
+    title: "5. Browser and Web Browsing Skills - Part 1",
+    duration: "12:00",
+    type: "Browser",
+    thumbnail: "https://i.ytimg.com/vi/5ZgKoO-RhzE/hqdefault.jpg"
+  },
+  {
+    id: "jA-VrCL7V9I",
+    title: "6. Browser and Web Browsing Skills - Bangla",
+    duration: "14:10",
+    type: "Browser",
+    thumbnail: "https://i.ytimg.com/vi/jA-VrCL7V9I/hqdefault.jpg"
+  },
+  {
+    id: "ucXhmbKAzfA",
+    title: "7. Internet & Browser Basics",
+    duration: "11:40",
+    type: "Internet",
+    thumbnail: "https://i.ytimg.com/vi/ucXhmbKAzfA/hqdefault.jpg"
+  },
+  {
+    id: "oRxy5WHu6I4",
+    title: "8. How Browser Works",
+    duration: "13:15",
+    type: "Browser",
+    thumbnail: "https://i.ytimg.com/vi/oRxy5WHu6I4/hqdefault.jpg"
+  },
+  {
+    id: "kBmSWwv0EQY",
+    title: "9. Web Browsing Complete Guide",
+    duration: "16:00",
+    type: "Browser",
+    thumbnail: "https://i.ytimg.com/vi/kBmSWwv0EQY/hqdefault.jpg"
+  },
+  {
+    id: "d59TJlWsXqY",
+    title: "10. Advanced Browsing Skills",
+    duration: "18:30",
+    type: "Advanced",
+    thumbnail: "https://i.ytimg.com/vi/d59TJlWsXqY/hqdefault.jpg"
+  }
 ];
 
 export default function MyClassas() {
@@ -67,6 +111,7 @@ export default function MyClassas() {
   const getCurrentVideo = () => videos.find(v => v.id === activeVideo);
 
   return (
+
     
     <div>
 
@@ -111,7 +156,7 @@ export default function MyClassas() {
             <div className="md:col-span-12 lg:col-span-5 relative cursor-pointer overflow-hidden rounded-xl h-64 md:h-auto">
               <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent z-10"></div>
               <img
-                src="https://i.ytimg.com/vi/pJQXGmMofro/maxresdefault.jpg"
+                src="https://i.ibb.co.com/S7QCB12P/ggg.png"
                 alt="Course Banner"
                 className="w-full h-full object-cover transform group-hover:scale-110 transition duration-700 ease-in-out"
               />
@@ -120,7 +165,7 @@ export default function MyClassas() {
                   Complete Web <br />Development
                 </h3>
                 <div className="flex items-center gap-2 mt-2">
-                  <span className="bg-yellow-400 text-black text-xs font-bold px-2 py-0.5 rounded shadow-lg">Batch 12</span>
+                  <span className="bg-yellow-400 text-black text-xs font-bold px-2 py-0.5 rounded shadow-lg">Batch 1</span>
                 </div>
               </div>
 
@@ -189,9 +234,16 @@ export default function MyClassas() {
          gap-6 opacity-80 hover:opacity-100 transition duration-300 hover:border-gray-700">
           <div className="w-full md:w-1/3 h-40 rounded-xl overflow-hidden relative group">
             <div className="absolute inset-0 bg-gradient-to-r from-[#832388] to-[#E3436B] opacity-20 group-hover:opacity-10 transition"></div>
-            <img src="https://i.ytimg.com/vi/Z-EkslDJTJI/maxresdefault.jpg" className="w-full h-full object-cover" alt="Recommended" />
+            <img src="https://i.ibb.co.com/S7QCB12P/ggg.png" className="w-full h-full object-cover" alt="Recommended" />
             <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
-             
+                  <div className="absolute bottom-4 left-4 z-20">
+                <h3 className="text-2xl font-black italic uppercase tracking-wider text-white drop-shadow-lg leading-tight">
+                  Complete Web <br />Development
+                </h3>
+                <div className="flex items-center gap-2 mt-2">
+                  <span className="bg-yellow-400 text-black text-xs font-bold px-2 py-0.5 rounded shadow-lg">Recommeneded BootCamp </span>
+                </div>
+              </div>
             </div>
           </div>
           <div className="flex-1 w-full">
@@ -205,14 +257,14 @@ export default function MyClassas() {
               </div>
               <span className="font-bold text-gray-400 text-sm">27%</span>
             </div>
-            <button
-              className="px-8 py-3 rounded-full font-bold text-white shadow-lg hover:shadow-orange-500/30
-               transform hover:-translate-y-0.5 active:translate-y-0 transition text-sm flex items-center gap-2"
-              style={{ background: 'linear-gradient(90deg, #FF0F7B, #F89B29)' }}
-            >
-              <FaPlay className="w-4 h-4 fill-current" />
-              Continue Course
-            </button>
+          <button
+  className="px-8 py-3 rounded-full font-bold text-white shadow-lg hover:shadow-orange-500/30
+   transform hover:-translate-y-0.5 active:translate-y-0 transition text-sm flex items-center gap-2"
+  style={{ background: 'linear-gradient(90deg, #FF0F7B, #F89B29)' }}
+>
+  <FaPlay className="w-4 h-4 fill-current" />
+  Continue Course
+</button>
           </div>
         </div>
       </div>
@@ -360,3 +412,7 @@ export default function MyClassas() {
     </div>
   );
 }
+
+
+
+
