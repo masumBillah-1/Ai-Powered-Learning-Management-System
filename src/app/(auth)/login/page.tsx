@@ -181,7 +181,7 @@ const LoginPage = () => {
               {errors.password && <p className="text-xs text-red-400 mt-1">{errors.password.message}</p>}
             </div>
 
-            {/* Remember / Forgot */}
+           
             <div className="flex items-center justify-between text-sm text-gray-300">
               <label className="flex items-center gap-2 cursor-pointer">
                 <input type="checkbox" className="checkbox checkbox-xs" />
