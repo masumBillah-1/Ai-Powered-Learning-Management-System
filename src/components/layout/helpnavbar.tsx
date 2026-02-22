@@ -15,15 +15,15 @@ import {
 const HelpNavbar = () => {
   const pathname = usePathname();
   
-  // DaisyUI থিম স্টেট (Default dark রাখা হয়েছে আপনার কোড অনুযায়ী)
+ 
   const [theme, setTheme] = useState<string>("dark");
 
   useEffect(() => {
-    // DaisyUI data-theme সেট করা
+ 
     const html = document.documentElement;
     html.setAttribute("data-theme", theme);
     
-    // Tailwind dark class ও বজায় রাখা হলো যাতে কাস্টম dark: ক্লাসগুলো কাজ করে
+    
     if (theme === "dark") {
       html.classList.add("dark");
     } else {
@@ -43,11 +43,11 @@ const HelpNavbar = () => {
   ];
 
   return (
-    // DaisyUI classes: bg-base-100 (সাদা/কালো থিম অনুযায়ী অটো চেঞ্জ হবে)
-    <header className="w-full text-base-content select-none border-b border-base-300 transition-colors duration-300">
+ 
+    <header className=" text-base-content mx-auto max-w-7xl select-none border-b border-base-300 transition-colors duration-300">
       
       {/* --- TOP SECTION --- */}
-      <div className="flex items-center justify-between px-6 py-4">
+      <div className="flex   items-center justify-between px-6 py-4">
         
         {/* Logo */}
         <div className="flex flex-col leading-none">
@@ -55,14 +55,14 @@ const HelpNavbar = () => {
             HELP DESK
           </h1>
           <span className="text-[10px] opacity-60 font-medium">
-            Brain Boost
+         Smartlms-Pro
           </span>
         </div>
 
         {/* Right Actions */}
         <div className="flex items-center gap-6">
           <span className="text-sm font-medium opacity-70 cursor-pointer hover:opacity-100 transition-opacity">
-            My Classes
+           <Link  href="/dashboard/my-classes">My Classes</Link> 
           </span>
 
           <div className="flex items-center gap-5">
@@ -99,7 +99,7 @@ const HelpNavbar = () => {
                 onChange={toggleTheme} 
                 checked={theme === "light"} 
               />
-              {/* Sun Icon */}
+             
               <FiSun className="swap-on text-orange-500 text-xl" />
               {/* Moon Icon */}
               <FiMoon className="swap-off text-purple-500 text-xl" />

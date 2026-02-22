@@ -326,6 +326,66 @@ edusmartai-lms/
 └── README.md
 ```
 ---
+## 📁 Server Project Structure
+
+```
+src/
+├── app/api/
+│   ├── auth/
+│   │   ├── register/route.ts   ← নতুন user তৈরি
+│   │   ├── login/route.ts      ← login + JWT দেবে
+│   │   └── logout/route.ts     ← cookie clear
+│   ├── users/
+│   │   ├── route.ts            ← সব user দেখা (admin)
+│   │   └── [id]/route.ts       ← single user update/delete
+│   ├── courses/
+│   │   ├── route.ts            ← course list + create
+│   │   └── [id]/route.ts       ← single course
+│   ├── enrollments/
+│   │   ├── route.ts            ← enroll করা
+│   │   └── [id]/route.ts       ← progress update
+│   └── achievements/
+│       └── route.ts            ← badge/points দেখা
+│
+├── models/
+│   ├── User.ts         ← সব user এক জায়গায় (role দিয়ে আলাদা)
+│   ├── Course.ts       ← course schema
+│   ├── Enrollment.ts   ← student + course relation
+│   ├── Progress.ts     ← lesson progress
+│   └── Achievement.ts  ← badge, points, streak
+│
+├── services/
+│   ├── auth.service.ts         ← register/login logic
+│   ├── user.service.ts         ← user CRUD logic
+│   ├── course.service.ts       ← course logic
+│   ├── enrollment.service.ts   ← enrollment logic
+│   └── achievement.service.ts  ← gamification logic
+│
+├── db/
+│   └── connect.ts      ← MongoDB connection (একবার connect)
+│
+├── middleware/
+│   ├── auth.middleware.ts   ← JWT verify করবে
+│   └── role.middleware.ts   ← admin/instructor check
+│
+├── validators/
+│   ├── auth.validator.ts    ← email, password check
+│   ├── user.validator.ts    ← profile update check
+│   └── course.validator.ts  ← course data check
+│
+├── utils/
+│   ├── generateToken.ts    ← JWT বানাবে
+│   ├── hashPassword.ts     ← bcrypt hash
+│   ├── comparePassword.ts  ← password match
+│   └── apiResponse.ts      ← { success, data } format
+│
+├── config/
+│   └── env.ts          ← JWT_SECRET, MONGODB_URI
+│
+└── types/
+    └── index.ts        ← UserRole, JwtPayload types
+```
+---
 
 ## 🚀 Getting Started
 

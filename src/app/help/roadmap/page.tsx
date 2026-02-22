@@ -29,7 +29,7 @@ const Roadmap = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#06061a] p-8 text-gray-200 font-sans">
+    <div className="min-h-screen p-8 text-gray-200 font-sans">
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-7xl mx-auto">
         
         {/* Column: Investigating */}
@@ -75,20 +75,20 @@ const Roadmap = () => {
 
 // Reusable Card Component
 const TicketCard = ({ ticket, borderColor }: { ticket: Ticket; borderColor: string }) => (
-  <div className={`bg-[#11112b] p-5 rounded-xl border ${borderColor} hover:bg-[#16163a] transition-colors`}>
+  <div className={` p-5 rounded-xl border ${borderColor}  transition-colors`}>
     <div className="flex items-center gap-3 mb-3">
       <img src={ticket.avatar} alt={ticket.user} className="w-8 h-8 rounded-full border border-gray-600" />
-      <span className="text-sm font-semibold text-gray-300">{ticket.user}</span>
+      <span className="text-sm font-bold text-black dark:text-white ">{ticket.user}</span>
     </div>
-    <h3 className="text-base font-medium mb-4 leading-tight">{ticket.title}</h3>
+    <h3 className=" font-bold text-black dark:text-white  mb-4 leading-tight">{ticket.title}</h3>
     <div className="flex gap-2">
       {ticket.tags.map(tag => (
-        <span key={tag} className="text-[10px] bg-gray-800 text-gray-400 px-2 py-1 rounded uppercase tracking-wider font-bold">
+        <span key={tag} className="text-[10px] text-black dark:text-white px-2 py-1 rounded uppercase tracking-wider ">
           {tag}
         </span>
       ))}
       {ticket.category && (
-        <span className="text-[10px] bg-gray-800 text-gray-400 px-2 py-1 rounded uppercase tracking-wider font-bold">
+        <span className="text-[10px] text-black dark:text-white  px-2 py-1 rounded uppercase tracking-wider font-bold">
           {ticket.category}
         </span>
       )}
