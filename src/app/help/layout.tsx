@@ -6,8 +6,8 @@ export default function HelpLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="min-h-screen ">
-     <HelpNavbar/>
+    <div>
+      <HelpNavbar />
       {children}
     </div>
   );
