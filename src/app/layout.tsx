@@ -5,6 +5,7 @@ import { Geist, Geist_Mono, Hind_Siliguri } from "next/font/google";
 import "./globals.css";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
+import { Toaster } from "react-hot-toast";
 
 
 const geistSans = Geist({
@@ -53,6 +54,7 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} ${hindSiliguri.variable} antialiased min-h-screen flex flex-col transition-colors duration-300`}
         style={{ fontFamily: 'var(--font-hind-siliguri), var(--font-geist-sans), sans-serif' }}
       >
+          <Toaster position="top-right" />
           <Navbar />
           {/* <FAQ /> */}
           <main className="flex-grow">
