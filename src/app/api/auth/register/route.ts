@@ -12,7 +12,7 @@ export async function POST(req: NextRequest) {
 
     const { name, email, phone, password, photoURL, provider } = await req.json();
 
-    // Google login হলে আলাদা logic
+    // ✅ Google login
     if (provider === "google") {
       let user = await User.findOne({ email });
 
@@ -35,7 +35,7 @@ export async function POST(req: NextRequest) {
         { expiresIn: "7d" }
       );
 
-      return NextResponse.json({
+      const response = NextResponse.json({
         success: true,
         message: "Google login successful!",
         token,
@@ -47,9 +47,20 @@ export async function POST(req: NextRequest) {
           role: user.role,
         },
       });
+
+      // ✅ Cookie set
+      response.cookies.set("token", token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "lax",
+        maxAge: 60 * 60 * 24 * 7,
+        path: "/",
+      });
+
+      return response;
     }
 
-    // Email/Password register
+    // ✅ Email/Password register
     if (!name || !email || !phone || !password)
       return NextResponse.json({ error: "All fields required" }, { status: 400 });
 

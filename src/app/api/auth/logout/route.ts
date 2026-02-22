@@ -1,5 +1,17 @@
 import { NextResponse } from "next/server";
 
 export async function POST() {
-  return NextResponse.json({ success: true, message: "Logged out successfully" });
+  const response = NextResponse.json({
+    success: true,
+    message: "Logged out successfully",
+  });
+
+  // ✅ Cookie clear করো
+  response.cookies.set("token", "", {
+    httpOnly: true,
+    expires: new Date(0),
+    path: "/",
+  });
+
+  return response;
 }
