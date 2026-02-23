@@ -4,6 +4,8 @@ import { useState, useEffect } from "react";
 import { Camera, Pencil, X, Check, User, Mail, Phone, Shield, Clock, LogIn } from "lucide-react";
 import toast from "react-hot-toast";
 
+import Footer from "@/components/layout/Footer";
+
 interface UserData {
   _id: string;
   name: string;
@@ -96,23 +98,33 @@ export default function ProfilePage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-white dark:bg-[#05010D] flex items-center justify-center transition-colors">
-        <div className="w-10 h-10 border-4 border-purple-500 border-t-transparent rounded-full animate-spin" />
-      </div>
+      <>
+        
+        <div className="min-h-screen bg-white dark:bg-[#05010D] flex items-center justify-center transition-colors">
+          <div className="w-10 h-10 border-4 border-purple-500 border-t-transparent rounded-full animate-spin" />
+        </div>
+        <Footer />
+      </>
     );
   }
 
   if (!user) {
     return (
-      <div className="min-h-screen bg-white dark:bg-[#05010D] flex items-center justify-center transition-colors">
-        <p className="text-gray-400 dark:text-gray-400">Profile not found. Please login again.</p>
-      </div>
+      <>
+      
+        <div className="min-h-screen bg-white dark:bg-[#05010D] flex items-center justify-center transition-colors">
+          <p className="text-gray-400 dark:text-gray-400">Profile not found. Please login again.</p>
+        </div>
+    
+      </>
     );
   }
 
   return (
-    <div className="min-h-screen bg-white dark:bg-[#05010D] py-10 px-4 transition-colors">
-      <div className="max-w-4xl mx-auto space-y-6">
+    <>
+      
+      <div className="min-h-screen bg-white dark:bg-[#05010D] py-10 px-4 transition-colors">
+        <div className="max-w-4xl mx-auto space-y-6">
 
         {/* ===== TOP CARD ===== */}
         <div className="relative bg-gray-50 dark:bg-[#120B1E] border border-gray-200 dark:border-[#2D2438] rounded-3xl overflow-hidden transition-colors">
@@ -326,6 +338,8 @@ export default function ProfilePage() {
         </div>
 
       </div>
-    </div>
+      </div>
+    
+    </>
   );
 }
