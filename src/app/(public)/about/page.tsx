@@ -16,61 +16,88 @@ const About = () => {
   ];
 
   return (
-    <div className="bg-[#0b1120] text-white min-h-screen py-24">
-      <div className="container mx-auto px-6 lg:px-16 max-w-7xl relative">
+    <div className="bg-[#020617] text-white min-h-screen py-24 relative overflow-hidden">
+      
+      {/* Background Decorative Elements */}
+      <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none -z-0">
+        <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-purple-900/20 blur-[120px] rounded-full" />
+        <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-blue-900/20 blur-[120px] rounded-full" />
+      </div>
+
+      <div className="container mx-auto px-6 lg:px-16 max-w-7xl relative z-10">
         
-        {/* Header - Matching image_2f7ccc.jpg */}
+        {/* Header Section */}
         <div className="text-center mb-24">
-          <motion.h1 
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="text-4xl md:text-6xl font-medium tracking-tight"
+          <motion.p 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="text-purple-400 font-bold tracking-widest text-sm uppercase mb-3"
           >
-            Meet Our Team_
+            Behind the Scenes
+          </motion.p>
+          <motion.h1 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="text-5xl md:text-7xl font-black tracking-tighter"
+          >
+            Meet Our <span className="bg-clip-text text-transparent bg-gradient-to-r from-purple-400 to-pink-600">Team_</span>
           </motion.h1>
+          <div className="h-1.5 w-24 bg-gradient-to-r from-purple-600 to-pink-600 mx-auto mt-6 rounded-full" />
         </div>
 
-        {/* Team Grid - 4 Columns on Large Screens */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-x-10 gap-y-20">
+        {/* Team Grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-x-8 gap-y-16">
           {team.map((member, index) => (
             <motion.div 
               key={index}
-              initial={{ opacity: 0, y: 30 }}
+              initial={{ opacity: 0, y: 50 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
-              transition={{ delay: (index % 4) * 0.1 }}
-              className="flex flex-col items-center group"
+              transition={{ duration: 0.5, delay: index * 0.1 }}
+              className="flex flex-col"
             >
-              {/* Shield Shape Image Card */}
-              <div className="relative w-full aspect-[4/5] mb-6">
-                <div className="absolute inset-0 bg-slate-800/50 rounded-[2.5rem] overflow-hidden border border-white/5 transition-all group-hover:border-white/20">
+              <div className="relative">
+                {/* Image Container - Hover effects removed */}
+                <div className="relative aspect-[4/5] rounded-[3rem] overflow-hidden border border-white/10 bg-slate-900/50 backdrop-blur-sm">
                   
-                  {/* Purple Ribbon/Background Shape */}
-                  <div className="absolute top-1/4 -left-4 w-20 h-40 bg-[#4c1d95]/40 -rotate-12 z-0 group-hover:bg-[#4c1d95]/60 transition-colors" />
+                  {/* Subtle Gradient Overlay */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-[#020617] via-transparent to-transparent opacity-40 z-10" />
                   
                   <img 
                     src={member.image} 
                     alt={member.name}
-                    className="w-full h-full object-cover object-top relative z-10 grayscale group-hover:grayscale-0 transition-all duration-700 group-hover:scale-105"
+                    className="w-full h-full object-cover object-top relative z-0" 
                   />
                 </div>
-              </div>
 
-              {/* Info Area */}
-              <div className="text-center">
-                <h3 className="text-lg lg:text-xl font-bold mb-1 tracking-wide transition-colors group-hover:text-purple-400">
-                  {member.name}
-                </h3>
-                <p className="text-[10px] lg:text-xs text-slate-500 font-black tracking-[0.2em]">
-                  {member.role}
-                </p>
+                {/* Name & Role Section */}
+                <div className="mt-8 text-center px-4">
+                  <h3 className="text-xl font-black mb-2 tracking-tight">
+                    {member.name}
+                  </h3>
+                  <div className="inline-block px-3 py-1 rounded-lg bg-purple-500/10 border border-purple-500/20">
+                    <p className="text-[10px] text-purple-300 font-bold uppercase tracking-[0.15em]">
+                      {member.role}
+                    </p>
+                  </div>
+                </div>
               </div>
             </motion.div>
           ))}
         </div>
 
-        {/* Decorative background glow */}
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full bg-[#832388]/5 blur-[120px] rounded-full -z-10 pointer-events-none" />
+        {/* Bottom CTA */}
+        <motion.div 
+          initial={{ opacity: 0 }}
+          whileInView={{ opacity: 1 }}
+          transition={{ delay: 0.5 }}
+          className="mt-32 text-center p-12 rounded-[4rem] bg-gradient-to-b from-slate-900/50 to-transparent border border-white/5"
+        >
+          <h2 className="text-2xl md:text-3xl font-bold mb-4">ধন্যবাদ আমাদের সাথে থাকার জন্য</h2>
+          <p className="text-slate-400 max-w-2xl mx-auto font-medium">
+            আমরা একটি স্বপ্ন নিয়ে কাজ করছি—সবাইকে দক্ষ করে গড়ে তোলা। আমাদের এই যাত্রায় আপনার অংশগ্রহণ আমাদের অনুপ্রাণিত করে।
+          </p>
+        </motion.div>
       </div>
     </div>
   );
