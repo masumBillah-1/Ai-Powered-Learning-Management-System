@@ -73,14 +73,27 @@ const LoginPage = () => {
         body: JSON.stringify({ email: data.email, password: data.password }),
       });
       const result = await res.json();
+      
+      console.log("Login response:", { status: res.status, result });
 
       if (!res.ok) {
-        if (result.locked) { toast.error(result.error); return; }
+        console.log("Login failed:", result.error);
+        
+        if (result.locked) { 
+          toast.error(result.error); 
+          return; 
+        }
+        
         if (result.error === "Invalid email or password") {
-          toast.error("Account পাওয়া যায়নি! Register করুন।");
-          setTimeout(() => { window.location.href = "/register"; }, 2000);
+          toast.error("Email বা Password ভুল! আবার চেষ্টা করুন।");
           return;
         }
+        
+        if (result.error?.includes("social login")) {
+          toast.error(result.error);
+          return;
+        }
+        
         toast.error(result.error || "Login failed");
         return;
       }
@@ -95,6 +108,7 @@ const LoginPage = () => {
       }
 
     } catch (err: any) {
+      console.error("Login error:", err);
       toast.error(err.message || "Something went wrong");
     } finally {
       setLoading(false);
@@ -203,13 +217,13 @@ const LoginPage = () => {
                 Google
               </button>
 
-              <a
+              <Link
                 href="/api/auth/github"
                 className="flex items-center justify-center gap-2 py-2.5 rounded-lg border border-gray-300 dark:border-white/20 bg-white dark:bg-white/5 text-gray-800 dark:text-white hover:bg-gray-50 dark:hover:bg-white/10 transition shadow-sm text-sm font-medium"
               >
                 <GitHubIcon />
                 GitHub
-              </a>
+              </Link>
             </div>
 
             <p className="text-center text-sm text-gray-700 dark:text-gray-400 mt-6">
