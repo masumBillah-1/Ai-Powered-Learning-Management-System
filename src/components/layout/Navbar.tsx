@@ -13,7 +13,6 @@ import {
 } from "react-icons/fa";
 import Logo from "./Logo";
 
-
 interface UserData {
   name: string;
   email: string;
@@ -21,15 +20,14 @@ interface UserData {
   role: string;
 }
 
-
 const Navbar = () => {
   const [mounted, setMounted] = useState(false);
   const [theme, setTheme] = useState("light");
   const [isOpen, setIsOpen] = useState(false);
   const [user, setUser] = useState<UserData | null>(null);
   const [showMenu, setShowMenu] = useState(false);
+  const [isEnrollModalOpen, setIsEnrollModalOpen] = useState(false); // Modal State
   const menuRef = useRef<HTMLDivElement>(null);
-
 
   useEffect(() => {
     setMounted(true);
@@ -45,7 +43,6 @@ const Navbar = () => {
     if (savedUser) setUser(JSON.parse(savedUser));
   }, []);
 
-
   const toggleTheme = () => {
     const newTheme = theme === "light" ? "dark" : "light";
     setTheme(newTheme);
@@ -58,8 +55,6 @@ const Navbar = () => {
     }
   };
 
-
-  // ✅ Logout — API call করে cookie clear করে
   const handleLogout = async () => {
     await fetch("/api/auth/logout", { method: "POST" });
     localStorage.removeItem("user");
@@ -69,7 +64,6 @@ const Navbar = () => {
     setIsOpen(false);
     window.location.href = "/login";
   };
-
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -81,15 +75,12 @@ const Navbar = () => {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-
   if (!mounted) return null;
-
 
   const firstLetter =
     user?.name?.charAt(0).toUpperCase() ||
     user?.email?.charAt(0).toUpperCase() ||
     "?";
-
 
   const AvatarImage = () =>
     user?.photoURL ? (
@@ -104,7 +95,6 @@ const Navbar = () => {
       </div>
     );
 
-
   const navLinks = [
     { name: "Course Details", href: "/courses" },
     { name: "Student Feedback", href: "/feedback" },
@@ -112,13 +102,11 @@ const Navbar = () => {
     { name: "About", href: "/about" },
   ];
 
-
   return (
     <nav className="bg-[var(--nav-bg)] border-b border-[var(--border-color)] sticky top-0 z-[100] shadow-sm transition-all duration-300">
       <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-12">
         <div className="flex justify-between items-center h-20">
           <Logo />
-
 
           {/* DESKTOP */}
           <div className="hidden lg:flex items-center space-x-8">
@@ -150,7 +138,6 @@ const Navbar = () => {
               )}
             </div>
 
-
             <div className="flex items-center gap-5 border-l border-gray-200 dark:border-gray-700 pl-6">
               <button
                 onClick={toggleTheme}
@@ -158,7 +145,6 @@ const Navbar = () => {
               >
                 {theme === "dark" ? <FaSun size={18} /> : <FaMoon size={18} />}
               </button>
-
 
               {!user ? (
                 <div className="flex items-center gap-4">
@@ -169,6 +155,7 @@ const Navbar = () => {
                     Login
                   </Link>
                   <button
+                    onClick={() => setIsEnrollModalOpen(true)}
                     style={{ background: "linear-gradient(90deg, #FF0F7B, #F89B29)" }}
                     className="text-white px-8 py-2.5 rounded-xl font-extrabold text-sm shadow-md hover:scale-105 transition-all"
                   >
@@ -178,12 +165,12 @@ const Navbar = () => {
               ) : (
                 <div className="flex items-center gap-4">
                   <button
+                    onClick={() => setIsEnrollModalOpen(true)}
                     style={{ background: "linear-gradient(90deg, #FF0F7B, #F89B29)" }}
                     className="hidden xl:block text-white px-8 py-2.5 rounded-xl font-extrabold text-sm shadow-lg hover:scale-105 transition-all"
                   >
                     Enroll Now
                   </button>
-
 
                   <div className="relative" ref={menuRef}>
                     <button
@@ -192,7 +179,6 @@ const Navbar = () => {
                     >
                       <AvatarImage />
                     </button>
-
 
                     {showMenu && (
                       <div className="absolute right-0 mt-3 w-64 bg-white dark:bg-[#161d2f] rounded-2xl shadow-2xl border border-gray-100 dark:border-gray-800 py-3 z-50">
@@ -235,7 +221,6 @@ const Navbar = () => {
             </div>
           </div>
 
-
           {/* MOBILE */}
           <div className="lg:hidden flex items-center gap-3">
             <button
@@ -266,7 +251,6 @@ const Navbar = () => {
         </div>
       </div>
 
-
       {/* MOBILE DRAWER */}
       <div
         className={`fixed inset-0 bg-black/50 backdrop-blur-sm z-[101] lg:hidden transition-opacity duration-300 ${
@@ -288,7 +272,6 @@ const Navbar = () => {
               </button>
             </div>
 
-
             {user && (
               <div className="flex items-center gap-3 p-4 rounded-xl bg-gray-50 dark:bg-gray-800 mb-4">
                 <AvatarImage />
@@ -300,7 +283,6 @@ const Navbar = () => {
                 </div>
               </div>
             )}
-
 
             <div className="space-y-3 flex-grow overflow-y-auto">
               {navLinks.map((link) => (
@@ -324,7 +306,6 @@ const Navbar = () => {
               )}
             </div>
 
-
             <div className="pt-6 border-t border-gray-100 dark:border-gray-700 space-y-4">
               {user ? (
                 <>
@@ -336,6 +317,7 @@ const Navbar = () => {
                     <FaThLarge /> Dashboard
                   </Link>
                   <button
+                    onClick={() => { setIsOpen(false); setIsEnrollModalOpen(true); }}
                     style={{ background: "linear-gradient(90deg, #FF0F7B, #F89B29)" }}
                     className="w-full text-white py-4 rounded-2xl font-bold shadow-lg"
                   >
@@ -357,6 +339,7 @@ const Navbar = () => {
                     Login
                   </Link>
                   <button
+                    onClick={() => { setIsOpen(false); setIsEnrollModalOpen(true); }}
                     style={{ background: "linear-gradient(90deg, #FF0F7B, #F89B29)" }}
                     className="w-full text-white py-4 rounded-2xl font-bold shadow-lg"
                   >
@@ -368,18 +351,71 @@ const Navbar = () => {
           </div>
         </div>
       </div>
+
+      {/* ENROLL MODAL */}
+      {isEnrollModalOpen && (
+        <div 
+          className="fixed inset-0 z-[200] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-300"
+          onClick={() => setIsEnrollModalOpen(false)}
+        >
+          <div 
+            className="relative bg-white dark:bg-[#1a2236] w-full max-w-[480px] rounded-[32px] overflow-hidden shadow-2xl animate-in zoom-in-95 duration-300"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Close Button */}
+            <button 
+              onClick={() => setIsEnrollModalOpen(false)}
+              className="absolute top-5 right-5 text-gray-400 hover:text-red-500 transition-colors z-10"
+            >
+              <FaTimes size={22} />
+            </button>
+
+            <div className="p-8 md:p-10 text-center">
+              {/* Icon/Illustration */}
+              <div className="flex justify-center mb-6">
+                <div className="w-20 h-20 bg-pink-50 dark:bg-pink-900/20 rounded-full flex items-center justify-center">
+                  <span className="text-4xl animate-bounce">🚀</span>
+                </div>
+              </div>
+
+              <h2 className="text-xl md:text-2xl font-bold text-gray-800 dark:text-white leading-tight mb-4">
+                ৬ মাসে একজন প্রফেশনাল হওয়ার চ্যালেঞ্জ নিতে চাও?
+              </h2>
+              
+              <p className="text-gray-600 dark:text-gray-400 mb-8 font-medium">
+                সঠিক গাইডলাইনে তোমার শেখার যাত্রা শুরু হোক আজই।
+              </p>
+
+              {/* Dates Box */}
+              <div className="bg-gray-50 dark:bg-gray-800/50 rounded-2xl p-5 mb-8 border border-gray-100 dark:border-gray-700">
+                <div className="flex flex-col gap-2 font-bold">
+                  <div className="flex justify-between items-center text-sm md:text-base">
+                    <span className="text-gray-500">এনরোলমেন্ট শুরু:</span>
+                    <span className="text-[#F89B29]">১ আগস্ট, ২০২৬</span>
+                  </div>
+                  <div className="h-[1px] bg-gray-200 dark:bg-gray-700 w-full" />
+                  <div className="flex justify-between items-center text-sm md:text-base">
+                    <span className="text-gray-500">এনরোলমেন্ট শেষ:</span>
+                    <span className="text-[#FF0F7B]">১৫ আগস্ট, ২০২৬</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Action Button */}
+              <Link href="/login" onClick={() => setIsEnrollModalOpen(false)}>
+                <button
+                  style={{ background: "linear-gradient(90deg, #FF0F7B, #F89B29)" }}
+                  className="w-full py-4 rounded-xl text-white font-black text-lg shadow-lg hover:scale-[1.02] active:scale-95 transition-all"
+                >
+                  Register Now
+                </button>
+              </Link>
+            </div>
+          </div>
+        </div>
+      )}
     </nav>
   );
 };
 
-
 export default Navbar;
-
-
-
-
-
-
-
-
-
