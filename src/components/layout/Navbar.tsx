@@ -1,4 +1,3 @@
-
 "use client";
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
@@ -15,18 +14,26 @@ import {
 import Logo from "./Logo";
 
 const Navbar = () => {
-  const [mounted, setMounted] = useState(false);
-  const [theme, setTheme] = useState("light");
+  const [theme, setTheme] = useState(() => {
+    if (typeof window !== "undefined") {
+      return localStorage.getItem("theme") || "light";
+    }
+    return "light";
+  });
   const [isOpen, setIsOpen] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(true); 
   const [showMenu, setShowMenu] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    setMounted(true);
-    const savedTheme = localStorage.getItem("theme") || "light";
-    setTheme(savedTheme);
-  }, []);
+    // Apply theme on mount
+    document.documentElement.setAttribute("data-theme", theme);
+    if (theme === "dark") {
+      document.documentElement.classList.add("dark");
+    } else {
+      document.documentElement.classList.remove("dark");
+    }
+  }, [theme]);
 
   const toggleTheme = () => {
     const newTheme = theme === "light" ? "dark" : "light";
@@ -51,8 +58,6 @@ const Navbar = () => {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  if (!mounted) return null;
-
   const navLinks = [
     { name: "Course Details", href: "/courses" },
     { name: "Student Feedback", href: "/feedback" },
@@ -71,7 +76,11 @@ const Navbar = () => {
           <div className="hidden lg:flex items-center space-x-8">
             <div className="flex items-center space-x-7 font-bold text-[15px] text-gray-700 dark:text-gray-300">
                {navLinks.map((link) => (
-                 <Link key={link.name} href={link.href} className="hover:text-[#C81D77] transition-colors">
+                 <Link 
+                   key={link.name} 
+                   href={link.href} 
+                   className="hover:text-[#C81D77] transition-colors"
+                 >
                    {link.name}
                  </Link>
                ))}
@@ -89,7 +98,7 @@ const Navbar = () => {
                    href="/help" 
                    className="flex items-center gap-2 text-gray-700 dark:text-gray-300 hover:text-[#C81D77] transition-colors"
                  >
-                    Hepldesk
+                    Helpdesk
                  </Link>
                )}
             </div>
@@ -105,23 +114,57 @@ const Navbar = () => {
 
               {!isLoggedIn ? (
                 <div className="flex items-center gap-4">
-                  <Link href="/login" className="bg-[#2D2D2D] hover:bg-gray-50 transition-all border-2 hover:border-[#FF0F7B] hover:text-[#FF0F7B] dark:bg-gray-700 text-white px-7 py-2.5 rounded-xl font-bold text-sm">Login</Link>
-                  <button style={{ background: "linear-gradient(90deg, #FF0F7B, #F89B29)" }} className="text-white px-8 py-2.5 rounded-xl font-extrabold text-sm shadow-md hover:scale-105 transition-all active:scale-95 animate-shimmer relative overflow-hidden group">Enroll Now</button>
+                  <Link href="/login" className="bg-[#2D2D2D] hover:bg-gray-50 transition-all border-2 hover:border-[#FF0F7B] hover:text-[#FF0F7B] dark:bg-gray-700 text-white px-7 py-2.5 rounded-xl font-bold text-sm">
+                    Login
+                  </Link>
+                  <button 
+                    style={{ background: "linear-gradient(90deg, #FF0F7B, #F89B29)" }} 
+                    className="text-white px-8 py-2.5 rounded-xl font-extrabold text-sm shadow-md hover:scale-105 transition-all active:scale-95"
+                  >
+                    Enroll Now
+                  </button>
                 </div>
               ) : (
                 <div className="flex items-center gap-4">
-                  <button style={{ background: "linear-gradient(90deg, #FF0F7B, #F89B29)" }} className="hidden xl:block text-white px-8 py-2.5 rounded-xl font-extrabold text-sm shadow-lg hover:scale-105 transition-all active:scale-95 animate-shimmer relative overflow-hidden group">Enroll Now</button>
+                  <button 
+                    style={{ background: "linear-gradient(90deg, #FF0F7B, #F89B29)" }} 
+                    className="hidden xl:block text-white px-8 py-2.5 rounded-xl font-extrabold text-sm shadow-lg hover:scale-105 transition-all active:scale-95"
+                  >
+                    Enroll Now
+                  </button>
 
                   <div className="relative" ref={menuRef}>
-                    <button onClick={() => setShowMenu(!showMenu)} className="flex items-center p-0.5 rounded-full border-2 border-[#6710C2] hover:scale-105 transition-transform">
-                      <img src="https://img.freepik.com/free-vector/blue-circle-with-white-user_78370-4707.jpg" alt="User" className="w-10 h-10 rounded-full object-cover" />
+                    <button 
+                      onClick={() => setShowMenu(!showMenu)} 
+                      className="flex items-center p-0.5 rounded-full border-2 border-[#6710C2] hover:scale-105 transition-transform"
+                    >
+                      <img 
+                        src="https://img.freepik.com/free-vector/blue-circle-with-white-user_78370-4707.jpg" 
+                        alt="User" 
+                        className="w-10 h-10 rounded-full object-cover" 
+                      />
                     </button>
 
                     {showMenu && (
-                      <div className="absolute right-0 mt-3 w-60 bg-white dark:bg-[#161d2f] rounded-2xl shadow-2xl border border-gray-100 dark:border-gray-800 py-3 z-50 animate-in fade-in zoom-in duration-200">
-                        <Link href="/dashboard" className="flex items-center gap-3 px-5 py-3 hover:bg-gray-50 dark:hover:bg-gray-800 font-bold dark:text-gray-200 text-gray-700"><FaThLarge className="text-[#6710C2]" /> Dashboard</Link>
-                        <Link href="/dashboard/my-profile" className="flex items-center gap-3 px-5 py-3 hover:bg-gray-50 dark:hover:bg-gray-800 font-bold dark:text-gray-200 text-gray-700"><FaUser className="text-[#6710C2]" /> My Profile</Link>
-                        <button onClick={() => setIsLoggedIn(false)} className="w-full flex items-center gap-3 px-5 py-3 text-red-600 font-bold hover:bg-red-50 border-t dark:border-gray-700 mt-2"><FaSignOutAlt /> Logout</button>
+                      <div className="absolute right-0 mt-3 w-60 bg-white dark:bg-[#161d2f] rounded-2xl shadow-2xl border border-gray-100 dark:border-gray-800 py-3 z-50">
+                        <Link 
+                          href="/dashboard" 
+                          className="flex items-center gap-3 px-5 py-3 hover:bg-gray-50 dark:hover:bg-gray-800 font-bold dark:text-gray-200 text-gray-700"
+                        >
+                          <FaThLarge className="text-[#6710C2]" /> Dashboard
+                        </Link>
+                        <Link 
+                          href="/dashboard/my-profile" 
+                          className="flex items-center gap-3 px-5 py-3 hover:bg-gray-50 dark:hover:bg-gray-800 font-bold dark:text-gray-200 text-gray-700"
+                        >
+                          <FaUser className="text-[#6710C2]" /> My Profile
+                        </Link>
+                        <button 
+                          onClick={() => setIsLoggedIn(false)} 
+                          className="w-full flex items-center gap-3 px-5 py-3 text-red-600 font-bold hover:bg-red-50 border-t dark:border-gray-700 mt-2"
+                        >
+                          <FaSignOutAlt /> Logout
+                        </button>
                       </div>
                     )}
                   </div>
@@ -132,10 +175,16 @@ const Navbar = () => {
 
           {/* --- MOBILE & TABLET --- */}
           <div className="lg:hidden flex items-center gap-3">
-             <button onClick={toggleTheme} className="p-2 rounded-lg bg-gray-100 dark:bg-gray-800">
+             <button 
+               onClick={toggleTheme} 
+               className="p-2 rounded-lg bg-gray-100 dark:bg-gray-800"
+             >
                 {theme === "dark" ? <FaSun size={20} className="text-yellow-500" /> : <FaMoon size={20} className="text-gray-600" />}
              </button>
-             <button onClick={() => setIsOpen(!isOpen)} className="text-gray-800 dark:text-white p-2">
+             <button 
+               onClick={() => setIsOpen(!isOpen)} 
+               className="text-gray-800 dark:text-white p-2"
+             >
                {isOpen ? <FaTimes size={28} /> : <FaBars size={28} />}
              </button>
           </div>
@@ -143,7 +192,10 @@ const Navbar = () => {
       </div>
 
       {/* --- MOBILE NAVIGATION DRAWER --- */}
-      <div className={`fixed inset-0 bg-black/50 backdrop-blur-sm z-[101] lg:hidden transition-opacity duration-300 ${isOpen ? "opacity-100 visible" : "opacity-0 invisible"}`} onClick={() => setIsOpen(false)}>
+      <div 
+        className={`fixed inset-0 bg-black/50 backdrop-blur-sm z-[101] lg:hidden transition-opacity duration-300 ${isOpen ? "opacity-100 visible" : "opacity-0 invisible"}`} 
+        onClick={() => setIsOpen(false)}
+      >
         <div 
           className={`absolute top-0 right-0 h-full w-[80%] max-w-[350px] bg-white dark:bg-[#0b1120] shadow-2xl transition-transform duration-300 transform ${isOpen ? "translate-x-0" : "translate-x-full"}`}
           onClick={(e) => e.stopPropagation()}
@@ -151,12 +203,22 @@ const Navbar = () => {
           <div className="p-6 flex flex-col h-full">
             <div className="flex justify-between items-center mb-8">
               <Logo />
-              <button onClick={() => setIsOpen(false)} className="p-2 text-gray-500"><FaTimes size={24} /></button>
+              <button 
+                onClick={() => setIsOpen(false)} 
+                className="p-2 text-gray-500"
+              >
+                <FaTimes size={24} />
+              </button>
             </div>
 
             <div className="space-y-3 flex-grow overflow-y-auto">
               {navLinks.map((link) => (
-                <Link key={link.name} href={link.href} className="flex justify-between items-center p-4 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-800 text-gray-800 dark:text-gray-200 font-bold" onClick={() => setIsOpen(false)}>
+                <Link 
+                  key={link.name} 
+                  href={link.href} 
+                  className="flex justify-between items-center p-4 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-800 text-gray-800 dark:text-gray-200 font-bold" 
+                  onClick={() => setIsOpen(false)}
+                >
                   {link.name} <FaChevronRight size={12} className="text-gray-400" />
                 </Link>
               ))}
@@ -167,7 +229,7 @@ const Navbar = () => {
                   className="flex justify-between items-center p-4 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-800 text-gray-800 dark:text-gray-200 font-bold"
                   onClick={() => setIsOpen(false)}
                 >
-                  <span className="flex items-center gap-2"> My Classes</span>
+                  <span className="flex items-center gap-2">My Classes</span>
                   <FaChevronRight size={12} />
                 </Link>
               )}
@@ -176,16 +238,37 @@ const Navbar = () => {
             <div className="pt-6 border-t border-gray-100 dark:border-gray-700 space-y-4">
                {isLoggedIn ? (
                  <>
-                   <Link href="/dashboard" className="flex items-center justify-center gap-2 w-full bg-[#f3f4f6] dark:bg-gray-800 text-gray-800 dark:text-white py-4 rounded-2xl font-bold" onClick={() => setIsOpen(false)}>
+                   <Link 
+                     href="/dashboard" 
+                     className="flex items-center justify-center gap-2 w-full bg-[#f3f4f6] dark:bg-gray-800 text-gray-800 dark:text-white py-4 rounded-2xl font-bold" 
+                     onClick={() => setIsOpen(false)}
+                   >
                      <FaThLarge /> Dashboard
                    </Link>
-                   <button style={{ background: "linear-gradient(90deg, #FF0F7B, #F89B29)" }} className="w-full text-white py-4 rounded-2xl font-bold shadow-lg">Enroll Now</button>
-                   <button onClick={() => {setIsLoggedIn(false); setIsOpen(false);}} className="w-full text-red-600 font-bold py-2">Logout</button>
+                   <button 
+                     style={{ background: "linear-gradient(90deg, #FF0F7B, #F89B29)" }} 
+                     className="w-full text-white py-4 rounded-2xl font-bold shadow-lg"
+                   >
+                     Enroll Now
+                   </button>
+                   <button 
+                     onClick={() => {setIsLoggedIn(false); setIsOpen(false);}} 
+                     className="w-full text-red-600 font-bold py-2"
+                   >
+                     Logout
+                   </button>
                  </>
                ) : (
                  <>
-                   <button className="w-full bg-[#2D2D2D] dark:bg-gray-700 text-white py-4 rounded-2xl font-bold">Login</button>
-                   <button style={{ background: "linear-gradient(90deg, #FF0F7B, #F89B29)" }} className="w-full text-white py-4 rounded-2xl font-bold shadow-lg">Enroll Now</button>
+                   <button className="w-full bg-[#2D2D2D] dark:bg-gray-700 text-white py-4 rounded-2xl font-bold">
+                     Login
+                   </button>
+                   <button 
+                     style={{ background: "linear-gradient(90deg, #FF0F7B, #F89B29)" }} 
+                     className="w-full text-white py-4 rounded-2xl font-bold shadow-lg"
+                   >
+                     Enroll Now
+                   </button>
                  </>
                )}
             </div>
@@ -197,4 +280,3 @@ const Navbar = () => {
 };
 
 export default Navbar;
-
