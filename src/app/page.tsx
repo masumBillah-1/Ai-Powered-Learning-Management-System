@@ -7,7 +7,8 @@ import BootcampFeatures from "@/components/Ctasection/Ctasection";
 import StepSection from "@/components/StepSection/StepSection";
 import SuccessSection from "@/components/SuccessSection/SuccessSection";
 import LearnSection from "@/components/Home/LearnSection";
-
+import ReleaseNotesPage from "@/components/ReleaseNotesPage/ReleaseNotesPage";
+import FeatureBoard from "@/components/FeatureBoard/FeatureBoard";
 
 export default function Home() {
   return (
@@ -18,11 +19,11 @@ export default function Home() {
       <BootcampFeatures />
       <SuccessSection />
       <StepSection />
-      <LearnSection/>
+      <LearnSection />
       <FAQ />
       <JoinNow />
-
-
+      <ReleaseNotesPage></ReleaseNotesPage>
+      <FeatureBoard></FeatureBoard>
     </div>
   );
 }
