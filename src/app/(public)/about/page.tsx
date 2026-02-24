@@ -31,22 +31,22 @@ const About = () => {
       name: "Sakib Al Hasan", 
       role: "Mern-Stack Developer", 
       image: "https://i.ibb.co.com/RpFQKWTh/473419070-1296272228367678-2831504883843112837-n.jpg",
-      github: "https://github.com/", 
-      linkedin: "https://linkedin.com/" 
+      github: "https://github.com/Sadman-Sakib-12", 
+      linkedin: "https://www.linkedin.com/in/sakib-al-hasan-898a173a2" 
     },
     { 
       name: "Bayjid Mia", 
       role: "Frontend Developer", 
       image: "https://i.ibb.co.com/8LdmVScp/1000072045-removebg-preview-1.png",
       github: "https://github.com/bayjidmia", 
-      linkedin: "https://linkedin.com/" 
+      linkedin: "https://www.linkedin.com/in/md-bayjid-mia-275b823a3/" 
     },
     { 
       name: "Masum Billah", 
       role: "Mern-Stack Developer", 
       image: "https://i.ibb.co.com/Fk1htvFj/Gemini-Generated-Image-iyhys1iyhys1iyhy.png",
-      github: "https://github.com/", 
-      linkedin: "https://www.linkedin.com/in/md-bayjid-mia-275b823a3/" 
+      github: "https://github.com/masumBillah-1", 
+      linkedin: "https://www.linkedin.com/in/masumamms/" 
     },
   ];
 
