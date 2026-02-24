@@ -8,8 +8,6 @@ import { FiMoreHorizontal } from "react-icons/fi";
 import Link from "next/link";
 import CreatePostModal from "../modal";
 
-
-
 interface SidebarItem {
   icon: React.ReactNode;
   label: string;

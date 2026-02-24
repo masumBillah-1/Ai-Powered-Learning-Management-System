@@ -44,14 +44,30 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({ onClose }) => {
     }
   };
 
-  const handleSubmit = (): void => {
-    if (!content.trim()) return;
-    setSubmitted(true);
-    setTimeout(() => {
-      setSubmitted(false);
-      onClose();
-    }, 1500);
+const handleSubmit = (): void => {
+  if (!content.trim()) {
+    console.log("Post not submitted: Content is empty");
+    return;
+  }
+
+  const postData = {
+    title,
+    content,
+    postType,
+    batch,
+    mediaFiles,
   };
+
+  console.log("Submitting Post Data:");
+  console.log(postData);
+
+  setSubmitted(true);
+
+  setTimeout(() => {
+    setSubmitted(false);
+    onClose();
+  }, 1500);
+};
 
   const removeMedia = (idx: number): void => {
     setMediaFiles((prev) => prev.filter((_, i) => i !== idx));

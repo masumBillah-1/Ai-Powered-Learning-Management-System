@@ -1,4 +1,5 @@
 import AllPost from "./allpost/page";
+import Mypost from "./mypost/page";
 
 export default function HelpPage() {
   return (
