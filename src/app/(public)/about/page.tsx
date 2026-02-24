@@ -10,7 +10,7 @@ const About = () => {
     { name: "Sayma Ahmed Shimu", role: "Chief Operating Officer (COO)", image: "https://i.ibb.co.com/nND6Jbrz/mine-removebg-preview.png" },
     { name: "Sakib Al Hasan", role: "Lead Developer", image: "https://i.ibb.co.com/RpFQKWTh/473419070-1296272228367678-2831504883843112837-n.jpg" },
     { name: "Bayjid Mia", role: "Software Engineer", image: "https://i.ibb.co.com/8LdmVScp/1000072045-removebg-preview-1.png" },
-    { name: "Masum Billah", role: "UI/UX Designer", image: "https://i.ibb.co.com/5hXmNFCm/484624221-2525246021156921-5746599839737274879-n.jpg" },
+    { name: "Masum Billah", role: "UI/UX Designer", image: "https://i.ibb.co.com/Fk1htvFj/Gemini-Generated-Image-iyhys1iyhys1iyhy.png" },
     { name: "Tanvir Hossain", role: "App Developer", image: "https://i.ibb.co/xL7L3z0/rakib.png" },
     { name: "Nabila Islam", role: "Content Manager", image: "https://i.ibb.co/yYyH6m0/anika.png" },
   ];
