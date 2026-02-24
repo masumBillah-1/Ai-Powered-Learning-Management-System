@@ -61,19 +61,19 @@ export async function POST(req: NextRequest) {
     }
 
     // ✅ Email/Password register
-    if (!name || !email || !phone || !password)
-      return NextResponse.json({ error: "All fields required" }, { status: 400 });
+    if (!name || !email || !password)
+      return NextResponse.json({ error: "Name, email and password required" }, { status: 400 });
 
-    const existing = await User.findOne({ $or: [{ email }, { phone }] });
+    const existing = await User.findOne({ email });
     if (existing)
-      return NextResponse.json({ error: "Email or phone already exists" }, { status: 400 });
+      return NextResponse.json({ error: "Email already exists" }, { status: 400 });
 
     const hashed = await bcrypt.hash(password, 10);
 
     const user = await User.create({
       name,
       email,
-      phone,
+      phone: phone || undefined,
       password: hashed,
       photoURL: "",
       provider: "credentials",
