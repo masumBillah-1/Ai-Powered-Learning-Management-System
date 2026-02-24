@@ -39,7 +39,7 @@ const LoginPage = () => {
     else window.location.href = "/dashboard/student";
   };
 
-  // ✅ Google Login
+  // ✅ Google Login — OTP নেই, সরাসরি dashboard
   const handleGoogleLogin = async () => {
     setGoogleLoading(true);
     try {
@@ -63,7 +63,7 @@ const LoginPage = () => {
     }
   };
 
-  // ✅ Email/Password Login
+  // ✅ Email/Password Login — OTP verify page এ যাবে
   const onSubmit = async (data: LoginFormData) => {
     setLoading(true);
     try {
@@ -73,6 +73,7 @@ const LoginPage = () => {
         body: JSON.stringify({ email: data.email, password: data.password }),
       });
       const result = await res.json();
+
       if (!res.ok) {
         if (result.locked) { toast.error(result.error); return; }
         if (result.error === "Invalid email or password") {
@@ -80,12 +81,19 @@ const LoginPage = () => {
           setTimeout(() => { window.location.href = "/register"; }, 2000);
           return;
         }
-        throw new Error(result.error || "Login failed");
+        toast.error(result.error || "Login failed");
+        return;
       }
-      localStorage.setItem("user", JSON.stringify(result.user));
-      localStorage.setItem("token", result.token);
-      toast.success("Login successful!");
-      setTimeout(() => redirect(result.user.role), 800);
+
+      // ✅ OTP required — verify page এ পাঠাও
+      if (result.requireOtp) {
+        toast.success("OTP পাঠানো হয়েছে! Email চেক করুন।");
+        setTimeout(() => {
+          window.location.href = `/verify-otp?email=${encodeURIComponent(data.email)}&mode=login`;
+        }, 800);
+        return;
+      }
+
     } catch (err: any) {
       toast.error(err.message || "Something went wrong");
     } finally {
@@ -164,7 +172,12 @@ const LoginPage = () => {
                 disabled={loading}
                 className="w-full py-2.5 rounded-lg font-medium text-white bg-gradient-to-r from-[#832388] via-[#E3436B] to-[#F0772F] hover:opacity-90 transition disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {loading ? "Signing In..." : "Sign In"}
+                {loading ? (
+                  <span className="flex items-center justify-center gap-2">
+                    <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    Sending OTP...
+                  </span>
+                ) : "Sign In"}
               </button>
             </form>
 
@@ -175,9 +188,8 @@ const LoginPage = () => {
               <div className="flex-1 h-px bg-gray-300 dark:bg-white/10" />
             </div>
 
-            {/* ✅ Social Buttons — Google + GitHub */}
+            {/* Social Buttons */}
             <div className="grid grid-cols-2 gap-3 mb-5">
-              {/* Google */}
               <button
                 onClick={handleGoogleLogin}
                 disabled={googleLoading}
@@ -191,7 +203,6 @@ const LoginPage = () => {
                 Google
               </button>
 
-              {/* GitHub */}
               <a
                 href="/api/auth/github"
                 className="flex items-center justify-center gap-2 py-2.5 rounded-lg border border-gray-300 dark:border-white/20 bg-white dark:bg-white/5 text-gray-800 dark:text-white hover:bg-gray-50 dark:hover:bg-white/10 transition shadow-sm text-sm font-medium"
