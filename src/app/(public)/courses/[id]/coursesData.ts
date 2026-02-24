@@ -142,7 +142,8 @@ export const coursesDatabase: Record<string, {
     level: "Beginner to Advanced",
     language: "Bangla",
     thumbnail: "https://i.ibb.co.com/FkxynQ3K/carlos-muza-hpj-Sk-U2-UYSU-unsplash.jpg",
-    videoUrl: "https://www.youtube.com/embed/dQw4w9WgXcQ",
+    videoUrl: "https://www.youtube.com/embed/KGgIl5NBVlM",
+    // https://www.youtube.com/embed/dQw4w9WgXcQ
     features: [
       "120+ Video Lessons",
       "Lifetime Access",
@@ -235,7 +236,7 @@ export const coursesDatabase: Record<string, {
     level: "Beginner to Advanced",
     language: "Bangla",
     thumbnail: "https://i.ibb.co.com/fzkDftYT/theme-photos-CGpif-H3-Fj-OA-unsplash.jpg",
-    videoUrl: "https://www.youtube.com/embed/jNQXAC9IVRw",
+    videoUrl: "https://www.youtube.com/embed/O7N1hrkiv98",
     features: [
       "90+ Video Lessons",
       "Lifetime Access",
