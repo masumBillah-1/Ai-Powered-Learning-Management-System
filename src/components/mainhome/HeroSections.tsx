@@ -4,15 +4,15 @@ import { useEffect, useState } from "react";
 import { FaPlayCircle, FaArrowRight } from "react-icons/fa";
 
 export default function HeroSections() {
-  const texts = [
+  const texts: string[] = [
     "Learn Web Development",
     "Build Real Projects",
     "Grow Your Career",
   ];
 
-  const [currentText, setCurrentText] = useState("");
-  const [index, setIndex] = useState(0);
-  const [charIndex, setCharIndex] = useState(0);
+  const [currentText, setCurrentText] = useState<string>("");
+  const [index, setIndex] = useState<number>(0);
+  const [charIndex, setCharIndex] = useState<number>(0);
 
   // Typewriter Effect
   useEffect(() => {
@@ -29,7 +29,7 @@ export default function HeroSections() {
         setIndex((prev) => (prev + 1) % texts.length);
       }, 1500);
     }
-  }, [charIndex, index]);
+  }, [charIndex, index, texts]);
 
   return (
     <section className="relative overflow-hidden bg-gradient-to-br from-[#1a0b2e] via-[#2b0f45] to-[#12061c] text-white">
@@ -80,5 +80,3 @@ export default function HeroSections() {
     </section>
   );
 }
-
-
