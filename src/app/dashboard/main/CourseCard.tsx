@@ -113,7 +113,7 @@ export default function MyClassas() {
   return (
 
     
-    <div>
+    <div className="w-full h- [200px]">
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-8">
         {/* Welcome Section */}
@@ -122,7 +122,7 @@ export default function MyClassas() {
   <span className="bg-gradient-to-r from-[#C81D77] to-[#6710C2] text-transparent bg-clip-text">
     Welcome Back 
   </span>{" "}
-  <span className="text-black">Ready for Your</span>{" "}
+  <span className="bg-gradient-to-r from-[#832388] via-[#E3436B] to-[#F0772F] text-transparent bg-clip-text">Ready for Your</span>{" "}
   <span className="bg-gradient-to-r from-[#832388] via-[#E3436B] to-[#F0772F] text-transparent bg-clip-text">
     Next Lessons?
   </span>
@@ -142,9 +142,7 @@ export default function MyClassas() {
           <button className="px-6 py-3 text-[#E3436B] border-b-2 border-[#E3436B] font-medium flex items-center gap-2 whitespace-nowrap">
             <FaBookOpen className="w-4 h-4" /> Level 1 Course
           </button>
-          <button className="px-6 py-3 text-gray-400 hover:text-white font-medium flex items-center gap-2 transition whitespace-nowrap">
-            <FaPlay className="w-4 h-4" /> Conceptual Session
-          </button>
+       
         </div>
 
 
