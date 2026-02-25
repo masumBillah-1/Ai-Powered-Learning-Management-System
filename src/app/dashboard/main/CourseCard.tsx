@@ -79,7 +79,7 @@ const videos = [
   }
 ];
 
-export default function MyClassas() {
+export default function CourseCard() {
   const [activeVideo, setActiveVideo] = useState<string | null>(null);
   const [completedVideos, setCompletedVideos] = useState<string[]>([]);
   const [showVideoPlayer, setShowVideoPlayer] = useState(false);
@@ -107,7 +107,6 @@ export default function MyClassas() {
     setActiveVideo(null);
   };
 
-  // Helper function jhi g hjh fuyh f current video object
   const getCurrentVideo = () => videos.find(v => v.id === activeVideo);
 
   return (
