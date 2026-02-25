@@ -66,15 +66,7 @@ const CareerSection = () => {
           <h2 className="text-2xl md:text-4xl font-black text-gray-900 dark:text-white flex items-center gap-2">
             Career <span className="text-orange-500">🔥🔥</span>
           </h2>
-          <Link 
-            href="/career" 
-            className="flex items-center gap-2 text-gray-600 dark:text-gray-300 font-bold hover:text-[#6710C2] transition-colors group"
-          >
-            <span className="text-lg">See More Blog</span>
-            <span className="bg-[#6710C2] text-white p-2 rounded-lg group-hover:scale-110 transition-transform flex items-center justify-center">
-              <FiExternalLink size={18} />
-            </span>
-          </Link>
+      
         </div>
 
         {/* Career Blog Grid */}

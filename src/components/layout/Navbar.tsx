@@ -13,12 +13,14 @@ import {
 } from "react-icons/fa";
 import Logo from "./Logo";
 
+
 interface UserData {
   name: string;
   email: string;
   photoURL?: string;
   role: string;
 }
+
 
 const Navbar = () => {
   const [mounted, setMounted] = useState(false);
@@ -28,6 +30,7 @@ const Navbar = () => {
   const [showMenu, setShowMenu] = useState(false);
   const [isEnrollModalOpen, setIsEnrollModalOpen] = useState(false); // Modal State
   const menuRef = useRef<HTMLDivElement>(null);
+
 
   useEffect(() => {
     setMounted(true);
@@ -43,6 +46,7 @@ const Navbar = () => {
     if (savedUser) setUser(JSON.parse(savedUser));
   }, []);
 
+
   const toggleTheme = () => {
     const newTheme = theme === "light" ? "dark" : "light";
     setTheme(newTheme);
@@ -55,6 +59,8 @@ const Navbar = () => {
     }
   };
 
+
+  // ✅ Logout — API call করে cookie clear করে
   const handleLogout = async () => {
     await fetch("/api/auth/logout", { method: "POST" });
     localStorage.removeItem("user");
@@ -64,6 +70,7 @@ const Navbar = () => {
     setIsOpen(false);
     window.location.href = "/login";
   };
+
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -75,12 +82,15 @@ const Navbar = () => {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+
   if (!mounted) return null;
+
 
   const firstLetter =
     user?.name?.charAt(0).toUpperCase() ||
     user?.email?.charAt(0).toUpperCase() ||
     "?";
+
 
   const AvatarImage = () =>
     user?.photoURL ? (
@@ -95,6 +105,7 @@ const Navbar = () => {
       </div>
     );
 
+
   const navLinks = [
     { name: "Course Details", href: "/courses" },
     { name: "Student Feedback", href: "/feedback" },
@@ -102,11 +113,13 @@ const Navbar = () => {
     { name: "About", href: "/about" },
   ];
 
+
   return (
     <nav className="bg-[var(--nav-bg)] border-b border-[var(--border-color)] sticky top-0 z-[100] shadow-sm transition-all duration-300">
       <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-12">
         <div className="flex justify-between items-center h-20">
           <Logo />
+
 
           {/* DESKTOP */}
           <div className="hidden lg:flex items-center space-x-8">
@@ -122,7 +135,7 @@ const Navbar = () => {
               ))}
               {user && (
                 <Link
-                  href="/dashboard/my-classes"
+                  href="/myclasses"
                   className="hover:text-[#C81D77] transition-colors"
                 >
                   My Classes
@@ -138,6 +151,7 @@ const Navbar = () => {
               )}
             </div>
 
+
             <div className="flex items-center gap-5 border-l border-gray-200 dark:border-gray-700 pl-6">
               <button
                 onClick={toggleTheme}
@@ -145,6 +159,7 @@ const Navbar = () => {
               >
                 {theme === "dark" ? <FaSun size={18} /> : <FaMoon size={18} />}
               </button>
+
 
               {!user ? (
                 <div className="flex items-center gap-4">
@@ -172,13 +187,14 @@ const Navbar = () => {
                     Enroll Now
                   </button>
 
-                  <div className="relative" ref={menuRef}>
+                  <div className="relative " ref={menuRef}>
                     <button
                       onClick={() => setShowMenu(!showMenu)}
-                      className="flex items-center p-0.5 rounded-full border-2 border-[#6710C2] hover:scale-105 transition-transform"
+                      className="flex items-center cursor-pointer p-0.5 rounded-full border-2 border-[#6710C2] hover:scale-105 transition-transform"
                     >
                       <AvatarImage />
                     </button>
+
 
                     {showMenu && (
                       <div className="absolute right-0 mt-3 w-64 bg-white dark:bg-[#161d2f] rounded-2xl shadow-2xl border border-gray-100 dark:border-gray-800 py-3 z-50">
@@ -221,6 +237,7 @@ const Navbar = () => {
             </div>
           </div>
 
+
           {/* MOBILE */}
           <div className="lg:hidden flex items-center gap-3">
             <button
@@ -251,6 +268,7 @@ const Navbar = () => {
         </div>
       </div>
 
+
       {/* MOBILE DRAWER */}
       <div
         className={`fixed inset-0 bg-black/50 backdrop-blur-sm z-[101] lg:hidden transition-opacity duration-300 ${
@@ -272,6 +290,7 @@ const Navbar = () => {
               </button>
             </div>
 
+
             {user && (
               <div className="flex items-center gap-3 p-4 rounded-xl bg-gray-50 dark:bg-gray-800 mb-4">
                 <AvatarImage />
@@ -283,6 +302,7 @@ const Navbar = () => {
                 </div>
               </div>
             )}
+
 
             <div className="space-y-3 flex-grow overflow-y-auto">
               {navLinks.map((link) => (
@@ -305,6 +325,7 @@ const Navbar = () => {
                 </Link>
               )}
             </div>
+
 
             <div className="pt-6 border-t border-gray-100 dark:border-gray-700 space-y-4">
               {user ? (
@@ -417,5 +438,6 @@ const Navbar = () => {
     </nav>
   );
 };
+
 
 export default Navbar;
