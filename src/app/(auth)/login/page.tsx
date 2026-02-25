@@ -1,7 +1,8 @@
 "use client";
 
-import React, { useState } from "react";
+import { useState } from "react";
 import { useForm } from "react-hook-form";
+import { useSearchParams } from "next/navigation";
 import { FiEye, FiEyeOff } from "react-icons/fi";
 import toast from "react-hot-toast";
 import { signInWithPopup } from "firebase/auth";
@@ -29,14 +30,23 @@ const GitHubIcon = () => (
 
 const LoginPage = () => {
   const { register, handleSubmit, formState: { errors } } = useForm<LoginFormData>();
+  const searchParams = useSearchParams();
+  const redirectUrl = searchParams.get("redirect") || "/dashboard/student";
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
 
   const redirect = (role: string) => {
-    if (role === "admin") window.location.href = "/dashboard/admin";
-    else if (role === "instructor") window.location.href = "/dashboard/instructor";
-    else window.location.href = "/dashboard/student";
+    // If there's a redirect URL, use it, otherwise use role-based redirect
+    if (redirectUrl && redirectUrl !== "/dashboard/student") {
+      window.location.href = redirectUrl;
+    } else if (role === "admin") {
+      window.location.href = "/dashboard/admin";
+    } else if (role === "instructor") {
+      window.location.href = "/dashboard/instructor";
+    } else {
+      window.location.href = "/dashboard/student";
+    }
   };
 
   // ✅ Google Login — OTP নেই, সরাসরি dashboard
