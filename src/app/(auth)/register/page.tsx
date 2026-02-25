@@ -82,17 +82,26 @@ const Register = () => {
         body: JSON.stringify({ name: data.name, email: data.email, phone: data.phone, password: data.password }),
       });
       const result = await res.json();
+      
+      console.log("Register response:", { status: res.status, result });
+      
       if (!res.ok) {
+        console.log("Register failed:", result.error);
+        
         if (result.error === "Email already exists") {
           toast.error("এই email দিয়ে আগেই account আছে! Login করুন।");
           setTimeout(() => { window.location.href = "/login"; }, 2000);
           return;
         }
-        throw new Error(result.error || "Registration failed");
+        
+        toast.error(result.error || "Registration failed");
+        return;
       }
+      
       setRegistered(true);
       toast.success("Registration successful!");
     } catch (err: any) {
+      console.error("Register error:", err);
       toast.error(err.message || "Something went wrong");
     } finally {
       setLoading(false);
@@ -239,13 +248,13 @@ const Register = () => {
               </button>
 
               {/* GitHub */}
-              <a
+              <link
                 href="/api/auth/github"
                 className="flex items-center justify-center gap-2 py-2.5 rounded-lg border border-gray-300 dark:border-[#2D2438] bg-white dark:bg-[#1B1229] text-gray-800 dark:text-white hover:bg-gray-50 dark:hover:bg-[#2D2438] transition shadow-sm text-sm font-medium"
               >
                 <GitHubIcon />
                 GitHub
-              </a>
+              </link>
             </div>
 
             <p className="text-center text-[12px] text-gray-700 dark:text-gray-400 pt-3">
