@@ -35,7 +35,7 @@ const videos = [
   },
 ];
 
-export default function MyClassas() {
+export default function CourseCard() {
   const [activeVideo, setActiveVideo] = useState<string | null>(null);
   const [completedVideos, setCompletedVideos] = useState<string[]>([]);
   const [showVideoPlayer, setShowVideoPlayer] = useState(false);

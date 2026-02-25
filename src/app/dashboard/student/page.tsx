@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 
 // ── Theme Hook ─────────────────────────────────────────────────────────────
 const useTheme = () => {
@@ -357,19 +358,42 @@ const ProgressPage = ({ dark }: any) => {
 
       {/* Streak */}
       <div className={`rounded-2xl border p-6 ${box}`}>
-        <h3 className={`font-bold mb-4 ${heading}`}>Learning Streak — February 2025</h3>
-        <div className="grid grid-cols-7 gap-2">
-          {Array.from({length:28},(_,i) => {
-            const on = [1,2,4,5,6,8,9,10,11,14,15,17,18,19,22,23,24,25].includes(i+1);
-            return (
-              <div key={i} className={`aspect-square rounded-md text-[10px] flex items-center justify-center font-medium transition-all ${on ? "bg-gradient-to-br from-[#832388] to-[#F0772F] text-white" : dark ? "bg-white/5 text-white/20" : "bg-gray-100 text-gray-400"}`}>
-                {i+1}
-              </div>
-            );
-          })}
+  <h3 className={`font-bold mb-2 ${heading}`}>
+    Learning Streak — February 2025
+  </h3>
+
+  <div className="grid grid-cols-20 gap-1 w-150">
+    {Array.from({ length: 30 }, (_, i) => {
+      const day = i + 1;
+      const on = [
+        1,2,4,5,6,8,9,10,11,14,15,17,18,19,22,23,24,25
+      ].includes(day);
+
+      return (
+        <div
+          key={day}
+          className={`aspect-square w-5 rounded-md flex items-center justify-center text-[10px] font-medium transition-all
+            ${
+              on
+                ? "bg-gradient-to-br from-[#832388] to-[#F0772F] text-white"
+                : dark
+                ? "bg-white/5 text-white/20"
+                : "bg-gray-100 text-gray-400"
+            }`}
+        >
+          {day}
         </div>
-        <p className={`text-xs mt-3 ${sub}`}>🔥 Current streak: <span className="text-orange-400 font-bold">7 days</span></p>
-      </div>
+      );
+    })}
+  </div>
+
+  <p className={`text-xs mt-3 ${sub}`}>
+    🔥 Current streak:
+    <span className="text-orange-400 font-bold ml-1">
+      7 days
+    </span>
+  </p>
+</div>
     </div>
   );
 };
@@ -620,17 +644,17 @@ export default function StudentDashboard() {
         <div className={`p-6 border-b ${divider}`}>
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#832388] to-[#F0772F] flex items-center justify-center font-black text-sm text-white">S</div>
-            <div>
+            <Link href={'/'}>
               <p className={`font-bold text-sm ${sText}`}>SmartLMS</p>
               <p className={`text-[10px] ${sSub}`}>Student Portal</p>
-            </div>
+            </Link>
           </div>
         </div>
 
         <nav className="flex-1 p-4 space-y-1">
           {navItems.map(({id,label,Icon}) => (
             <button key={id} onClick={() => {setActiveNav(id); setSidebarOpen(false);}}
-              className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 border ${activeNav === id ? navActive : navIdle}`}>
+              className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 border cursor-pointer ${activeNav === id ? navActive : navIdle}`}>
               <span className={activeNav === id ? "text-[#E3436B]" : ""}><Icon /></span>
               {label}
               {activeNav === id && <div className="ml-auto w-1.5 h-1.5 rounded-full bg-[#E3436B]" />}

@@ -9,8 +9,11 @@ interface PublicLayoutProps {
 export default function PublicLayout({ children }: PublicLayoutProps) {
   return (
     <>
+    <Navbar/>
     
       <main>{children}</main>
+
+      <Footer/>
  
     </>
   );

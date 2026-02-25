@@ -13,6 +13,7 @@ import Navbar from "@/components/layout/Navbar";
 export default function Home() {
   return (
     <div className="container mx-auto px-6 py-10">
+      
       <HeroSection />
       <ImpactSection />
       <ProblemSolution />
