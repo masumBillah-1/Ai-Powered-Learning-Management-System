@@ -83,7 +83,7 @@ const Register = () => {
       });
       const result = await res.json();
       if (!res.ok) {
-        if (result.error === "Email or phone already exists") {
+        if (result.error === "Email already exists") {
           toast.error("এই email দিয়ে আগেই account আছে! Login করুন।");
           setTimeout(() => { window.location.href = "/login"; }, 2000);
           return;
@@ -143,39 +143,6 @@ const Register = () => {
 
           <div className="bg-white/90 dark:bg-[#120B1E] border border-gray-200 dark:border-[#2D2438] p-7 rounded-2xl shadow-2xl transition-colors">
 
-            {/* ✅ Social Buttons — Google + GitHub */}
-            <div className="grid grid-cols-2 gap-3 mb-5">
-              {/* Google */}
-              <button
-                onClick={handleGoogleLogin}
-                disabled={googleLoading}
-                type="button"
-                className="flex items-center justify-center gap-2 py-2.5 rounded-lg border border-gray-300 dark:border-[#2D2438] bg-white dark:bg-[#1B1229] text-gray-800 dark:text-white hover:bg-gray-50 dark:hover:bg-[#2D2438] transition disabled:opacity-50 shadow-sm text-sm font-medium"
-              >
-                {googleLoading
-                  ? <span className="w-4 h-4 border-2 border-gray-400 border-t-transparent rounded-full animate-spin" />
-                  : <GoogleIcon />
-                }
-                Google
-              </button>
-
-              {/* GitHub */}
-              <a
-                href="/api/auth/github"
-                className="flex items-center justify-center gap-2 py-2.5 rounded-lg border border-gray-300 dark:border-[#2D2438] bg-white dark:bg-[#1B1229] text-gray-800 dark:text-white hover:bg-gray-50 dark:hover:bg-[#2D2438] transition shadow-sm text-sm font-medium"
-              >
-                <GitHubIcon />
-                GitHub
-              </a>
-            </div>
-
-            {/* OR Divider */}
-            <div className="flex items-center gap-3 mb-5">
-              <div className="flex-1 h-px bg-gray-300 dark:bg-[#2D2438]" />
-              <span className="text-gray-500 dark:text-gray-500 text-xs font-medium">OR</span>
-              <div className="flex-1 h-px bg-gray-300 dark:bg-[#2D2438]" />
-            </div>
-
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-3.5">
               {/* Name */}
               <div>
@@ -197,12 +164,18 @@ const Register = () => {
 
               {/* Phone */}
               <div>
-                <label className="text-[12px] text-gray-700 dark:text-gray-300 ml-1 font-medium">Phone No.</label>
+                <label className="text-[12px] text-gray-700 dark:text-gray-300 ml-1 font-medium">Phone No. (Optional)</label>
                 <div className="flex items-center h-10 bg-white dark:bg-[#1B1229] border border-gray-300 dark:border-[#2D2438] rounded-lg px-3 focus-within:border-purple-500 transition">
                   <span className="text-gray-900 dark:text-white text-sm mr-2">🇧🇩 +880</span>
                   <input type="tel" inputMode="numeric" placeholder="1XXXXXXXXX"
                     className="bg-transparent flex-1 text-[13px] text-gray-900 dark:text-white outline-none placeholder-gray-500 dark:placeholder-gray-400"
-                    {...register("phone", { required: "Phone number is required", minLength: { value: 11, message: "11 digits required" }, maxLength: { value: 11, message: "11 digits required" } })} />
+                    {...register("phone", { 
+                      validate: (value) => {
+                        if (!value) return true; // Optional
+                        const digits = value.replace(/\D/g, "");
+                        return (digits.length >= 10 && digits.length <= 11) || "Valid phone number দিন";
+                      }
+                    })} />
                 </div>
                 {errors.phone && <p className="text-xs text-red-400 mt-1">{errors.phone.message}</p>}
               </div>
@@ -240,12 +213,45 @@ const Register = () => {
                 className="w-full h-11 mt-4 rounded-lg text-white font-bold bg-gradient-to-r from-[#832388] via-[#E3436B] to-[#F0772F] disabled:opacity-50 disabled:cursor-not-allowed hover:opacity-90 transition">
                 {loading ? "Signing Up..." : "Sign Up"}
               </button>
-
-              <p className="text-center text-[12px] text-gray-700 dark:text-gray-400 pt-3">
-                Already have an account?{" "}
-                <Link href="/login" className="text-purple-600 dark:text-[#E02994] font-semibold hover:underline">Sign In</Link>
-              </p>
             </form>
+
+            {/* OR Divider */}
+            <div className="flex items-center gap-3 my-5">
+              <div className="flex-1 h-px bg-gray-300 dark:bg-[#2D2438]" />
+              <span className="text-gray-600 dark:text-gray-500 text-xs font-medium">OR CONTINUE WITH</span>
+              <div className="flex-1 h-px bg-gray-300 dark:bg-[#2D2438]" />
+            </div>
+
+            {/* ✅ Social Buttons — Google + GitHub */}
+            <div className="grid grid-cols-2 gap-3 mb-4">
+              {/* Google */}
+              <button
+                onClick={handleGoogleLogin}
+                disabled={googleLoading}
+                type="button"
+                className="flex items-center justify-center gap-2 py-2.5 rounded-lg border border-gray-300 dark:border-[#2D2438] bg-white dark:bg-[#1B1229] text-gray-800 dark:text-white hover:bg-gray-50 dark:hover:bg-[#2D2438] transition disabled:opacity-50 shadow-sm text-sm font-medium"
+              >
+                {googleLoading
+                  ? <span className="w-4 h-4 border-2 border-gray-400 border-t-transparent rounded-full animate-spin" />
+                  : <GoogleIcon />
+                }
+                Google
+              </button>
+
+              {/* GitHub */}
+              <a
+                href="/api/auth/github"
+                className="flex items-center justify-center gap-2 py-2.5 rounded-lg border border-gray-300 dark:border-[#2D2438] bg-white dark:bg-[#1B1229] text-gray-800 dark:text-white hover:bg-gray-50 dark:hover:bg-[#2D2438] transition shadow-sm text-sm font-medium"
+              >
+                <GitHubIcon />
+                GitHub
+              </a>
+            </div>
+
+            <p className="text-center text-[12px] text-gray-700 dark:text-gray-400 pt-3">
+              Already have an account?{" "}
+              <Link href="/login" className="text-purple-600 dark:text-[#E02994] font-semibold hover:underline">Sign In</Link>
+            </p>
           </div>
         </div>
       </div>

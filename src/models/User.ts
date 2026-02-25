@@ -7,7 +7,11 @@ export interface IUserDocument extends Document {
   password?: string;
   photoURL?: string;
   role: "student" | "instructor" | "admin";
-  provider: "credentials" | "google";
+  provider: "credentials" | "google" | "github";
+  resetToken?: string;
+  resetTokenExpiry?: Date;
+  loginAttempts?: number;
+  lockUntil?: Date;
 }
 
 const UserSchema = new Schema<IUserDocument>(
@@ -24,9 +28,13 @@ const UserSchema = new Schema<IUserDocument>(
     },
     provider: {
       type: String,
-      enum: ["credentials", "google"],
+      enum: ["credentials", "google", "github"],
       default: "credentials",
     },
+    resetToken: { type: String },
+    resetTokenExpiry: { type: Date },
+    loginAttempts: { type: Number, default: 0 },
+    lockUntil: { type: Date },
   },
   { timestamps: true }
 );
