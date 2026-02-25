@@ -134,7 +134,7 @@ const Navbar = () => {
               ))}
               {user && (
                 <Link
-                  href="/dashboard/my-classes"
+                  href="/myclasses"
                   className="hover:text-[#C81D77] transition-colors"
                 >
                   My Classes
@@ -184,11 +184,10 @@ const Navbar = () => {
                     Enroll Now
                   </button>
 
-
-                  <div className="relative" ref={menuRef}>
+                  <div className="relative " ref={menuRef}>
                     <button
                       onClick={() => setShowMenu(!showMenu)}
-                      className="flex items-center p-0.5 rounded-full border-2 border-[#6710C2] hover:scale-105 transition-transform"
+                      className="flex items-center cursor-pointer p-0.5 rounded-full border-2 border-[#6710C2] hover:scale-105 transition-transform"
                     >
                       <AvatarImage />
                     </button>
