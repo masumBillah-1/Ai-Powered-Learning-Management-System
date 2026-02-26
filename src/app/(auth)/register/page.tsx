@@ -251,8 +251,12 @@ const Register = () => {
 <<<<<<< HEAD
               <Link
 =======
+<<<<<<< HEAD
+              <Link
+=======
               <link
 >>>>>>> c17d50a8dfbe0bcf76131a44f848e3622b4ec7e5
+>>>>>>> b09521bfc8c5811bf305686f3055f8dbb3596a84
                 href="/api/auth/github"
                 className="flex items-center justify-center gap-2 py-2.5 rounded-lg border border-gray-300 dark:border-[#2D2438] bg-white dark:bg-[#1B1229] text-gray-800 dark:text-white hover:bg-gray-50 dark:hover:bg-[#2D2438] transition shadow-sm text-sm font-medium"
               >
@@ -261,8 +265,12 @@ const Register = () => {
 <<<<<<< HEAD
               </Link>
 =======
+<<<<<<< HEAD
+              </Link>
+=======
               </link>
 >>>>>>> c17d50a8dfbe0bcf76131a44f848e3622b4ec7e5
+>>>>>>> b09521bfc8c5811bf305686f3055f8dbb3596a84
             </div>
 
             <p className="text-center text-[12px] text-gray-700 dark:text-gray-400 pt-3">
