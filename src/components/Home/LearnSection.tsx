@@ -20,7 +20,7 @@ const LearnSection = () => {
   ];
 
   return (
-    <section className="py-12 md:py-20 bg-white dark:bg-[#020617] w-full overflow-x-hidden">
+    <section className="py-12 md:py-20   w-full overflow-x-hidden">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-full lg:max-w-[1440px]">
         
         <div className="text-center mb-12 md:mb-16">
@@ -42,7 +42,7 @@ const LearnSection = () => {
               whileInView={{ opacity: 1, scale: 1 }}
               viewport={{ once: true }}
               transition={{ duration: 0.5, delay: index * 0.05 }}
-              /* Shadow যোগ করা হয়েছে: shadow-lg এবং hover:shadow-2xl */
+             
               className="relative p-[2px] group rounded-[2rem] sm:rounded-[2.5rem] overflow-hidden flex h-full w-full shadow-lg hover:shadow-[0_20px_50px_rgba(0,0,0,0.1)] dark:hover:shadow-[0_20px_50px_rgba(0,0,0,0.3)] transition-all duration-500"
             >
               <motion.div 
