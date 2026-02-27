@@ -5,6 +5,7 @@ import { Camera, Pencil, X, Check, User, Mail, Phone, Shield, Clock, LogIn } fro
 import toast from "react-hot-toast";
 
 import Footer from "@/components/layout/Footer";
+import Navbar from "@/components/layout/Navbar";
 
 interface UserData {
   _id: string;
@@ -122,6 +123,8 @@ export default function ProfilePage() {
 
   return (
     <>
+
+    <Navbar/>
       
       <div className="min-h-screen bg-white dark:bg-[#05010D] py-10 px-4 transition-colors">
         <div className="max-w-4xl mx-auto space-y-6">
@@ -339,6 +342,9 @@ export default function ProfilePage() {
 
       </div>
       </div>
+
+
+      <Footer/>
     
     </>
   );

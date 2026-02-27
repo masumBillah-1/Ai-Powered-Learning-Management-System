@@ -26,6 +26,7 @@ const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [user, setUser] = useState<UserData | null>(null);
   const [showMenu, setShowMenu] = useState(false);
+  const [isEnrollModalOpen, setIsEnrollModalOpen] = useState(false); // Modal State
   const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -97,7 +98,7 @@ const Navbar = () => {
 
   const navLinks = [
     { name: "Course Details", href: "/courses" },
-    { name: "Student Feedback", href: "/feedback" },
+    { name: "Student Feedback", href: "/student-feedback" },
     { name: "Blog", href: "/blog" },
     { name: "About", href: "/about" },
   ];
@@ -122,7 +123,7 @@ const Navbar = () => {
               ))}
               {user && (
                 <Link
-                  href="/dashboard/my-classes"
+                  href="/myclasses"
                   className="hover:text-[#C81D77] transition-colors"
                 >
                   My Classes
@@ -155,9 +156,8 @@ const Navbar = () => {
                     Login
                   </Link>
                   <button
-                    style={{
-                      background: "linear-gradient(90deg, #FF0F7B, #F89B29)",
-                    }}
+                    onClick={() => setIsEnrollModalOpen(true)}
+                    style={{ background: "linear-gradient(90deg, #FF0F7B, #F89B29)" }}
                     className="text-white px-8 py-2.5 rounded-xl font-extrabold text-sm shadow-md hover:scale-105 transition-all"
                   >
                     Enroll Now
@@ -166,18 +166,17 @@ const Navbar = () => {
               ) : (
                 <div className="flex items-center gap-4">
                   <button
-                    style={{
-                      background: "linear-gradient(90deg, #FF0F7B, #F89B29)",
-                    }}
+                    onClick={() => setIsEnrollModalOpen(true)}
+                    style={{ background: "linear-gradient(90deg, #FF0F7B, #F89B29)" }}
                     className="hidden xl:block text-white px-8 py-2.5 rounded-xl font-extrabold text-sm shadow-lg hover:scale-105 transition-all"
                   >
                     Enroll Now
                   </button>
 
-                  <div className="relative" ref={menuRef}>
+                  <div className="relative " ref={menuRef}>
                     <button
                       onClick={() => setShowMenu(!showMenu)}
-                      className="flex items-center p-0.5 rounded-full border-2 border-[#6710C2] hover:scale-105 transition-transform"
+                      className="flex items-center cursor-pointer p-0.5 rounded-full border-2 border-[#6710C2] hover:scale-105 transition-transform"
                     >
                       <AvatarImage />
                     </button>
@@ -325,9 +324,8 @@ const Navbar = () => {
                     <FaThLarge /> Dashboard
                   </Link>
                   <button
-                    style={{
-                      background: "linear-gradient(90deg, #FF0F7B, #F89B29)",
-                    }}
+                    onClick={() => { setIsOpen(false); setIsEnrollModalOpen(true); }}
+                    style={{ background: "linear-gradient(90deg, #FF0F7B, #F89B29)" }}
                     className="w-full text-white py-4 rounded-2xl font-bold shadow-lg"
                   >
                     Enroll Now
@@ -348,9 +346,8 @@ const Navbar = () => {
                     Login
                   </Link>
                   <button
-                    style={{
-                      background: "linear-gradient(90deg, #FF0F7B, #F89B29)",
-                    }}
+                    onClick={() => { setIsOpen(false); setIsEnrollModalOpen(true); }}
+                    style={{ background: "linear-gradient(90deg, #FF0F7B, #F89B29)" }}
                     className="w-full text-white py-4 rounded-2xl font-bold shadow-lg"
                   >
                     Enroll Now
@@ -361,8 +358,73 @@ const Navbar = () => {
           </div>
         </div>
       </div>
+
+      {/* ENROLL MODAL */}
+      {isEnrollModalOpen && (
+        <div 
+          className="fixed inset-0 z-[200] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-300"
+          onClick={() => setIsEnrollModalOpen(false)}
+        >
+          <div 
+            className="relative bg-white dark:bg-[#1a2236] w-full max-w-[480px] rounded-[32px] overflow-hidden shadow-2xl animate-in zoom-in-95 duration-300"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Close Button */}
+            <button 
+              onClick={() => setIsEnrollModalOpen(false)}
+              className="absolute top-5 right-5 text-gray-400 hover:text-red-500 transition-colors z-10"
+            >
+              <FaTimes size={22} />
+            </button>
+
+            <div className="p-8 md:p-10 text-center">
+              {/* Icon/Illustration */}
+              <div className="flex justify-center mb-6">
+                <div className="w-20 h-20 bg-pink-50 dark:bg-pink-900/20 rounded-full flex items-center justify-center">
+                  <span className="text-4xl animate-bounce">🚀</span>
+                </div>
+              </div>
+
+              <h2 className="text-xl md:text-2xl font-bold text-gray-800 dark:text-white leading-tight mb-4">
+                ৬ মাসে একজন প্রফেশনাল হওয়ার চ্যালেঞ্জ নিতে চাও?
+              </h2>
+              
+              <p className="text-gray-600 dark:text-gray-400 mb-8 font-medium">
+                সঠিক গাইডলাইনে তোমার শেখার যাত্রা শুরু হোক আজই।
+              </p>
+
+              {/* Dates Box */}
+              <div className="bg-gray-50 dark:bg-gray-800/50 rounded-2xl p-5 mb-8 border border-gray-100 dark:border-gray-700">
+                <div className="flex flex-col gap-2 font-bold">
+                  <div className="flex justify-between items-center text-sm md:text-base">
+                    <span className="text-gray-500">এনরোলমেন্ট শুরু:</span>
+                    <span className="text-[#F89B29]">১ আগস্ট, ২০২৬</span>
+                  </div>
+                  <div className="h-[1px] bg-gray-200 dark:bg-gray-700 w-full" />
+                  <div className="flex justify-between items-center text-sm md:text-base">
+                    <span className="text-gray-500">এনরোলমেন্ট শেষ:</span>
+                    <span className="text-[#FF0F7B]">১৫ আগস্ট, ২০২৬</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Action Button */}
+              <Link href="/login" onClick={() => setIsEnrollModalOpen(false)}>
+                <button
+                  style={{ background: "linear-gradient(90deg, #FF0F7B, #F89B29)" }}
+                  className="w-full py-4 rounded-xl text-white font-black text-lg shadow-lg hover:scale-[1.02] active:scale-95 transition-all"
+                >
+                  Register Now
+                </button>
+              </Link>
+            </div>
+          </div>
+        </div>
+      )}
     </nav>
   );
 };
+
+
 
 export default Navbar;
