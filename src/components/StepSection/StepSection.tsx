@@ -31,7 +31,7 @@ const StepSection = () => {
   ];
 
   return (
-    <section className="py-16 px-4 bg-white min-h-screen font-sans">
+    <section className="py-16 px-4  min-h-screen font-sans">
       <div className="max-w-7xl mx-auto text-center">
         {/* Title Header */}
         <motion.div
@@ -41,7 +41,7 @@ const StepSection = () => {
           viewport={{ once: false }}
           className="flex items-center justify-center gap-2 mb-16"
         >
-          <h2 className="text-2xl md:text-4xl font-extrabold text-slate-800">
+          <h2 className="text-2xl md:text-4xl dark:text-white font-extrabold text-slate-800">
             জব/ইন্টার্ন পাওয়ার
           </h2>
           <span className="px-6 py-2 bg-gradient-to-r from-orange-400 to-fuchsia-600 text-white rounded-full text-2xl md:text-4xl font-bold shadow-lg">
@@ -61,18 +61,18 @@ const StepSection = () => {
               className="relative group"
             >
               {/* Number Circle */}
-              <div className="absolute -top-6 left-1/2 -translate-x-1/2 w-14 h-14 bg-fuchsia-50 rounded-full flex items-center justify-center border-2 border-fuchsia-100 z-10 shadow-sm">
+              <div className="absolute -top-6 left-1/2 -translate-x-1/2 w-14 h-14 rounded-full flex items-center justify-center border-2 border-fuchsia-100 z-10 shadow-sm">
                 <span className="text-fuchsia-600 font-bold text-xl">
                   {step.id}
                 </span>
               </div>
 
               {/* Card */}
-              <div className="h-full pt-10 pb-8 px-6 rounded-[2.5rem] border border-fuchsia-200 bg-gradient-to-b from-[#FAF7FD] to-[#EFE4F7] shadow-sm transition-all duration-300 hover:shadow-lg">
+              <div className="h-full pt-10 pb-8 px-6 rounded-[2.5rem] border border-fuchsia-200  shadow-sm transition-all duration-300 hover:shadow-lg">
                 <h3 className="text-xl font-bold text-slate-800 mb-4">
                   {step.title}
                 </h3>
-                <p className="text-slate-500 text-sm leading-relaxed">
+                <p className="text-slate-500 text-sm dark:text-gray-300 leading-relaxed">
                   {step.description}
                 </p>
               </div>

@@ -1,5 +1,5 @@
 "use client";
-import CourseCard from "@/app/dashboard/main/CourseCard";
+import CourseCard from "@/app/(public)/dashboard/main/CourseCard";
 
 export default function MyClassesPage() {
     return (
