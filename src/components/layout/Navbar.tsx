@@ -105,7 +105,7 @@ const Navbar = () => {
 
   return (
     <nav className="bg-[var(--nav-bg)] border-b border-[var(--border-color)] sticky top-0 z-[100] shadow-sm transition-all duration-300">
-      <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-12">
+      <div className="container mx-auto px-4 sm:px-6 lg:px-10">
         <div className="flex justify-between items-center h-20">
           <Logo />
 
@@ -268,7 +268,10 @@ const Navbar = () => {
           <div className="p-6 flex flex-col h-full">
             <div className="flex justify-between items-center mb-6">
               <Logo />
-              <button onClick={() => setIsOpen(false)} className="p-2 text-gray-500">
+              <button
+                onClick={() => setIsOpen(false)}
+                className="p-2 text-gray-500"
+              >
                 <FaTimes size={24} />
               </button>
             </div>
@@ -280,7 +283,9 @@ const Navbar = () => {
                   <span className="font-bold text-gray-800 dark:text-white text-sm truncate">
                     {user.name}
                   </span>
-                  <span className="text-xs text-gray-400 truncate">{user.email}</span>
+                  <span className="text-xs text-gray-400 truncate">
+                    {user.email}
+                  </span>
                 </div>
               </div>
             )}
@@ -293,7 +298,8 @@ const Navbar = () => {
                   className="flex justify-between items-center p-4 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-800 text-gray-800 dark:text-gray-200 font-bold"
                   onClick={() => setIsOpen(false)}
                 >
-                  {link.name} <FaChevronRight size={12} className="text-gray-400" />
+                  {link.name}{" "}
+                  <FaChevronRight size={12} className="text-gray-400" />
                 </Link>
               ))}
               {user && (
