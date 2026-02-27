@@ -42,6 +42,12 @@ export function middleware(req: NextRequest) {
   return NextResponse.next();
 }
 
+// Export as default and named export for compatibility
+export default middleware;
+
+// Also export as proxy for Next.js compatibility
+export const proxy = middleware;
+
 export const config = {
   matcher: [
     "/dashboard/:path*",

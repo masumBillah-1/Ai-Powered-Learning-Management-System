@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono, Hind_Siliguri } from "next/font/google";
 import { Toaster } from "react-hot-toast";
+import SplashWrapper from "@/components/SplashWrapper";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -56,33 +57,35 @@ export default function RootLayout({
         }}
         suppressHydrationWarning
       >
-        <Toaster
-          position="top-center"
-          reverseOrder={false}
-          toastOptions={{
-            duration: 3000,
-            style: {
-              background: "#1f2937",
-              color: "#fff",
-              borderRadius: "8px",
-              padding: "12px 20px",
-              fontSize: "14px",
-            },
-            success: {
-              iconTheme: {
-                primary: "#10b981",
-                secondary: "#fff",
+        <SplashWrapper>
+          <Toaster
+            position="top-center"
+            reverseOrder={false}
+            toastOptions={{
+              duration: 3000,
+              style: {
+                background: "#1f2937",
+                color: "#fff",
+                borderRadius: "8px",
+                padding: "12px 20px",
+                fontSize: "14px",
               },
-            },
-            error: {
-              iconTheme: {
-                primary: "#ef4444",
-                secondary: "#fff",
+              success: {
+                iconTheme: {
+                  primary: "#10b981",
+                  secondary: "#fff",
+                },
               },
-            },
-          }}
-        />
-        {children}
+              error: {
+                iconTheme: {
+                  primary: "#ef4444",
+                  secondary: "#fff",
+                },
+              },
+            }}
+          />
+          {children}
+        </SplashWrapper>
       </body>
     </html>
   );
