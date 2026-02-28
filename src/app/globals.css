@@ -1,6 +1,15 @@
 @import "tailwindcss";
 @plugin "daisyui";
 
+/* CSS Property Support for older browsers */
+@supports not (color: color(display-p3 1 0 0)) {
+  @property --radialprogress {
+    syntax: "<percentage>";
+    inherits: true;
+    initial-value: 0%;
+  }
+}
+
 /* Tailwind-ke dark mode er strategy bole deya */
 @custom-variant dark (&:where(.dark, [data-theme="dark"], .dark *));
 

@@ -18,7 +18,11 @@ const UserSchema = new Schema<IUserDocument>(
   {
     name: { type: String, required: true, trim: true },
     email: { type: String, required: true, unique: true, lowercase: true },
-    phone: { type: String, sparse: true },
+    phone: { 
+      type: String, 
+      sparse: true, // ✅ null values index এ যাবে না
+      trim: true,
+    },
     password: { type: String, minlength: 6 },
     photoURL: { type: String, default: "" },
     role: {
@@ -38,6 +42,10 @@ const UserSchema = new Schema<IUserDocument>(
   },
   { timestamps: true }
 );
+
+// ✅ Indexes
+UserSchema.index({ email: 1 }, { unique: true });
+UserSchema.index({ phone: 1 }, { unique: true, sparse: true }); // phone unique but allow multiple nulls
 
 export default mongoose.models.User ||
   mongoose.model<IUserDocument>("User", UserSchema);
