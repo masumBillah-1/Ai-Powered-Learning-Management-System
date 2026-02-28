@@ -1,20 +1,16 @@
-import { ReactNode } from "react";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 
-interface PublicLayoutProps {
-  children: ReactNode;
-}
-
-export default function PublicLayout({ children }: PublicLayoutProps) {
+export default function PublicLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   return (
     <>
-    <Navbar/>
-    
+      <Navbar />
       <main>{children}</main>
-
-      <Footer/>
- 
+      <Footer />
     </>
   );
 }

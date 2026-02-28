@@ -199,7 +199,7 @@ const Navbar = () => {
                           <FaThLarge className="text-[#6710C2]" /> Dashboard
                         </Link>
                         <Link
-                          href="/dashboard/profile"
+                          href="/viewprofile"
                           className="flex items-center gap-3 px-5 py-3 hover:bg-gray-50 dark:hover:bg-gray-800 font-bold dark:text-gray-200 text-gray-700"
                           onClick={() => setShowMenu(false)}
                         >
