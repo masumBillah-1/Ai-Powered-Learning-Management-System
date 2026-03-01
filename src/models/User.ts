@@ -18,11 +18,16 @@ const UserSchema = new Schema<IUserDocument>(
   {
     name: { type: String, required: true, trim: true },
     email: { type: String, required: true, unique: true, lowercase: true },
-    phone: { 
-      type: String, 
-      sparse: true, // ✅ null values index এ যাবে না
+
+    // ✅ FIX: empty string "" কে null এ convert করো
+    // sparse index শুধু null skip করে, "" skip করে না
+    phone: {
+      type: String,
       trim: true,
+      default: null,
+      set: (v: string) => (v === "" || v === undefined ? null : v),
     },
+
     password: { type: String, minlength: 6 },
     photoURL: { type: String, default: "" },
     role: {
@@ -43,9 +48,8 @@ const UserSchema = new Schema<IUserDocument>(
   { timestamps: true }
 );
 
-// ✅ Indexes
 UserSchema.index({ email: 1 }, { unique: true });
-UserSchema.index({ phone: 1 }, { unique: true, sparse: true }); // phone unique but allow multiple nulls
+UserSchema.index({ phone: 1 }, { unique: true, sparse: true });
 
 export default mongoose.models.User ||
   mongoose.model<IUserDocument>("User", UserSchema);
