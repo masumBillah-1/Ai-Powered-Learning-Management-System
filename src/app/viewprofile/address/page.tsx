@@ -70,7 +70,7 @@ const AddressPage = () => {
           </p>
           <button 
             onClick={() => setIsEditing(true)}
-            className="flex items-center gap-2 bg-purple-600 hover:bg-purple-700 text-white px-6 py-2.5 rounded-full font-medium transition-all shadow-lg shadow-purple-900/20"
+            className="flex items-center gap-2 bg-gradient-to-r from-[#832388] via-[#E3436B] to-[#F0772F] text-white px-6 py-2.5 rounded-full font-medium transition-all shadow-lg shadow-purple-900/20"
           >
             <FaPlus size={14} /> Add Address
           </button>
@@ -171,7 +171,7 @@ const AddressPage = () => {
             </button>
             <button 
               type="submit"
-              className="px-6 py-2 rounded-lg bg-purple-600 hover:bg-purple-700 text-white font-medium transition-all shadow-lg shadow-purple-900/20"
+              className="px-6 py-2 rounded-lg bg-gradient-to-r from-[#832388] via-[#E3436B] to-[#F0772F] text-white font-medium transition-all shadow-lg shadow-purple-900/20"
             >
               Save changes
             </button>

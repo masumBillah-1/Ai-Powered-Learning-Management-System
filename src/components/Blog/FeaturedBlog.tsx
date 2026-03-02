@@ -1,5 +1,6 @@
 "use client";
 import React from "react";
+import Link from "next/link";
 import { motion } from "framer-motion";
 import { FaCalendarAlt, FaUser, FaArrowRight, FaClock } from "react-icons/fa";
 import { HiSparkles } from "react-icons/hi2";
@@ -132,18 +133,20 @@ const FeaturedBlog = () => {
                 </p>
 
                 {/* CTA Button */}
-                <motion.button 
-                  whileHover={{ scale: 1.05, x: 5 }}
-                  whileTap={{ scale: 0.95 }}
-                  className="group/btn inline-flex items-center gap-3 px-8 py-4 rounded-2xl text-white font-black text-lg transition-all shadow-xl hover:shadow-2xl relative overflow-hidden"
-                  style={{ background: "linear-gradient(90deg, #C81D77, #6710C2)" }}
-                >
-                  <span className="relative z-10">Read Full Article</span>
-                  <FaArrowRight className="relative z-10 group-hover/btn:translate-x-2 transition-transform" />
-                  
-                  {/* Shimmer Effect */}
-                  <div className="absolute inset-0 -translate-x-full group-hover/btn:translate-x-full transition-transform duration-1000 bg-gradient-to-r from-transparent via-white/20 to-transparent"></div>
-                </motion.button>
+                <Link href="/blog/best-learning-management-course-bangladesh">
+                  <motion.button 
+                    whileHover={{ scale: 1.05, x: 5 }}
+                    whileTap={{ scale: 0.95 }}
+                    className="group/btn inline-flex items-center gap-3 px-8 py-4 rounded-2xl text-white font-black text-lg transition-all shadow-xl hover:shadow-2xl relative overflow-hidden"
+                    style={{ background: "linear-gradient(90deg, #C81D77, #6710C2)" }}
+                  >
+                    <span className="relative z-10">Read Full Article</span>
+                    <FaArrowRight className="relative z-10 group-hover/btn:translate-x-2 transition-transform" />
+                    
+                    {/* Shimmer Effect */}
+                    <div className="absolute inset-0 -translate-x-full group-hover/btn:translate-x-full transition-transform duration-1000 bg-gradient-to-r from-transparent via-white/20 to-transparent"></div>
+                  </motion.button>
+                </Link>
 
                 {/* Tags */}
                 <div className="flex flex-wrap gap-2 mt-8">

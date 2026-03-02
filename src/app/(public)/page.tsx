@@ -7,20 +7,24 @@ import BootcampFeatures from "@/components/Ctasection/Ctasection";
 import StepSection from "@/components/StepSection/StepSection";
 import SuccessSection from "@/components/SuccessSection/SuccessSection";
 import LearnSection from "@/components/Home/LearnSection";
-import Navbar from "@/components/layout/Navbar";
+import HeroSections from "@/components/mainhome/HeroSections";
+import HeroSectionNew from "@/components/Herosection/HeroSection";
+
 
 
 export default function Home() {
   return (
-    <div className="container mx-auto px-6 py-10">
+    <div className="">
       
+      <HeroSectionNew />
+      <HeroSections />
       <HeroSection />
       <ImpactSection />
       <ProblemSolution />
       <BootcampFeatures />
       <SuccessSection />
       <StepSection />
-      <LearnSection/>
+      <LearnSection />
       <FAQ />
       <JoinNow />
     </div>

@@ -10,15 +10,14 @@ import {
 const Myprofilenavbar = () => {
   const pathname = usePathname();
 
-  // আপনার ইমেজ (image_1a3636.png) অনুযায়ী মেনু আইটেমগুলো
   const menuItems = [
     { name: "My Profile", href: "/viewprofile/myprofile", icon: User },
-    { name: "Additional Info", href: "/viewprofile/additional", icon: InfoCircle },
     { name: "Address", href: "/viewprofile/address", icon: MapPin },
     { name: "Education", href: "/viewprofile/education", icon: GraduationCap },
     { name: "Important Links", href: "/viewprofile/links", icon: LinkIcon },
-    { name: "Skill Set", href: "/viewprofile/skills", icon: Lightbulb },
-    { name: "Job Profile", href: "/viewprofile/job", icon: Briefcase },
+    { name: "Skill Set", href: "/viewprofile/skillset", icon: Lightbulb },
+    { name: "order-history", href: "/viewprofile/", icon: Lightbulb },
+    { name: "certification", href: "/viewprofile/", icon: Lightbulb },
   ];
 
   return (
@@ -34,7 +33,7 @@ const Myprofilenavbar = () => {
         <div className="relative w-28 h-28 rounded-full border-4 border-blue-500/20 p-1 mb-4">
           <div className="w-full h-full rounded-full overflow-hidden relative">
             <Image 
-              src="/profile.jpg" // আপনার পাবলিক ফোল্ডারে ইমেজটি রাখুন
+              src="/profile.jpg"
               alt="Sakib Al Hasan" 
               fill 
               className="object-cover" 

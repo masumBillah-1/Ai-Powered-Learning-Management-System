@@ -9,12 +9,12 @@
     "lint": "eslint"
   },
   "dependencies": {
-    "@types/nodemailer": "^7.0.11",
     "bcryptjs": "^3.0.3",
     "daisyui": "^5.5.18",
+    "dotenv": "^17.3.1",
     "express": "^5.2.1",
     "firebase": "^12.9.0",
-    "framer-motion": "^12.34.1",
+    "framer-motion": "^12.34.3",
     "jsonwebtoken": "^9.0.3",
     "lucide": "^0.564.0",
     "lucide-react": "^0.575.0",
@@ -34,6 +34,7 @@
     "@types/bcryptjs": "^2.4.6",
     "@types/jsonwebtoken": "^9.0.10",
     "@types/node": "^20",
+    "@types/nodemailer": "^7.0.11",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",
