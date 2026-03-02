@@ -140,6 +140,7 @@ const Register = () => {
   return (
     <>
       <Navbar />
+      <title>Register</title>
       <div className="py-16 flex items-center justify-center bg-white dark:bg-[#05010D] px-4 transition-colors relative overflow-hidden min-h-screen">
         <div className="absolute inset-0 bg-gradient-to-br from-purple-50 to-orange-50 dark:from-transparent dark:to-transparent" />
         <div className="absolute inset-0 backdrop-blur-3xl" />

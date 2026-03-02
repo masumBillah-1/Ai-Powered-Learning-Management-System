@@ -1,3 +1,44 @@
+
+
+
+Ruhi apur kaj ======================
+
+student dashboard 
+
+
+🧠 “Now let me find where HomePage is rendered…”
+student dashboard ar continue booton ar satha link kora video open hoba 
+
+আগে দেখি HomePage component কোথায় use / render করা হচ্ছে।
+
+মানে:
+
+HomePage কোন page.tsx বা parent component এ call হচ্ছে সেটা খুঁজবে।
+
+
+MyClasses component
+✅ Added console log for debugging
+✅ All video URLs are correct
+✅ VideoModal component is properly
+
+
+5️ Video modal add করার সময় mistake
+
+তুমি যেহেতু নতুন modal + prop add করতেছিলে — সম্ভবত সেখানে:
+
+prop define করো নাই
+
+type ভুল
+
+component close নাই
+
+state declare নাই
+
+
+
+
+
+
 # 🎓 AI-Powered Learning Management System
 
 <div align="center">

@@ -97,7 +97,6 @@ const VideoModal = ({
   videoUrl,
   title,
 }: {
-  isOpen: boolean;
   onClose: () => void;
   videoUrl: string;
   title: string;
@@ -135,7 +134,9 @@ const th = (dark: boolean, d: string, l: string) => dark ? d : l;
 // ══════════════════════════════════════════════════════════════════════════
 // HOME PAGE
 // ══════════════════════════════════════════════════════════════════════════
-const HomePage = ({ firstName, overallProgress, dark, onPlayVideo }: any) => {
+
+const HomePage = ({ firstName, overallProgress, dark }: any) => {
+
   const card = th(dark, "bg-white/[0.03] border-white/5 hover:border-white/10", "bg-white border-gray-200 hover:border-gray-300 shadow-sm");
   const sub = th(dark, "text-white/40", "text-gray-400");
   const muted = th(dark, "text-white/30", "text-gray-400");
