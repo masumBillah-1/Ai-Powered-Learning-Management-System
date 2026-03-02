@@ -12,12 +12,12 @@ import HeroSectionNew from "@/components/Herosection/HeroSection";
 
 
 
+
 export default function Home() {
   return (
-    <div className="">
-      
+    <div className="">      
       <HeroSectionNew />
-      <HeroSections />
+      <HeroSections /> 
       <HeroSection />
       <ImpactSection />
       <ProblemSolution />
