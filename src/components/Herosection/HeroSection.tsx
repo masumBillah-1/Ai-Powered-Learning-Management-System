@@ -26,8 +26,8 @@ const HeroSection: React.FC = () => {
         ══════════════════════════════════════ */
         .hero-wrap {
           position: relative;
-          width: 100%;
-          min-height: 100vh;
+          width: 100vw;
+          height: 100vh;
           overflow: hidden;
           display: flex;
           align-items: center;
@@ -41,10 +41,10 @@ const HeroSection: React.FC = () => {
           inset: 0;
           z-index: 0;
           object-fit: cover !important;
-          object-position: center top !important;
-          width: 100% !important;
-          height: 100% !important;
-          transform: scale(1.04);
+          object-position: center center !important;
+          width: 100vw !important;
+          height: 100vh !important;
+          transform: scale(1.02);
           animation: heroZoom 18s ease-in-out infinite alternate;
         }
         @keyframes heroZoom {
@@ -249,8 +249,8 @@ const HeroSection: React.FC = () => {
         .hero-content {
           position: relative;
           z-index: 10;
-          width: 100%;
-          max-width: 900px;
+          width: 100vw;
+          max-width: 100vw;
           display: flex;
           flex-direction: column;
           align-items: center;
@@ -324,15 +324,14 @@ const HeroSection: React.FC = () => {
           animation: heroFadeDown 0.9s 0.05s ease both;
         }
 
-        /* ══════════════════════════════════════
-           HEADLINE — Ultra Premium Typography
-        ══════════════════════════════════════ */
+        /* ── Headline ── */
         .hero-headline {
           font-family: 'Nunito', sans-serif;
           font-weight: 900;
           line-height: 1.05;
           letter-spacing: -0.025em;
-          max-width: 840px;
+          width: 100%;
+          max-width: 100vw;
           margin-bottom: 28px;
           animation: heroFadeDown 0.9s 0.12s ease both;
           color: #fff;
@@ -342,21 +341,21 @@ const HeroSection: React.FC = () => {
         /* Line 1 — big bold white */
         .hl-l1 {
           display: block;
-          font-size: clamp(2.8rem, 7.5vw, 5.6rem);
+          font-size: clamp(3.5rem, 10vw, 8rem);
           margin-bottom: 2px;
         }
 
         /* Line 2 — gradient + larger */
         .hl-l2 {
           display: block;
-          font-size: clamp(2.8rem, 7.5vw, 5.6rem);
+          font-size: clamp(3.5rem, 10vw, 8rem);
           margin-bottom: 2px;
         }
 
         /* Line 3 — italic, smaller, elegant */
         .hl-l3 {
           display: block;
-          font-size: clamp(2rem, 5.2vw, 3.8rem);
+          font-size: clamp(2.5rem, 7vw, 5.5rem);
           font-style: italic;
           letter-spacing: 0.01em;
           margin-top: 6px;

@@ -12,7 +12,7 @@ export async function POST(req: NextRequest) {
 
     const { name, email, phone, password, photoURL, provider } = await req.json();
 
-    // ✅ Google/GitHub login
+    // ── Google / GitHub ────────────────────────────────────────────────
     if (provider === "google" || provider === "github") {
       let user = await User.findOne({ email });
 
@@ -23,7 +23,7 @@ export async function POST(req: NextRequest) {
           photoURL: photoURL || "",
           provider,
           role: "student",
-          // ✅ phone field intentionally omitted for social logins
+          // ✅ phone intentionally omitted — social login এ phone নেই
         });
       } else {
         user.photoURL = photoURL || user.photoURL;
@@ -38,7 +38,6 @@ export async function POST(req: NextRequest) {
 
       const response = NextResponse.json({
         success: true,
-        message: `${provider} login successful!`,
         token,
         user: {
           _id: user._id,
@@ -60,7 +59,7 @@ export async function POST(req: NextRequest) {
       return response;
     }
 
-    // ✅ Email/Password register
+    // ── Email / Password Register ──────────────────────────────────────
     if (!name || !email || !password) {
       return NextResponse.json(
         { error: "Name, email and password required" },
@@ -70,18 +69,16 @@ export async function POST(req: NextRequest) {
 
     const existing = await User.findOne({ email });
     if (existing) {
-      return NextResponse.json(
-        { error: "Email already exists" },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "Email already exists" }, { status: 400 });
     }
 
-    // ✅ Check if phone already exists (if provided)
-    if (phone && phone.trim()) {
-      const phoneExists = await User.findOne({ phone: phone.trim() });
+    // ✅ Phone check — শুধু তখনই check করো যদি phone দেওয়া হয়েছে
+    const cleanPhone = phone && phone.trim() ? phone.trim() : null;
+    if (cleanPhone) {
+      const phoneExists = await User.findOne({ phone: cleanPhone });
       if (phoneExists) {
         return NextResponse.json(
-          { error: "Phone number already exists" },
+          { error: "Phone number already registered. অন্য নম্বর ব্যবহার করুন।" },
           { status: 400 }
         );
       }
@@ -89,7 +86,7 @@ export async function POST(req: NextRequest) {
 
     const hashed = await bcrypt.hash(password, 10);
 
-    // ✅ Create user object - only include phone if it's valid
+    // ✅ phone null হলে userData তে রাখবো না
     const userData: any = {
       name,
       email,
@@ -98,24 +95,16 @@ export async function POST(req: NextRequest) {
       provider: "credentials",
     };
 
-    // Only add phone if it exists and is not empty
-    if (phone && phone.trim()) {
-      userData.phone = phone.trim();
+    if (cleanPhone) {
+      userData.phone = cleanPhone;
     }
 
     const user = await User.create(userData);
-
-    const token = jwt.sign(
-      { userId: user._id, email: user.email, role: user.role },
-      JWT_SECRET,
-      { expiresIn: "7d" }
-    );
 
     return NextResponse.json(
       {
         success: true,
         message: "Registration successful!",
-        token,
         user: {
           _id: user._id,
           name: user.name,
@@ -129,24 +118,17 @@ export async function POST(req: NextRequest) {
   } catch (err: any) {
     console.error("❌ Register error:", err.message);
 
-    // Handle duplicate key errors
     if (err.code === 11000) {
-      if (err.message.includes("email")) {
+      if (err.keyPattern?.email) {
+        return NextResponse.json({ error: "Email already exists" }, { status: 400 });
+      }
+      if (err.keyPattern?.phone) {
         return NextResponse.json(
-          { error: "Email already exists" },
+          { error: "Phone number already registered. অন্য নম্বর ব্যবহার করুন।" },
           { status: 400 }
         );
       }
-      if (err.message.includes("phone")) {
-        return NextResponse.json(
-          { error: "Phone number already exists" },
-          { status: 400 }
-        );
-      }
-      return NextResponse.json(
-        { error: "Duplicate data found" },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "Duplicate data found" }, { status: 400 });
     }
 
     return NextResponse.json({ error: err.message }, { status: 500 });
