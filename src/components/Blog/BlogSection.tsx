@@ -57,15 +57,7 @@ const BlogSection = () => {
           <h2 className="text-2xl md:text-3xl font-extrabold text-gray-900 dark:text-white flex items-center gap-2">
             Full Blog Section <span className="text-[#C81D77]">📚</span>
           </h2>
-          <Link 
-            href="/blog" 
-            className="flex items-center gap-2 text-gray-600 dark:text-gray-300 font-bold hover:text-[#C81D77] transition-colors"
-          >
-            See More Blog{" "}
-            <span className="bg-[#8B2FF1] p-2 rounded-lg text-white">
-              <FaExternalLinkAlt size={14} />
-            </span>
-          </Link>
+       
         </div>
 
         {/* Blog Grid */}
