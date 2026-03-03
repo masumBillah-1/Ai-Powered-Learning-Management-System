@@ -25,20 +25,18 @@ type Props = {
   userId: string;
   userName: string;
   userRole: string;
-  userAvatar?: string;
 };
 
-export default function LiveChat({ userId, userName, userRole, userAvatar }: Props) {
+export default function LiveChat({ userId, userName, userRole }: Props) {
   const [socket, setSocket] = useState<Socket | null>(null);
   const [connected, setConnected] = useState(false);
   const [onlineStaff, setOnlineStaff] = useState<OnlineUser[]>([]);
   const [selectedUser, setSelectedUser] = useState<OnlineUser | null>(null);
   const [messages, setMessages] = useState<LiveMsg[]>([]);
   const [input, setInput] = useState("");
-  const [isTyping, setIsTyping] = useState(false);
   const [typingUser, setTypingUser] = useState("");
   const bottomRef = useRef<HTMLDivElement>(null);
-  const typingTimer = useRef<NodeJS.Timeout>();
+  const typingTimer = useRef<NodeJS.Timeout | null>(null);
 
   const roomId = selectedUser
     ? [userId, selectedUser.userId].sort().join("_")
@@ -74,7 +72,12 @@ export default function LiveChat({ userId, userName, userRole, userAvatar }: Pro
 
     s.on("typing:hide", () => setTypingUser(""));
 
-    return () => { s.disconnect(); };
+    return () => { 
+      s.disconnect(); 
+      if (typingTimer.current) {
+        clearTimeout(typingTimer.current);
+      }
+    };
   }, [userId, userName, userRole]);
 
   // Room join when user selected
@@ -114,7 +117,9 @@ export default function LiveChat({ userId, userName, userRole, userAvatar }: Pro
     setInput(val);
     if (!socket || !roomId) return;
     socket.emit("typing:start", { roomId, userName });
-    clearTimeout(typingTimer.current);
+    if (typingTimer.current) {
+      clearTimeout(typingTimer.current);
+    }
     typingTimer.current = setTimeout(() => {
       socket.emit("typing:stop", { roomId });
     }, 1500);
