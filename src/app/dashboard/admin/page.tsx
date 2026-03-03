@@ -797,7 +797,7 @@ export default function AdminDashboard() {
           <div className="mb-4">
             <p className={`text-[10px] font-bold uppercase tracking-wider mb-2 px-4 ${sSub}`}>Main Menu</p>
             {mainMenuItems.map(({ id, label, Icon }) => {
-              // Use Link for separate pages (announcements, quiz)
+              // Use Link for separate pages (announcements, quiz, courses)
               if (id === "announcements") {
                 return (
                   <Link key={id} href="/dashboard/admin/announcements"
@@ -811,6 +811,16 @@ export default function AdminDashboard() {
               if (id === "quiz") {
                 return (
                   <Link key={id} href="/dashboard/admin/quiz"
+                    className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 border cursor-pointer ${navIdle}`}>
+                    <span><Icon /></span>
+                    {label}
+                  </Link>
+                );
+              }
+
+              if (id === "courses") {
+                return (
+                  <Link key={id} href="/dashboard/admin/courses"
                     className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 border cursor-pointer ${navIdle}`}>
                     <span><Icon /></span>
                     {label}
