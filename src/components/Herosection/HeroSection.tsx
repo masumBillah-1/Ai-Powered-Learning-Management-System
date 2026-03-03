@@ -26,7 +26,7 @@ const HeroSection: React.FC = () => {
         ══════════════════════════════════════ */
         .hero-wrap {
           position: relative;
-          width: 100vw;
+          width: 100%;
           height: 100vh;
           overflow: hidden;
           display: flex;
@@ -42,8 +42,8 @@ const HeroSection: React.FC = () => {
           z-index: 0;
           object-fit: cover !important;
           object-position: center center !important;
-          width: 100vw !important;
-          height: 100vh !important;
+          width: 100% !important;
+          height: 100% !important;
           transform: scale(1.02);
           animation: heroZoom 18s ease-in-out infinite alternate;
         }
@@ -249,8 +249,8 @@ const HeroSection: React.FC = () => {
         .hero-content {
           position: relative;
           z-index: 10;
-          width: 100vw;
-          max-width: 100vw;
+          width: 100%;
+          max-width: 100%;
           display: flex;
           flex-direction: column;
           align-items: center;

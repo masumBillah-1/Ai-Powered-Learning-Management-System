@@ -177,7 +177,6 @@ export default function FloatingChat({
                 userId={userId}
                 userName={userName}
                 userRole={userRole}
-                userAvatar={userAvatar}
               />
             )}
           </div>
