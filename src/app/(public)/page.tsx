@@ -9,6 +9,7 @@ import SuccessSection from "@/components/SuccessSection/SuccessSection";
 import LearnSection from "@/components/Home/LearnSection";
 import HeroSections from "@/components/mainhome/HeroSections";
 import HeroSectionNew from "@/components/Herosection/HeroSection";
+import Timeline from "@/components/Timeline/Timeline";
 
 
 
@@ -23,6 +24,7 @@ export default function Home() {
       <ProblemSolution />
       <BootcampFeatures />
       <SuccessSection />
+      <Timeline/>
       <StepSection />
       <LearnSection />
       <FAQ />
