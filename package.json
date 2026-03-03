@@ -5,10 +5,13 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "start": "next start",
-    "lint": "eslint"
+    "start": "next start -p $PORT",
+    "lint": "eslint",
+    "socket": "ts-node src/server/socket-server.ts",
+    "socket:dev": "nodemon --exec ts-node src/server/socket-server.ts"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.78.0",
     "bcryptjs": "^3.0.3",
     "daisyui": "^5.5.18",
     "dotenv": "^17.3.1",
@@ -27,7 +30,9 @@
     "react-hook-form": "^7.71.1",
     "react-hot-toast": "^2.6.0",
     "react-icons": "^5.5.0",
-    "resend": "^6.9.2"
+    "resend": "^6.9.2",
+    "socket.io": "^4.8.3",
+    "socket.io-client": "^4.8.3"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
@@ -41,6 +46,7 @@
     "eslint-config-next": "16.1.6",
     "mongodb-memory-server": "^11.0.1",
     "tailwindcss": "^4",
+    "ts-node": "^10.9.2",
     "typescript": "^5"
   }
-}
+}   

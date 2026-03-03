@@ -37,7 +37,10 @@ const UserSchema = new Schema<IUserDocument>(
     loginAttempts:    { type: Number, default: 0 },
     lockUntil:        { type: Date },
   },
-  { timestamps: true }
+  { 
+    timestamps: true,
+    collection: "users" // ✅ Fixed collection name in code
+  }
 );
 
 // ✅ শুধু email unique index — phone index সম্পূর্ণ remove
