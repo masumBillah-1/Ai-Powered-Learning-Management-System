@@ -41,16 +41,11 @@ export default function FloatingChat({
     );
   };
 
-  // ── Responsive panel position & size ──────────────────
-  // mobile: fullscreen সবসময়
-  // tablet: bottom-right, medium size
-  // desktop: bottom-right, বড়
   const panelPositionClass = () => {
     if (panelSize === "fullscreen") return "inset-0";
     if (panelSize === "large")
-      return "bottom-0 right-0 left-0 top-0 sm:inset-auto sm:bottom-6 sm:right-6 sm:w-[480px] sm:h-[680px] md:w-[560px] md:h-[740px]";
-    // normal
-    return "bottom-0 right-0 left-0 top-0 sm:inset-auto sm:bottom-28 sm:right-6 sm:w-[92vw] sm:max-w-[400px] sm:h-[560px] md:max-w-[440px] md:h-[600px]";
+      return "top-[72px] right-0 bottom-0 w-full sm:inset-auto sm:top-auto sm:bottom-20 sm:right-10 sm:w-[480px] sm:h-[680px] md:w-[560px] md:h-[440px]";
+    return "top-[72px] right-0 bottom-0 w-full sm:inset-auto sm:top-auto sm:bottom-20 sm:right-6 sm:w-[90vw] sm:max-w-[400px] sm:h-[460px] md:max-w-[440px] md:h-[400px]";
   };
 
   const roundedClass =
@@ -58,7 +53,6 @@ export default function FloatingChat({
       ? "rounded-none"
       : "rounded-none sm:rounded-2xl";
 
-  // Size icon
   const SizeIcon = () => {
     if (panelSize === "fullscreen") {
       return (
@@ -76,15 +70,13 @@ export default function FloatingChat({
 
   return (
     <>
-      {/* ══════════════════════════════════════════
-          Chat Panel
-      ══════════════════════════════════════════ */}
+      {/* Chat Panel */}
       <div
-        className={`fixed z-50 transition-all duration-300 ease-out
+        className={`fixed z-[9999] transition-all duration-300 ease-out
           ${panelPositionClass()}
           ${activePanel
             ? "opacity-100 translate-y-0 scale-100 pointer-events-auto"
-            : "opacity-0 translate-y-6 scale-95 pointer-events-none"
+            : "opacity-0 translate-y-5 scale-95 pointer-events-none"
           }`}
       >
         <div className={`w-full h-full bg-base-200 shadow-2xl border border-base-300 flex flex-col overflow-hidden ${roundedClass}`}>
@@ -121,7 +113,6 @@ export default function FloatingChat({
 
             {/* Controls */}
             <div className="flex items-center gap-1">
-              {/* Switch — শুধু sm+ এ দেখাবে */}
               <button
                 onClick={() => openPanel(activePanel === "ai" ? "live" : "ai")}
                 className="btn btn-ghost btn-xs gap-1 text-[10px] normal-case hidden sm:flex"
@@ -132,7 +123,6 @@ export default function FloatingChat({
                 {activePanel === "ai" ? "Live" : "AI"}
               </button>
 
-              {/* Switch mobile এ icon only */}
               <button
                 onClick={() => openPanel(activePanel === "ai" ? "live" : "ai")}
                 className="btn btn-ghost btn-xs btn-circle sm:hidden"
@@ -143,7 +133,6 @@ export default function FloatingChat({
                 </svg>
               </button>
 
-              {/* Size toggle */}
               <button
                 onClick={toggleSize}
                 className="btn btn-ghost btn-xs btn-circle"
@@ -152,7 +141,6 @@ export default function FloatingChat({
                 <SizeIcon />
               </button>
 
-              {/* Close */}
               <button onClick={closePanel} className="btn btn-ghost btn-xs btn-circle">
                 <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12"/>
@@ -161,7 +149,7 @@ export default function FloatingChat({
             </div>
           </div>
 
-          {/* Content — fullscreen এ text বড় */}
+          {/* Content */}
           <div className={`flex-1 min-h-0 ${
             panelSize === "fullscreen"
               ? "text-base [&_textarea]:text-base [&_.chat-bubble]:text-base [&_.text-sm]:text-base [&_.text-xs]:text-sm"
@@ -183,17 +171,14 @@ export default function FloatingChat({
         </div>
       </div>
 
-      {/* ══════════════════════════════════════════
-          FAB — fullscreen এ লুকায়
-      ══════════════════════════════════════════ */}
+      {/* FAB — fullscreen এ লুকায় */}
       {panelSize !== "fullscreen" && (
-        <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end gap-3">
+        <div className="fixed bottom-6 right-6 z-[9999] flex flex-col items-end gap-3">
 
           {/* Expanded buttons */}
           <div className={`flex flex-col items-end gap-2 transition-all duration-300 ${
             fabOpen ? "opacity-100 translate-y-0 pointer-events-auto" : "opacity-0 translate-y-4 pointer-events-none"
           }`}>
-            {/* AI */}
             <div className="flex items-center gap-2">
               <span className="bg-neutral text-neutral-content text-xs px-3 py-1.5 rounded-full shadow font-medium whitespace-nowrap">
                 AI Assistant
@@ -208,7 +193,6 @@ export default function FloatingChat({
               </button>
             </div>
 
-            {/* Live */}
             <div className="flex items-center gap-2">
               <span className="bg-neutral text-neutral-content text-xs px-3 py-1.5 rounded-full shadow font-medium whitespace-nowrap">
                 Live Support
