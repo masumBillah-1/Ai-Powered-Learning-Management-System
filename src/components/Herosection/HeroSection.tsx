@@ -7,9 +7,6 @@ const HeroSection: React.FC = () => {
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Nunito:ital,wght@0,400;0,700;0,800;0,900;1,900&family=Poppins:wght@400;500;600;700&display=swap');
 
-        /* ══════════════════════════════════════
-           BRAND TOKENS
-        ══════════════════════════════════════ */
         :root {
           --bp: #FF0F7B;
           --bo: #F89B29;
@@ -21,9 +18,6 @@ const HeroSection: React.FC = () => {
           --g3: linear-gradient(135deg, #FF0F7B 0%, #832388 100%);
         }
 
-        /* ══════════════════════════════════════
-           SECTION
-        ══════════════════════════════════════ */
         .hero-wrap {
           position: relative;
           width: 100vw;
@@ -35,7 +29,6 @@ const HeroSection: React.FC = () => {
           font-family: 'Poppins', sans-serif;
         }
 
-        /* ── Background image ── */
         .hero-bg {
           position: absolute !important;
           inset: 0;
@@ -44,19 +37,13 @@ const HeroSection: React.FC = () => {
           object-position: center center !important;
           width: 100vw !important;
           height: 100vh !important;
-          transform: scale(1.02);
           animation: heroZoom 18s ease-in-out infinite alternate;
         }
         @keyframes heroZoom {
-          from { transform: scale(1.04); }
-          to   { transform: scale(1.10); }
+          from { transform: scale(1.00); }
+          to   { transform: scale(1.03); }
         }
 
-        /* ══════════════════════════════════════
-           LAYERED OVERLAY SYSTEM
-        ══════════════════════════════════════ */
-
-        /* Layer 1 — deep color wash */
         .hero-ov1 {
           position: absolute; inset: 0; z-index: 1;
           background: linear-gradient(
@@ -77,7 +64,6 @@ const HeroSection: React.FC = () => {
           );
         }
 
-        /* Layer 2 — radial vignette from edges */
         .hero-ov2 {
           position: absolute; inset: 0; z-index: 2;
           background:
@@ -92,7 +78,6 @@ const HeroSection: React.FC = () => {
             radial-gradient(ellipse 50% 50% at 100% 0%,  rgba(131,35,136,0.30) 0%, transparent 70%);
         }
 
-        /* Layer 3 — animated mesh shimmer */
         .hero-ov3 {
           position: absolute; inset: 0; z-index: 3;
           background: linear-gradient(
@@ -109,7 +94,6 @@ const HeroSection: React.FC = () => {
           50%       { background-position: 100% 100%; }
         }
 
-        /* Layer 4 — frosted glass bottom for text readability */
         .hero-ov4 {
           position: absolute;
           bottom: 0; left: 0;
@@ -131,11 +115,6 @@ const HeroSection: React.FC = () => {
           );
         }
 
-        /* ══════════════════════════════════════
-           DECORATIVE ELEMENTS
-        ══════════════════════════════════════ */
-
-        /* Animated noise texture overlay */
         .hero-noise {
           position: absolute; inset: 0; z-index: 5;
           opacity: 0.03;
@@ -144,7 +123,6 @@ const HeroSection: React.FC = () => {
           background-size: 200px 200px;
         }
 
-        /* Glowing orbs */
         .hero-orb {
           position: absolute;
           border-radius: 50%;
@@ -169,7 +147,7 @@ const HeroSection: React.FC = () => {
           width: 300px; height: 300px;
           bottom: 5%; left: 50%; transform: translateX(-50%);
           background: radial-gradient(circle, rgba(131,35,136,0.18) 0%, transparent 65%);
-          animation: heroOrbDrift 10s ease-in-out infinite;
+          animation: heroOrbDrift3 10s ease-in-out infinite;
           filter: blur(1px);
         }
         @keyframes heroOrbDrift {
@@ -177,13 +155,11 @@ const HeroSection: React.FC = () => {
           33%       { transform: translate(30px, -20px) scale(1.08); }
           66%       { transform: translate(-20px, 15px) scale(0.95); }
         }
-        .hero-orb-3 { animation-name: heroOrbDrift3; }
         @keyframes heroOrbDrift3 {
           0%, 100% { transform: translateX(-50%) scale(1); }
           50%       { transform: translateX(-48%) scale(1.1); }
         }
 
-        /* Sparkle stars */
         .hero-spark {
           position: absolute;
           z-index: 7;
@@ -210,7 +186,6 @@ const HeroSection: React.FC = () => {
           75%       { opacity: 0.5; transform: scale(0.8) rotate(270deg); }
         }
 
-        /* Floating ring accent */
         .hero-ring {
           position: absolute;
           border-radius: 50%;
@@ -243,9 +218,6 @@ const HeroSection: React.FC = () => {
           to   { transform: rotate(360deg); }
         }
 
-        /* ══════════════════════════════════════
-           MAIN CONTENT
-        ══════════════════════════════════════ */
         .hero-content {
           position: relative;
           z-index: 10;
@@ -258,7 +230,6 @@ const HeroSection: React.FC = () => {
           padding: 100px 24px 80px;
         }
 
-        /* ── Badge ── */
         .hero-badge {
           display: inline-flex;
           align-items: center;
@@ -312,7 +283,6 @@ const HeroSection: React.FC = () => {
         }
         .hero-badge-avatars span:first-child { margin-left: 0; }
 
-        /* ── Eyebrow ── */
         .hero-eyebrow {
           display: block;
           font-size: 11.5px;
@@ -324,7 +294,6 @@ const HeroSection: React.FC = () => {
           animation: heroFadeDown 0.9s 0.05s ease both;
         }
 
-        /* ── Headline ── */
         .hero-headline {
           font-family: 'Nunito', sans-serif;
           font-weight: 900;
@@ -337,22 +306,16 @@ const HeroSection: React.FC = () => {
           color: #fff;
           text-shadow: 0 2px 30px rgba(0,0,0,0.3);
         }
-
-        /* Line 1 — big bold white */
         .hl-l1 {
           display: block;
           font-size: clamp(3.5rem, 10vw, 8rem);
           margin-bottom: 2px;
         }
-
-        /* Line 2 — gradient + larger */
         .hl-l2 {
           display: block;
           font-size: clamp(3.5rem, 10vw, 8rem);
           margin-bottom: 2px;
         }
-
-        /* Line 3 — italic, smaller, elegant */
         .hl-l3 {
           display: block;
           font-size: clamp(2.5rem, 7vw, 5.5rem);
@@ -360,8 +323,6 @@ const HeroSection: React.FC = () => {
           letter-spacing: 0.01em;
           margin-top: 6px;
         }
-
-        /* Gradient text */
         .hl-grad {
           background: var(--g1);
           -webkit-background-clip: text;
@@ -376,8 +337,6 @@ const HeroSection: React.FC = () => {
           background-clip: text;
           display: inline;
         }
-
-        /* Animated underline on "Smarter" */
         .hl-underline {
           position: relative;
           display: inline-block;
@@ -396,8 +355,6 @@ const HeroSection: React.FC = () => {
           from { transform: scaleX(0); opacity: 0; }
           to   { transform: scaleX(1); opacity: 1; }
         }
-
-        /* Highlight box behind "Faster" */
         .hl-box {
           position: relative;
           display: inline-block;
@@ -417,8 +374,6 @@ const HeroSection: React.FC = () => {
           from { opacity:0; transform:scaleX(0.4); }
           to   { opacity:0.22; transform:scaleX(1); }
         }
-
-        /* "Succeed Anywhere" — extra glow */
         .hl-glow {
           background: var(--g2);
           -webkit-background-clip: text;
@@ -427,7 +382,6 @@ const HeroSection: React.FC = () => {
           filter: drop-shadow(0 0 20px rgba(255,15,123,0.5));
         }
 
-        /* ── Subtext ── */
         .hero-sub {
           font-size: clamp(14px, 1.8vw, 16px);
           color: rgba(255,255,255,0.78);
@@ -443,7 +397,6 @@ const HeroSection: React.FC = () => {
           box-shadow: inset 0 1px 0 rgba(255,255,255,0.1);
         }
 
-        /* ── Buttons ── */
         .hero-btns {
           display: flex;
           flex-wrap: wrap;
@@ -451,8 +404,6 @@ const HeroSection: React.FC = () => {
           justify-content: center;
           animation: heroFadeDown 0.9s 0.38s ease both;
         }
-
-        /* Primary */
         .hero-btn {
           position: relative;
           display: inline-flex;
@@ -475,7 +426,6 @@ const HeroSection: React.FC = () => {
             0 0 80px rgba(255,15,123,0.15);
           transition: transform 0.3s ease, box-shadow 0.3s ease;
         }
-        /* shimmer sweep */
         .hero-btn::after {
           content: '';
           position: absolute;
@@ -500,8 +450,6 @@ const HeroSection: React.FC = () => {
         .hero-btn > * { position: relative; z-index: 1; }
         .hero-btn svg { transition: transform 0.2s ease; }
         .hero-btn:hover svg { transform: translateX(5px); }
-
-        /* Outline */
         .hero-btn-ghost {
           display: inline-flex;
           align-items: center;
@@ -537,9 +485,6 @@ const HeroSection: React.FC = () => {
           border: 1px solid rgba(255,255,255,0.3);
         }
 
-        /* ══════════════════════════════════════
-           FLOATING STAT CARDS
-        ══════════════════════════════════════ */
         .hero-stat {
           position: absolute;
           z-index: 10;
@@ -550,7 +495,6 @@ const HeroSection: React.FC = () => {
           border-radius: 20px;
           font-family: 'Nunito', sans-serif;
           animation: heroFloatY 4s ease-in-out infinite;
-          /* glassmorphism */
           background: rgba(255,255,255,0.12);
           backdrop-filter: blur(20px);
           border: 1px solid rgba(255,255,255,0.22);
@@ -577,21 +521,14 @@ const HeroSection: React.FC = () => {
           color: rgba(255,255,255,0.65);
           margin-top: 2px;
         }
-
         .stat-students { left: 3%; top: 35%; animation-delay: 0s; }
         .stat-courses  { right: 3%; top: 28%; animation-delay: 1.6s; }
         .stat-rating   { right: 4%; bottom: 26%; animation-delay: 0.9s; }
-
-        /* accent color per card */
         .stat-students .s-icon { background: linear-gradient(135deg, rgba(255,15,123,0.3), rgba(131,35,136,0.2)); }
         .stat-courses  .s-icon { background: linear-gradient(135deg, rgba(248,155,41,0.3), rgba(227,67,107,0.2)); }
         .stat-rating   .s-icon { background: linear-gradient(135deg, rgba(253,224,71,0.3), rgba(248,155,41,0.2)); }
-
         .hero-stars { color: #FDE047; font-size: 12px; letter-spacing: 1px; }
 
-        /* ══════════════════════════════════════
-           BOTTOM FADE
-        ══════════════════════════════════════ */
         .hero-bottom {
           position: absolute;
           bottom: 0; left: 0;
@@ -601,9 +538,6 @@ const HeroSection: React.FC = () => {
           background: linear-gradient(to bottom, transparent, rgba(10,2,18,0.6));
         }
 
-        /* ══════════════════════════════════════
-           KEYFRAMES
-        ══════════════════════════════════════ */
         @keyframes heroFloatY {
           0%, 100% { transform: translateY(0); }
           50%       { transform: translateY(-14px); }
@@ -613,9 +547,6 @@ const HeroSection: React.FC = () => {
           to   { opacity:1; transform:translateY(0); }
         }
 
-        /* ══════════════════════════════════════
-           RESPONSIVE
-        ══════════════════════════════════════ */
         @media (max-width: 768px) {
           .stat-students { left:2%; top:auto; bottom:44%; }
           .stat-courses  { right:2%; top:auto; bottom:56%; }
@@ -629,8 +560,6 @@ const HeroSection: React.FC = () => {
       `}</style>
 
       <section className="hero-wrap">
-
-        {/* ── Background image ── */}
         <Image
           src="/home-background-min.webp"
           alt="Students learning"
@@ -640,31 +569,26 @@ const HeroSection: React.FC = () => {
           quality={92}
         />
 
-        {/* ── Layered overlays ── */}
         <div className="hero-ov1" />
         <div className="hero-ov2" />
         <div className="hero-ov3" />
         <div className="hero-ov4" />
         <div className="hero-noise" />
 
-        {/* ── Glowing orbs ── */}
         <div className="hero-orb hero-orb-1" />
         <div className="hero-orb hero-orb-2" />
         <div className="hero-orb hero-orb-3" />
 
-        {/* ── Sparkle stars ── */}
         <span className="hero-spark hs1" />
         <span className="hero-spark hs2" />
         <span className="hero-spark hs3" />
         <span className="hero-spark hs4" />
         <span className="hero-spark hs5" />
 
-        {/* ── Rotating rings ── */}
         <div className="hero-ring ring-1" />
         <div className="hero-ring ring-2" />
         <div className="hero-ring ring-3" />
 
-        {/* ── Floating stat cards ── */}
         <div className="hero-stat stat-students">
           <div className="s-icon">👥</div>
           <div>
@@ -689,10 +613,7 @@ const HeroSection: React.FC = () => {
           </div>
         </div>
 
-        {/* ── Main content ── */}
         <div className="hero-content">
-
-          {/* Badge */}
           <div className="hero-badge">
             <div className="hero-badge-avatars">
               <span>😊</span>
@@ -706,35 +627,26 @@ const HeroSection: React.FC = () => {
             </div>
           </div>
 
-          {/* Headline */}
           <h1 className="hero-headline">
             <span className="hero-eyebrow">✦ Your future starts here ✦</span>
-
-            {/* Learn Smarter. */}
             <span className="hl-l1">
               Learn{' '}
               <span className="hl-grad hl-underline">Smarter.</span>
             </span>
-
-            {/* Grow Faster. */}
             <span className="hl-l2">
               Grow{' '}
               <span className="hl-grad hl-box">Faster.</span>
             </span>
-
-            {/* Succeed Anywhere. */}
             <span className="hl-l3">
               <span className="hl-glow">Succeed Anywhere.</span>
             </span>
           </h1>
 
-          {/* Subtext */}
           <p className="hero-sub">
             Practical, industry-ready courses taught by expert instructors.
             Learn at your own pace or live from anywhere in the world.
           </p>
 
-          {/* Buttons */}
           <div className="hero-btns">
             <a href="#" className="hero-btn">
               <span>Explore Courses</span>
@@ -751,7 +663,6 @@ const HeroSection: React.FC = () => {
           </div>
         </div>
 
-        {/* ── Bottom fade ── */}
         <div className="hero-bottom" />
       </section>
     </>
