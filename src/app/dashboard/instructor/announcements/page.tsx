@@ -74,7 +74,7 @@ const Announcements = () => {
         variants={itemVars}
         className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-800 overflow-hidden"
       >
-        {/* Filters */}
+       
         <div className="p-6 flex flex-col md:flex-row gap-4 border-b dark:border-slate-800">
           <select className="px-4 py-2.5 border rounded-xl bg-white dark:bg-slate-800 dark:border-slate-700 text-sm font-semibold focus:ring-2 focus:ring-pink-500 outline-none">
             <option>Status</option>
@@ -91,7 +91,7 @@ const Announcements = () => {
           </div>
         </div>
 
-        {/* --- Table Section --- */}
+       
         <div className="overflow-x-auto">
           <table className="w-full text-left">
             <thead>

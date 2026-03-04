@@ -1,5 +1,5 @@
 import React from 'react'
-import Indashboard from './indashboard/page'
+import Indashboard from '../../sampleDashboard/instructor/page'
 // import DashboardNavbar from '@/components/DasboardNavbar'
 
 const page = () => {
