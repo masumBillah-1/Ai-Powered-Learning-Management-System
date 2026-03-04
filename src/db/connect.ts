@@ -34,6 +34,7 @@ export async function connectDB() {
       serverSelectionTimeoutMS: 10000, // ✅ 10 seconds
       socketTimeoutMS: 45000,
       family: 4, // ✅ Force IPv4
+      dbName: "learning-management", // ✅ Fixed database name in code
     };
 
     console.log("🔄 Connecting to MongoDB...");
@@ -41,6 +42,8 @@ export async function connectDB() {
       .connect(MONGODB_URI, opts)
       .then((conn) => {
         console.log("✅ MongoDB connected successfully!");
+        console.log("📊 Database: learning-management");
+        console.log("📋 Collections: users, aichatmessages");
         return conn;
       })
       .catch((error) => {
