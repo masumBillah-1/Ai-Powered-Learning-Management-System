@@ -1,6 +1,7 @@
 # See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
 
 # dependencies
+
 /node_modules
 /.pnp
 .pnp.*
@@ -41,3 +42,7 @@ yarn-error.log*
 next-env.d.ts
 
 .vercel
+
+# dashboard-2 folder (hidden from git)
+src/app/dashboard-2/
+src/app/dashboard/
