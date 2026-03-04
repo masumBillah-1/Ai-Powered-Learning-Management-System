@@ -1,4 +1,8 @@
 import mongoose from "mongoose";
+import dns from "dns";
+
+// ✅ Force IPv4 for better compatibility
+dns.setDefaultResultOrder("ipv4first");
 
 const MONGODB_URI = process.env.MONGODB_URI as string;
 
@@ -27,12 +31,14 @@ export async function connectDB() {
   if (!cached.promise) {
     const opts = {
       bufferCommands: false,
-      serverSelectionTimeoutMS: 5000, // 5 second timeout
-      socketTimeoutMS: 10000,
+      serverSelectionTimeoutMS: 10000, // ✅ 10 seconds
+      socketTimeoutMS: 45000,
+      family: 4, // ✅ Force IPv4
     };
 
     console.log("🔄 Connecting to MongoDB...");
-    cached.promise = mongoose.connect(MONGODB_URI, opts)
+    cached.promise = mongoose
+      .connect(MONGODB_URI, opts)
       .then((conn) => {
         console.log("✅ MongoDB connected successfully!");
         return conn;

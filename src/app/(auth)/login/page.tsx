@@ -128,6 +128,8 @@ const LoginPage = () => {
   return (
     <>
       <Navbar />
+
+      <title>Login</title>
       <div className="py-16 relative flex items-center justify-center overflow-hidden px-2 min-h-screen bg-white dark:bg-[#05010D] transition-colors">
         <div className="absolute inset-0 bg-gradient-to-br from-purple-50 to-orange-50 dark:from-transparent dark:to-transparent" />
         <div className="absolute inset-0 backdrop-blur-3xl" />

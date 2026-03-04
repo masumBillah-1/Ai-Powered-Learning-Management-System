@@ -113,6 +113,7 @@ const Register = () => {
     return (
       <>
         <Navbar />
+        
         <div className="py-16 flex items-center justify-center bg-white dark:bg-[#05010D] px-4 transition-colors relative overflow-hidden min-h-screen">
           <div className="absolute inset-0 bg-gradient-to-br from-purple-50 to-orange-50 dark:from-transparent dark:to-transparent" />
           <div className="w-full max-w-[420px] text-center relative z-10">
@@ -140,6 +141,9 @@ const Register = () => {
   return (
     <>
       <Navbar />
+
+      <title>Register</title>
+
       <div className="py-16 flex items-center justify-center bg-white dark:bg-[#05010D] px-4 transition-colors relative overflow-hidden min-h-screen">
         <div className="absolute inset-0 bg-gradient-to-br from-purple-50 to-orange-50 dark:from-transparent dark:to-transparent" />
         <div className="absolute inset-0 backdrop-blur-3xl" />
@@ -248,29 +252,13 @@ const Register = () => {
               </button>
 
               {/* GitHub */}
-<<<<<<< HEAD
               <Link
-=======
-<<<<<<< HEAD
-              <Link
-=======
-              <link
->>>>>>> c17d50a8dfbe0bcf76131a44f848e3622b4ec7e5
->>>>>>> b09521bfc8c5811bf305686f3055f8dbb3596a84
                 href="/api/auth/github"
                 className="flex items-center justify-center gap-2 py-2.5 rounded-lg border border-gray-300 dark:border-[#2D2438] bg-white dark:bg-[#1B1229] text-gray-800 dark:text-white hover:bg-gray-50 dark:hover:bg-[#2D2438] transition shadow-sm text-sm font-medium"
               >
                 <GitHubIcon />
                 GitHub
-<<<<<<< HEAD
               </Link>
-=======
-<<<<<<< HEAD
-              </Link>
-=======
-              </link>
->>>>>>> c17d50a8dfbe0bcf76131a44f848e3622b4ec7e5
->>>>>>> b09521bfc8c5811bf305686f3055f8dbb3596a84
             </div>
 
             <p className="text-center text-[12px] text-gray-700 dark:text-gray-400 pt-3">

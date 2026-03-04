@@ -8,19 +8,23 @@ import StepSection from "@/components/StepSection/StepSection";
 import SuccessSection from "@/components/SuccessSection/SuccessSection";
 import LearnSection from "@/components/Home/LearnSection";
 import HeroSections from "@/components/mainhome/HeroSections";
+import HeroSectionNew from "@/components/Herosection/HeroSection";
+import Timeline from "@/components/Timeline/Timeline";
 
 
 
 export default function Home() {
   return (
-    <div className="container mx-auto px-6 py-10">
+    <div className="">
       
+      <HeroSectionNew />
       <HeroSections />
       <HeroSection />
       <ImpactSection />
       <ProblemSolution />
       <BootcampFeatures />
       <SuccessSection />
+      <Timeline/>
       <StepSection />
       <LearnSection />
       <FAQ />

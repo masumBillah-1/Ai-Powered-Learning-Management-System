@@ -1,0 +1,21 @@
+<svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background with gradient and rounded corners -->
+  <rect width="32" height="32" rx="8" fill="url(#gradient)"/>
+  
+  <!-- Letter 'S' with proper styling -->
+  <text x="16" y="22" text-anchor="middle" fill="white" font-family="Poppins, Inter, sans-serif" font-size="18" font-weight="900" font-style="italic" transform="rotate(-6 16 16)" text-shadow="1px 1px 0 rgba(0,0,0,0.2)">S</text>
+  
+  <!-- Decorative white dot (top-right) -->
+  <circle cx="25" cy="7" r="2" fill="white" opacity="0.9"/>
+  
+  <!-- Small yellow dot (bottom-left) -->
+  <circle cx="7" cy="25" r="1.5" fill="#FDE047" opacity="0.8"/>
+  
+  <!-- Gradient definition -->
+  <defs>
+    <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#FF0F7B"/>
+      <stop offset="100%" style="stop-color:#F89B29"/>
+    </linearGradient>
+  </defs>
+</svg>
