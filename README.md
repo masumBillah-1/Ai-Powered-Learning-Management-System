@@ -197,6 +197,92 @@ This creates a **cohesive visual experience** throughout the entire application.
 
 ---
 
+## � Roele-based Menu Structure
+
+### 👨‍🎓 Student Dashboard
+```
+Dashboard
+├── My Profile
+├── Courses (enrolled)
+├── Assignments
+├── Quiz
+├── Certificates
+├── Messages
+└── Settings
+```
+
+### 👨‍🏫 Instructor Dashboard
+```
+Dashboard
+├── My Profile
+├── Courses (manage)
+├── Announcements
+├── Assignments
+├── Students
+├── Quiz
+├── Quiz Results
+├── Earnings
+│   ├── Payout
+│   └── Statements
+├── Messages
+└── Settings
+```
+
+### 👨‍💼 Admin Dashboard
+```
+Dashboard
+├── My Profile
+├── All Courses
+├── All Users
+│   ├── Students
+│   └── Instructors
+├── Announcements
+├── Earnings Overview
+│   ├── Payouts
+│   └── Statements
+├── Messages
+└── Settings
+```
+
+### 📁 Dashboard Folder Structure
+```
+dashboard/
+├── layout.tsx
+│
+├── student/
+│   ├── page.tsx              # Dashboard
+│   ├── courses/page.tsx
+│   ├── assignments/page.tsx
+│   ├── quiz/page.tsx
+│   ├── certificates/page.tsx
+│   ├── messages/page.tsx
+│   └── settings/page.tsx
+│
+├── instructor/
+│   ├── layout.tsx
+│   ├── page.tsx              # Dashboard
+│   ├── courses/page.tsx
+│   ├── announcements/page.tsx
+│   ├── assignments/page.tsx
+│   ├── students/page.tsx
+│   ├── quiz/page.tsx
+│   ├── quiz-results/page.tsx
+│   ├── earnings/page.tsx     # tabs: Payout + Statements
+│   ├── messages/page.tsx
+│   └── settings/page.tsx
+│
+└── admin/
+    ├── page.tsx              # Dashboard
+    ├── courses/page.tsx
+    ├── users/page.tsx        # tabs: Students + Instructors
+    ├── announcements/page.tsx
+    ├── earnings/page.tsx     # tabs: Payouts + Statements
+    ├── messages/page.tsx
+    └── settings/page.tsx
+```
+
+---
+
 ## 🛠️ Technology Stack
 
 ### Frontend
