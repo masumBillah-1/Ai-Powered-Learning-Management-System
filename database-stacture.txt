@@ -1,0 +1,202 @@
+Student, Instructor, Admin — সবাই একটাই collection এ থাকবে, শুধু role field আলাদা হবে।
+কারণ:
+
+Login, auth, profile — সব same logic
+আলাদা করলে code duplicate হয়
+Query করতে সহজ হয়
+
+
+👤 Users Collection
+jsusers: {
+  _id,
+  name,
+  email,
+  password,         // hashed
+  phone,
+  avatar,
+  bio,
+  role,             // "student" | "instructor" | "admin"
+  isVerified,       // email verified?
+  isBlocked,        // admin block করেছে?
+  createdAt,
+  updatedAt,
+
+  // শুধু Instructor এর জন্য
+  instructorInfo: {
+    expertise,        // subject area
+    rating,           // average rating
+    totalStudents,    // count
+    isApproved,       // admin approve করেছে?
+    payoutMethod: {
+      bankName,
+      accountNumber,
+      routingNumber
+    }
+  }
+}
+
+📚 Courses Collection
+jscourses: {
+  _id,
+  title,
+  description,
+  thumbnail,
+  price,
+  category,
+  instructorId,     // → users._id
+  status,           // "draft" | "published" | "rejected"
+  totalStudents,
+  rating,
+  createdAt,
+  updatedAt
+}
+
+📝 Enrollments Collection
+jsenrollments: {
+  _id,
+  studentId,        // → users._id
+  courseId,         // → courses._id
+  progress,         // 0-100%
+  isCompleted,
+  enrolledAt,
+  completedAt
+}
+
+📋 Assignments Collection
+jsassignments: {
+  _id,
+  title,
+  description,
+  courseId,         // → courses._id
+  instructorId,     // → users._id
+  deadline,
+  createdAt
+}
+
+📤 Submissions Collection
+jssubmissions: {
+  _id,
+  assignmentId,     // → assignments._id
+  studentId,        // → users._id
+  fileUrl,
+  grade,            // instructor দিবে
+  feedback,         // instructor দিবে
+  status,           // "pending" | "graded"
+  submittedAt
+}
+
+🎯 Quizzes Collection
+jsquizzes: {
+  _id,
+  title,
+  courseId,         // → courses._id
+  instructorId,     // → users._id
+  questions: [
+    {
+      question,
+      options: [],
+      correctAnswer
+    }
+  ],
+  isPublished,
+  createdAt
+}
+
+📊 Quiz Results Collection
+jsquizResults: {
+  _id,
+  quizId,           // → quizzes._id
+  studentId,        // → users._id
+  score,
+  totalQuestions,
+  isPassed,
+  submittedAt
+}
+
+🏆 Certificates Collection
+jscertificates: {
+  _id,
+  studentId,        // → users._id
+  courseId,         // → courses._id
+  certificateUrl,   // PDF link
+  issuedAt
+}
+
+📢 Announcements Collection
+jsannouncements: {
+  _id,
+  title,
+  content,
+  authorId,         // → users._id
+  target,           // "all" | "students" | "instructors" | courseId
+  createdAt
+}
+
+💬 Messages Collection
+jsmessages: {
+  _id,
+  senderId,         // → users._id
+  receiverId,       // → users._id
+  content,
+  isRead,
+  createdAt
+}
+
+💰 Transactions Collection
+jstransactions: {
+  _id,
+  studentId,        // → users._id
+  instructorId,     // → users._id
+  courseId,         // → courses._id
+  amount,
+  platformFee,      // admin commission
+  instructorEarning,
+  status,           // "completed" | "refunded"
+  createdAt
+}
+
+💸 Payouts Collection
+jspayouts: {
+  _id,
+  instructorId,     // → users._id
+  amount,
+  status,           // "pending" | "approved" | "rejected" | "paid"
+  requestedAt,
+  processedAt
+}
+```
+
+---
+
+## সব Collections একসাথে
+```
+MongoDB/
+├── users             # সবার জন্য একটাই (role দিয়ে আলাদা)
+├── courses
+├── enrollments
+├── assignments
+├── submissions
+├── quizzes
+├── quizResults
+├── certificates
+├── announcements
+├── messages
+├── transactions
+└── payouts
+```
+
+---
+
+## Relation Summary
+```
+users ──────────── courses (instructorId)
+users ──────────── enrollments (studentId)
+courses ─────────── enrollments (courseId)
+assignments ─────── submissions (assignmentId)
+users ──────────── submissions (studentId)
+quizzes ─────────── quizResults (quizId)
+users ──────────── quizResults (studentId)
+users ──────────── certificates (studentId)
+courses ─────────── certificates (courseId)
+users ──────────── transactions (studentId/instructorId)
+users ──────────── payouts (instructorId)
