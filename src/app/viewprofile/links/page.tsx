@@ -34,8 +34,8 @@ export default function ImportantLinks() {
   };
 
   return (
-    <div className=" text-white p-4 md:p-10 flex justify-center">
-      <div className="w-full max-w-4xl bg-[#1a0c2b] rounded-2xl border border-gray-800/50 shadow-2xl overflow-hidden">
+    <div className=" bg-[#11081a] rounded-2xl p-6 md:p-8 text-white border border-white/5 shadow-2xl">
+      <div className="  rounded-2xl   shadow-2xl overflow-hidden">
         
         {/* Header Section */}
         <div className="p-6 border-b border-dashed border-gray-700 flex justify-between items-center">

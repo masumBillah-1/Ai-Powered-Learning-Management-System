@@ -91,7 +91,7 @@ const EducationPage = () => {
                 </label>
                 <div className="relative group">
                   <select className="w-full bg-[#0d071b] border border-white/10 rounded-xl p-4 text-gray-300 appearance-none outline-none focus:border-purple-500/50 transition-all cursor-pointer">
-                    <option value="" disabled selected>Select Institution</option>
+                    <option value="" >Select Institution</option>
                   </select>
                   <ChevronDown size={18} className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none" />
                 </div>

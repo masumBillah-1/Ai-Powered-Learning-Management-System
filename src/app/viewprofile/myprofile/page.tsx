@@ -10,6 +10,13 @@ interface ProfileData {
   mobileNumber: string;
   whatsappNumber: string;
 }
+interface InputFieldProps {
+  label: string;
+  value: string;
+  icon: React.ReactNode;
+  isEditing: boolean;
+  onChange: (val: string) => void;
+}
 const InputField = ({ label, value, icon, isEditing, onChange }: InputFieldProps) => (
   <div className="space-y-2">
     <div className="flex items-center gap-2 text-gray-400">
@@ -113,7 +120,7 @@ const MyProfile = () => {
         <div className="flex justify-end mt-8">
           <button 
             onClick={() => setIsEditing(false)}
-            className="bg-[#2d2438] hover:bg-purple-600 text-gray-300 hover:text-white px-6 py-2 rounded-lg text-sm font-medium transition-all shadow-lg"
+            className="bg-gradient-to-r from-[#832388] via-[#E3436B] to-[#F0772F] text-gray-300 hover:text-white px-6 py-2 rounded-lg text-sm font-medium transition-all shadow-lg"
           >
             Save changes
           </button>
@@ -124,13 +131,7 @@ const MyProfile = () => {
   );
 };
 
-interface InputFieldProps {
-  label: string;
-  value: string;
-  icon: React.ReactNode;
-  isEditing: boolean;
-  onChange: (val: string) => void;
-}
+
 
 
 export default MyProfile;

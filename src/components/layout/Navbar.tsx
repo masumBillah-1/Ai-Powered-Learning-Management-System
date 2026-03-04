@@ -210,7 +210,7 @@ const Navbar = () => {
                         <div className="w-full flex flex-col gap-2 border-t border-white/10 pt-4">
                           <Link
                             href={`/dashboard/${user.role}`}
-                            className="flex items-center gap-3 px-2 py-2  dark:text-white/90 hover:text-white font-medium transition-colors"
+                            className="flex items-center gap-3 px-2 py-2  dark:text-white/90  font-medium transition-colors"
                             onClick={() => setShowMenu(false)}
                           >
                             <FaThLarge className="text-purple-400" /> Dashboard
