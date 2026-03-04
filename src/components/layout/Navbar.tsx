@@ -173,7 +173,7 @@ const Navbar = () => {
                     Enroll Now
                   </button>
 
-                  <div className="relative " ref={menuRef}>
+                  <div className="relative" ref={menuRef}>
                     <button
                       onClick={() => setShowMenu(!showMenu)}
                       className="flex items-center cursor-pointer p-0.5 rounded-full border-2 border-[#6710C2] hover:scale-105 transition-transform"
@@ -182,38 +182,46 @@ const Navbar = () => {
                     </button>
 
                     {showMenu && (
-                      <div className="absolute right-0 mt-3 w-64 bg-white dark:bg-[#161d2f] rounded-2xl shadow-2xl border border-gray-100 dark:border-gray-800 py-3 z-50">
-                        <div className="flex items-center gap-3 px-5 py-3 border-b border-gray-100 dark:border-gray-700 mb-2">
-                          <AvatarImage />
-                          <div className="flex flex-col leading-tight overflow-hidden">
-                            <span className="font-bold text-gray-800 dark:text-white text-sm truncate">
-                              {user.name}
-                            </span>
-                            <span className="text-xs text-gray-400 truncate">
-                              {user.email}
-                            </span>
+                      <div className="absolute right-0 mt-3 w-72   rounded-3xl shadow-2xl border border-white/10 p-6 z-50 flex flex-col items-center text-center">
+
+                        {/* Profile Section */}
+                        <div className="mb-4 flex flex-col items-center">
+                          <div className="mb-3">
+                            <AvatarImage  />
                           </div>
+                          <h3 className="text-white font-bold text-xl leading-tight">
+                            {user.name}
+                          </h3>
+                          <p className="text-gray-400 text-sm mt-1">
+                          email: {user.email}
+                          </p>
                         </div>
-                        <Link
-                          href={`/dashboard/${user.role}`}
-                          className="flex items-center gap-3 px-5 py-3 hover:bg-gray-50 dark:hover:bg-gray-800 font-bold dark:text-gray-200 text-gray-700"
-                          onClick={() => setShowMenu(false)}
-                        >
-                          <FaThLarge className="text-[#6710C2]" /> Dashboard
-                        </Link>
+
+                        {/* View Profile Button */}
                         <Link
                           href="/viewprofile"
-                          className="flex items-center gap-3 px-5 py-3 hover:bg-gray-50 dark:hover:bg-gray-800 font-bold dark:text-gray-200 text-gray-700"
+                          className="w-full py-3 mb-6 bg-gradient-to-r from-[#832388] via-[#E3436B] to-[#F0772F] text-white font-bold rounded-xl hover:opacity-90 transition-opacity text-center shadow-lg"
                           onClick={() => setShowMenu(false)}
                         >
-                          <FaUser className="text-[#6710C2]" /> My Profile
+                          View Profile
                         </Link>
-                        <button
-                          onClick={handleLogout}
-                          className="w-full flex items-center gap-3 px-5 py-3 text-red-600 font-bold hover:bg-red-50 dark:hover:bg-red-900/20 border-t dark:border-gray-700 mt-2"
-                        >
-                          <FaSignOutAlt /> Logout
-                        </button>
+
+                        {/* Menu Links */}
+                        <div className="w-full flex flex-col gap-2 border-t border-white/10 pt-4">
+                          <Link
+                            href={`/dashboard/${user.role}`}
+                            className="flex items-center gap-3 px-2 py-2  dark:text-white/90 hover:text-white font-medium transition-colors"
+                            onClick={() => setShowMenu(false)}
+                          >
+                            <FaThLarge className="text-purple-400" /> Dashboard
+                          </Link>                   
+                          <button
+                            onClick={handleLogout}
+                            className="flex items-center gap-3 px-2 py-2 text-red-400 font-bold hover:text-red-300 transition-colors mt-2"
+                          >
+                            <FaSignOutAlt /> Logout
+                          </button>
+                        </div>
                       </div>
                     )}
                   </div>
@@ -254,15 +262,13 @@ const Navbar = () => {
 
       {/* MOBILE DRAWER */}
       <div
-        className={`fixed inset-0 bg-black/50 backdrop-blur-sm z-[101] lg:hidden transition-opacity duration-300 ${
-          isOpen ? "opacity-100 visible" : "opacity-0 invisible"
-        }`}
+        className={`fixed inset-0 bg-black/50 backdrop-blur-sm z-[101] lg:hidden transition-opacity duration-300 ${isOpen ? "opacity-100 visible" : "opacity-0 invisible"
+          }`}
         onClick={() => setIsOpen(false)}
       >
         <div
-          className={`absolute top-0 right-0 h-full w-[80%] max-w-[350px] bg-white dark:bg-[#0b1120] shadow-2xl transition-transform duration-300 transform ${
-            isOpen ? "translate-x-0" : "translate-x-full"
-          }`}
+          className={`absolute top-0 right-0 h-full w-[80%] max-w-[350px] bg-white dark:bg-[#0b1120] shadow-2xl transition-transform duration-300 transform ${isOpen ? "translate-x-0" : "translate-x-full"
+            }`}
           onClick={(e) => e.stopPropagation()}
         >
           <div className="p-6 flex flex-col h-full">
@@ -361,16 +367,16 @@ const Navbar = () => {
 
       {/* ENROLL MODAL */}
       {isEnrollModalOpen && (
-        <div 
+        <div
           className="fixed inset-0 z-[200] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-300"
           onClick={() => setIsEnrollModalOpen(false)}
         >
-          <div 
+          <div
             className="relative bg-white dark:bg-[#1a2236] w-full max-w-[480px] rounded-[32px] overflow-hidden shadow-2xl animate-in zoom-in-95 duration-300"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Close Button */}
-            <button 
+            <button
               onClick={() => setIsEnrollModalOpen(false)}
               className="absolute top-5 right-5 text-gray-400 hover:text-red-500 transition-colors z-10"
             >
@@ -388,7 +394,7 @@ const Navbar = () => {
               <h2 className="text-xl md:text-2xl font-bold text-gray-800 dark:text-white leading-tight mb-4">
                 ৬ মাসে একজন প্রফেশনাল হওয়ার চ্যালেঞ্জ নিতে চাও?
               </h2>
-              
+
               <p className="text-gray-600 dark:text-gray-400 mb-8 font-medium">
                 সঠিক গাইডলাইনে তোমার শেখার যাত্রা শুরু হোক আজই।
               </p>
