@@ -1,758 +1,403 @@
+'use client';
 import React from 'react';
-import Image from 'next/image';
 
 const HeroSection: React.FC = () => {
   return (
     <>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Nunito:ital,wght@0,400;0,700;0,800;0,900;1,900&family=Poppins:wght@400;500;600;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,700;0,800;1,300&family=Outfit:wght@400;600;700;800&display=swap');
 
-        /* ══════════════════════════════════════
-           BRAND TOKENS
-        ══════════════════════════════════════ */
         :root {
-          --bp: #FF0F7B;
-          --bo: #F89B29;
-          --bpu: #832388;
-          --br: #E3436B;
-          --by: #FDE047;
+          --pk: #FF0F7B; --or: #F89B29; --pu: #832388; --re: #E3436B;
           --g1: linear-gradient(135deg, #FF0F7B 0%, #E3436B 50%, #F89B29 100%);
           --g2: linear-gradient(135deg, #832388 0%, #E3436B 55%, #F89B29 100%);
-          --g3: linear-gradient(135deg, #FF0F7B 0%, #832388 100%);
         }
 
-        /* ══════════════════════════════════════
-           SECTION
-        ══════════════════════════════════════ */
-        .hero-wrap {
-          position: relative;
-          width: 100vw;
-          height: 100vh;
-          overflow: hidden;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          font-family: 'Poppins', sans-serif;
+        .hx-wrap {
+          position: relative; width: 100%; height: 100vh; min-height: 700px;
+          overflow: hidden; display: flex; align-items: center; justify-content: center;
+          font-family: 'Plus Jakarta Sans', sans-serif;
         }
 
-        /* ── Background image ── */
-        .hero-bg {
-          position: absolute !important;
-          inset: 0;
-          z-index: 0;
-          object-fit: cover !important;
-          object-position: center center !important;
-          width: 100vw !important;
-          height: 100vh !important;
-          transform: scale(1.02);
-          animation: heroZoom 18s ease-in-out infinite alternate;
+        /* ── Real photo background ── */
+        .hx-bg-img {
+          position: absolute; inset: 0; z-index: 0;
+          width: 100%; height: 100%;
+          object-fit: cover; object-position: center 30%;
+          animation: hxZoom 20s ease-in-out infinite alternate;
         }
-        @keyframes heroZoom {
-          from { transform: scale(1.04); }
-          to   { transform: scale(1.10); }
+        @keyframes hxZoom {
+          from { transform: scale(1.00); }
+          to   { transform: scale(1.04); }
         }
 
-        /* ══════════════════════════════════════
-           LAYERED OVERLAY SYSTEM
-        ══════════════════════════════════════ */
-
-        /* Layer 1 — deep color wash */
-        .hero-ov1 {
+        /* ── Dark cinematic overlays ── */
+        .hx-ov1 {
           position: absolute; inset: 0; z-index: 1;
           background: linear-gradient(
             160deg,
-            rgba(255, 15, 123, 0.28) 0%,
-            rgba(131, 35, 136, 0.22) 28%,
-            rgba(227, 67, 107, 0.14) 55%,
-            rgba(248, 155, 41, 0.20) 100%
+            rgba(5,1,15,0.75) 0%,
+            rgba(10,1,25,0.65) 30%,
+            rgba(8,2,18,0.55) 60%,
+            rgba(5,1,12,0.70) 100%
           );
         }
-        [data-theme="dark"] .hero-ov1, .dark .hero-ov1 {
-          background: linear-gradient(
-            160deg,
-            rgba(255, 15, 123, 0.50) 0%,
-            rgba(131, 35, 136, 0.45) 30%,
-            rgba(18, 5, 30, 0.70)    60%,
-            rgba(8, 4, 14, 0.80)    100%
-          );
-        }
-
-        /* Layer 2 — radial vignette from edges */
-        .hero-ov2 {
+        .hx-ov2 {
           position: absolute; inset: 0; z-index: 2;
           background:
-            radial-gradient(ellipse 70% 60% at 50% 100%, rgba(0,0,0,0.45) 0%, transparent 100%),
-            radial-gradient(ellipse 40% 40% at 0%   0%,  rgba(255,15,123,0.18) 0%, transparent 70%),
-            radial-gradient(ellipse 40% 40% at 100% 0%,  rgba(248,155,41,0.18) 0%, transparent 70%);
+            radial-gradient(ellipse 80% 60% at 50% 110%, rgba(0,0,0,0.7) 0%, transparent 70%),
+            radial-gradient(ellipse 50% 50% at 0% 0%, rgba(255,15,123,0.15) 0%, transparent 60%),
+            radial-gradient(ellipse 50% 50% at 100% 0%, rgba(248,155,41,0.12) 0%, transparent 60%);
         }
-        [data-theme="dark"] .hero-ov2 {
-          background:
-            radial-gradient(ellipse 70% 70% at 50% 110%, rgba(0,0,0,0.75) 0%, transparent 100%),
-            radial-gradient(ellipse 50% 50% at 0%   0%,  rgba(255,15,123,0.30) 0%, transparent 70%),
-            radial-gradient(ellipse 50% 50% at 100% 0%,  rgba(131,35,136,0.30) 0%, transparent 70%);
+        .hx-ov3 {
+          position: absolute; bottom: 0; left: 0;
+          width: 100%; height: 60%; z-index: 3;
+          background: linear-gradient(to top, rgba(5,1,15,0.85) 0%, rgba(8,2,20,0.5) 40%, transparent 100%);
         }
 
-        /* Layer 3 — animated mesh shimmer */
-        .hero-ov3 {
+        /* ── Scanline texture ── */
+        .hx-scanline {
+          position: absolute; inset: 0; z-index: 4; pointer-events: none;
+          background: repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(0,0,0,0.02) 3px, rgba(0,0,0,0.02) 4px);
+        }
+
+        /* ── Color tint pulse ── */
+        .hx-tint {
           position: absolute; inset: 0; z-index: 3;
-          background: linear-gradient(
-            45deg,
-            transparent 30%,
-            rgba(253, 224, 71, 0.06) 50%,
-            transparent 70%
-          );
-          background-size: 300% 300%;
-          animation: heroMesh 8s ease-in-out infinite;
+          background: linear-gradient(135deg, rgba(255,15,123,0.08) 0%, transparent 50%, rgba(248,155,41,0.06) 100%);
+          animation: hxTintPulse 6s ease-in-out infinite;
         }
-        @keyframes heroMesh {
-          0%, 100% { background-position: 0% 0%; }
-          50%       { background-position: 100% 100%; }
+        @keyframes hxTintPulse {
+          0%,100% { opacity: 0.6; }
+          50% { opacity: 1; }
         }
 
-        /* Layer 4 — frosted glass bottom for text readability */
-        .hero-ov4 {
-          position: absolute;
-          bottom: 0; left: 0;
-          width: 100%; height: 65%;
-          z-index: 4;
-          background: linear-gradient(
-            to top,
-            rgba(20, 4, 30, 0.72) 0%,
-            rgba(30, 8, 40, 0.48) 40%,
-            transparent 100%
-          );
-        }
-        [data-theme="dark"] .hero-ov4 {
-          background: linear-gradient(
-            to top,
-            rgba(6, 2, 12, 0.88) 0%,
-            rgba(12, 4, 22, 0.65) 45%,
-            transparent 100%
-          );
+        .hx-content {
+          position: relative; z-index: 10; width: 100%; max-width: 980px;
+          margin: 0 auto; padding: 0 32px;
+          display: flex; flex-direction: column; align-items: center; text-align: center;
         }
 
-        /* ══════════════════════════════════════
-           DECORATIVE ELEMENTS
-        ══════════════════════════════════════ */
-
-        /* Animated noise texture overlay */
-        .hero-noise {
-          position: absolute; inset: 0; z-index: 5;
-          opacity: 0.03;
-          pointer-events: none;
-          background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
-          background-size: 200px 200px;
+        /* ── Pill ── */
+        .hx-pill {
+          display: inline-flex; align-items: center; gap: 8px;
+          padding: 7px 18px 7px 10px; border-radius: 100px;
+          background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.16);
+          backdrop-filter: blur(20px);
+          box-shadow: 0 0 0 1px rgba(255,15,123,0.2), inset 0 1px 0 rgba(255,255,255,0.08);
+          margin-bottom: 40px; animation: hxFade 1s 0.1s ease both;
         }
-
-        /* Glowing orbs */
-        .hero-orb {
-          position: absolute;
-          border-radius: 50%;
-          pointer-events: none;
-          z-index: 6;
+        .hx-pill-dot {
+          width: 6px; height: 6px; border-radius: 50%;
+          background: #4ade80; box-shadow: 0 0 10px #4ade80;
+          animation: hxPulse 1.6s ease infinite; flex-shrink: 0;
         }
-        .hero-orb-1 {
-          width: 500px; height: 500px;
-          top: -200px; left: -150px;
-          background: radial-gradient(circle, rgba(255,15,123,0.22) 0%, transparent 65%);
-          animation: heroOrbDrift 12s ease-in-out infinite;
-          filter: blur(1px);
+        .hx-pill-text {
+          font-family: 'Plus Jakarta Sans', sans-serif;
+          font-size: 12.5px; font-weight: 500; letter-spacing: 0.03em;
+          color: rgba(255,255,255,0.75);
         }
-        .hero-orb-2 {
-          width: 400px; height: 400px;
-          top: -160px; right: -120px;
-          background: radial-gradient(circle, rgba(248,155,41,0.20) 0%, transparent 65%);
-          animation: heroOrbDrift 15s ease-in-out infinite reverse;
-          filter: blur(1px);
-        }
-        .hero-orb-3 {
-          width: 300px; height: 300px;
-          bottom: 5%; left: 50%; transform: translateX(-50%);
-          background: radial-gradient(circle, rgba(131,35,136,0.18) 0%, transparent 65%);
-          animation: heroOrbDrift 10s ease-in-out infinite;
-          filter: blur(1px);
-        }
-        @keyframes heroOrbDrift {
-          0%, 100% { transform: translate(0, 0) scale(1); }
-          33%       { transform: translate(30px, -20px) scale(1.08); }
-          66%       { transform: translate(-20px, 15px) scale(0.95); }
-        }
-        .hero-orb-3 { animation-name: heroOrbDrift3; }
-        @keyframes heroOrbDrift3 {
-          0%, 100% { transform: translateX(-50%) scale(1); }
-          50%       { transform: translateX(-48%) scale(1.1); }
-        }
-
-        /* Sparkle stars */
-        .hero-spark {
-          position: absolute;
-          z-index: 7;
-          pointer-events: none;
-          animation: heroSparkle ease-in-out infinite;
-        }
-        .hero-spark::before {
-          content: '✦';
-          font-size: inherit;
-          background: var(--g1);
-          -webkit-background-clip: text;
-          -webkit-text-fill-color: transparent;
-          background-clip: text;
-        }
-        .hs1 { font-size:18px; top:12%; left:8%;  animation-duration:3s;  animation-delay:0s; }
-        .hs2 { font-size:12px; top:18%; right:12%; animation-duration:4s;  animation-delay:-1s; }
-        .hs3 { font-size:22px; top:8%;  left:45%; animation-duration:3.5s; animation-delay:-0.5s; }
-        .hs4 { font-size:10px; top:30%; left:3%;  animation-duration:5s;  animation-delay:-2s; }
-        .hs5 { font-size:14px; top:25%; right:5%; animation-duration:4.5s; animation-delay:-1.5s; }
-        @keyframes heroSparkle {
-          0%, 100% { opacity: 0.8; transform: scale(1)   rotate(0deg); }
-          25%       { opacity: 0.3; transform: scale(0.6) rotate(90deg); }
-          50%       { opacity: 1;   transform: scale(1.3) rotate(180deg); }
-          75%       { opacity: 0.5; transform: scale(0.8) rotate(270deg); }
-        }
-
-        /* Floating ring accent */
-        .hero-ring {
-          position: absolute;
-          border-radius: 50%;
-          pointer-events: none;
-          z-index: 6;
-          border: 1.5px solid;
-          animation: heroRingSpin linear infinite;
-        }
-        .ring-1 {
-          width: 180px; height: 180px;
-          top: 5%; right: 8%;
-          border-color: rgba(255,15,123,0.25);
-          animation-duration: 20s;
-        }
-        .ring-2 {
-          width: 100px; height: 100px;
-          top: 10%; right: 12%;
-          border-color: rgba(248,155,41,0.2);
-          animation-duration: 15s;
-          animation-direction: reverse;
-        }
-        .ring-3 {
-          width: 140px; height: 140px;
-          bottom: 18%; left: 6%;
-          border-color: rgba(131,35,136,0.2);
-          animation-duration: 18s;
-        }
-        @keyframes heroRingSpin {
-          from { transform: rotate(0deg); }
-          to   { transform: rotate(360deg); }
-        }
-
-        /* ══════════════════════════════════════
-           MAIN CONTENT
-        ══════════════════════════════════════ */
-        .hero-content {
-          position: relative;
-          z-index: 10;
-          width: 100vw;
-          max-width: 100vw;
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          text-align: center;
-          padding: 100px 24px 80px;
-        }
-
-        /* ── Badge ── */
-        .hero-badge {
-          display: inline-flex;
-          align-items: center;
-          gap: 10px;
-          padding: 9px 22px;
-          border-radius: 50px;
-          font-size: 13px;
-          font-weight: 700;
-          color: #fff;
-          background: rgba(255,255,255,0.12);
-          border: 1px solid rgba(255,255,255,0.28);
-          backdrop-filter: blur(16px);
-          box-shadow:
-            0 0 0 1px rgba(255,15,123,0.3),
-            0 8px 32px rgba(255,15,123,0.25),
-            inset 0 1px 0 rgba(255,255,255,0.15);
-          margin-bottom: 32px;
-          animation: heroFadeDown 0.9s ease both;
-          letter-spacing: 0.01em;
-        }
-        .hero-badge-live {
-          display: flex;
-          align-items: center;
-          gap: 5px;
-        }
-        .hero-badge-live-dot {
-          width: 7px; height: 7px;
-          border-radius: 50%;
-          background: #4ade80;
-          box-shadow: 0 0 8px rgba(74,222,128,0.8);
-          animation: heroPing 1.4s ease infinite;
-        }
-        @keyframes heroPing {
-          0%,100% { transform:scale(1); opacity:1; }
-          50%      { transform:scale(1.6); opacity:0.4; }
-        }
-        .hero-badge-divider {
-          width: 1px; height: 16px;
-          background: rgba(255,255,255,0.3);
-        }
-        .hero-badge-avatars { display: flex; }
-        .hero-badge-avatars span {
-          width: 26px; height: 26px;
-          border-radius: 50%;
-          border: 2px solid rgba(255,255,255,0.5);
-          margin-left: -8px;
+        .hx-pill-icon {
+          width: 26px; height: 26px; border-radius: 50%; background: var(--g1);
           display: flex; align-items: center; justify-content: center;
-          font-size: 13px;
-          background: rgba(255,255,255,0.15);
-          backdrop-filter: blur(4px);
+          font-size: 11px; box-shadow: 0 0 12px rgba(255,15,123,0.5); flex-shrink: 0;
         }
-        .hero-badge-avatars span:first-child { margin-left: 0; }
-
-        /* ── Eyebrow ── */
-        .hero-eyebrow {
-          display: block;
-          font-size: 11.5px;
-          font-weight: 700;
-          letter-spacing: 0.22em;
-          text-transform: uppercase;
-          color: rgba(255,255,255,0.65);
-          margin-bottom: 14px;
-          animation: heroFadeDown 0.9s 0.05s ease both;
+        @keyframes hxPulse {
+          0%,100% { opacity:1; transform:scale(1); }
+          50% { opacity:0.4; transform:scale(1.8); }
         }
 
         /* ── Headline ── */
-        .hero-headline {
-          font-family: 'Nunito', sans-serif;
-          font-weight: 900;
-          line-height: 1.05;
-          letter-spacing: -0.025em;
-          width: 100%;
-          max-width: 100vw;
-          margin-bottom: 28px;
-          animation: heroFadeDown 0.9s 0.12s ease both;
-          color: #fff;
-          text-shadow: 0 2px 30px rgba(0,0,0,0.3);
+        .hx-headline {
+          font-family: 'Outfit', sans-serif;
+          font-weight: 800; line-height: 1.0; letter-spacing: -0.03em;
+          color: #fff; animation: hxFade 1s 0.2s ease both;
         }
+        .hx-line1 {
+          display: block; font-size: clamp(3.2rem, 9vw, 7.5rem);
+          color: rgba(255,255,255,0.95); margin-bottom: -2px;
+        }
+        .hx-line2 {
+          display: block; font-size: clamp(3.2rem, 9vw, 7.5rem); margin-bottom: -2px;
+        }
+        .hx-line3 {
+          display: block; font-size: clamp(1.4rem, 3.5vw, 2.8rem);
+          font-weight: 300; font-style: italic; letter-spacing: 0.01em;
+          margin-top: 12px; color: rgba(255,255,255,0.4);
+          font-family: 'Plus Jakarta Sans', sans-serif;
+        }
+        .hx-grad {
+          background: var(--g1); -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent; background-clip: text;
+        }
+        .hx-grad2 {
+          background: var(--g2); -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent; background-clip: text;
+        }
+        .hx-highlight { position: relative; display: inline-block; }
+        .hx-highlight::before {
+          content: ''; position: absolute; inset: -2px -8px;
+          background: var(--g1); border-radius: 6px; z-index: -1;
+          opacity: 0; transform: scaleX(0.2);
+          animation: hxHighlight 1s 1.2s cubic-bezier(0.16,1,0.3,1) forwards;
+        }
+        @keyframes hxHighlight { to { opacity: 0.18; transform: scaleX(1); } }
+        .hx-underword { position: relative; display: inline-block; }
+        .hx-underword::after {
+          content: ''; position: absolute; left: 0; bottom: 2px;
+          width: 100%; height: 3px; border-radius: 3px; background: var(--g1);
+          transform: scaleX(0); transform-origin: left;
+          animation: hxUnderline 0.9s 1.4s cubic-bezier(0.16,1,0.3,1) forwards;
+        }
+        @keyframes hxUnderline { to { transform: scaleX(1); } }
 
-        /* Line 1 — big bold white */
-        .hl-l1 {
-          display: block;
-          font-size: clamp(3.5rem, 10vw, 8rem);
-          margin-bottom: 2px;
+        /* ── Descriptor row ── */
+        .hx-desc-row {
+          display: flex; align-items: center; gap: 20px;
+          margin-top: 34px; margin-bottom: 40px;
+          animation: hxFade 1s 0.4s ease both;
         }
-
-        /* Line 2 — gradient + larger */
-        .hl-l2 {
-          display: block;
-          font-size: clamp(3.5rem, 10vw, 8rem);
-          margin-bottom: 2px;
-        }
-
-        /* Line 3 — italic, smaller, elegant */
-        .hl-l3 {
-          display: block;
-          font-size: clamp(2.5rem, 7vw, 5.5rem);
-          font-style: italic;
-          letter-spacing: 0.01em;
-          margin-top: 6px;
-        }
-
-        /* Gradient text */
-        .hl-grad {
-          background: var(--g1);
-          -webkit-background-clip: text;
-          -webkit-text-fill-color: transparent;
-          background-clip: text;
-          display: inline;
-        }
-        .hl-grad2 {
-          background: var(--g2);
-          -webkit-background-clip: text;
-          -webkit-text-fill-color: transparent;
-          background-clip: text;
-          display: inline;
-        }
-
-        /* Animated underline on "Smarter" */
-        .hl-underline {
-          position: relative;
-          display: inline-block;
-        }
-        .hl-underline::after {
-          content: '';
-          position: absolute;
-          left: 0; bottom: -4px;
-          width: 100%; height: 4px;
-          border-radius: 2px;
-          background: var(--g1);
-          transform-origin: left;
-          animation: heroUnderline 1.2s 1s ease both;
-        }
-        @keyframes heroUnderline {
-          from { transform: scaleX(0); opacity: 0; }
-          to   { transform: scaleX(1); opacity: 1; }
-        }
-
-        /* Highlight box behind "Faster" */
-        .hl-box {
-          position: relative;
-          display: inline-block;
-          padding: 0 12px;
-        }
-        .hl-box::before {
-          content: '';
-          position: absolute;
-          inset: 0px -4px;
-          background: var(--g1);
-          border-radius: 8px;
-          z-index: -1;
-          opacity: 0.22;
-          animation: heroBoxFade 1s 0.7s ease both;
-        }
-        @keyframes heroBoxFade {
-          from { opacity:0; transform:scaleX(0.4); }
-          to   { opacity:0.22; transform:scaleX(1); }
-        }
-
-        /* "Succeed Anywhere" — extra glow */
-        .hl-glow {
-          background: var(--g2);
-          -webkit-background-clip: text;
-          -webkit-text-fill-color: transparent;
-          background-clip: text;
-          filter: drop-shadow(0 0 20px rgba(255,15,123,0.5));
-        }
-
-        /* ── Subtext ── */
-        .hero-sub {
-          font-size: clamp(14px, 1.8vw, 16px);
-          color: rgba(255,255,255,0.78);
-          max-width: 480px;
-          line-height: 1.8;
-          margin-bottom: 42px;
-          animation: heroFadeDown 0.9s 0.25s ease both;
-          background: rgba(255,255,255,0.07);
-          backdrop-filter: blur(10px);
-          padding: 14px 24px;
-          border-radius: 20px;
-          border: 1px solid rgba(255,255,255,0.12);
-          box-shadow: inset 0 1px 0 rgba(255,255,255,0.1);
+        .hx-desc-line { width: 40px; height: 1px; background: linear-gradient(90deg, transparent, rgba(255,255,255,0.25)); }
+        .hx-desc-line.right { background: linear-gradient(90deg, rgba(255,255,255,0.25), transparent); }
+        .hx-desc {
+          font-size: 11px; font-weight: 500; color: rgba(255,255,255,0.4);
+          letter-spacing: 0.14em; text-transform: uppercase; white-space: nowrap;
+          font-family: 'Plus Jakarta Sans', sans-serif;
         }
 
         /* ── Buttons ── */
-        .hero-btns {
-          display: flex;
-          flex-wrap: wrap;
-          gap: 14px;
-          justify-content: center;
-          animation: heroFadeDown 0.9s 0.38s ease both;
+        .hx-btns {
+          display: flex; align-items: center; gap: 14px;
+          flex-wrap: wrap; justify-content: center;
+          animation: hxFade 1s 0.5s ease both;
         }
-
-        /* Primary */
-        .hero-btn {
-          position: relative;
-          display: inline-flex;
-          align-items: center;
-          gap: 10px;
-          background: var(--g1);
-          color: white;
-          font-family: 'Nunito', sans-serif;
-          font-weight: 800;
-          font-size: 16px;
-          padding: 16px 40px;
-          border-radius: 50px;
-          text-decoration: none;
-          border: none;
-          cursor: pointer;
-          overflow: hidden;
-          box-shadow:
-            0 0 0 1px rgba(255,15,123,0.5),
-            0 10px 40px rgba(255,15,123,0.5),
-            0 0 80px rgba(255,15,123,0.15);
-          transition: transform 0.3s ease, box-shadow 0.3s ease;
+        .hx-cta {
+          position: relative; display: inline-flex; align-items: center; gap: 12px;
+          padding: 15px 36px; border-radius: 100px;
+          font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 15px;
+          color: #fff; text-decoration: none; border: none; cursor: pointer;
+          overflow: hidden; background: var(--g1);
+          box-shadow: 0 0 0 1px rgba(255,15,123,0.4), 0 8px 30px rgba(255,15,123,0.5), 0 0 60px rgba(255,15,123,0.15);
+          transition: transform 0.25s ease, box-shadow 0.25s ease;
         }
-        /* shimmer sweep */
-        .hero-btn::after {
-          content: '';
-          position: absolute;
-          top: 0; left: -100%;
-          width: 60%; height: 100%;
-          background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
-          transform: skewX(-20deg);
-          animation: heroBtnShimmer 3s ease infinite;
-        }
-        @keyframes heroBtnShimmer {
-          0%   { left: -100%; }
-          60%  { left: 160%; }
-          100% { left: 160%; }
-        }
-        .hero-btn:hover {
-          transform: translateY(-4px) scale(1.04);
-          box-shadow:
-            0 0 0 1px rgba(255,15,123,0.6),
-            0 18px 55px rgba(255,15,123,0.65),
-            0 0 100px rgba(255,15,123,0.25);
-        }
-        .hero-btn > * { position: relative; z-index: 1; }
-        .hero-btn svg { transition: transform 0.2s ease; }
-        .hero-btn:hover svg { transform: translateX(5px); }
-
-        /* Outline */
-        .hero-btn-ghost {
-          display: inline-flex;
-          align-items: center;
-          gap: 10px;
-          background: rgba(255,255,255,0.10);
-          backdrop-filter: blur(14px);
-          color: #fff;
-          font-family: 'Nunito', sans-serif;
-          font-weight: 700;
-          font-size: 15px;
-          padding: 15px 34px;
-          border-radius: 50px;
-          text-decoration: none;
-          border: 1px solid rgba(255,255,255,0.28);
-          cursor: pointer;
-          transition: all 0.3s ease;
-          box-shadow: inset 0 1px 0 rgba(255,255,255,0.15);
-        }
-        .hero-btn-ghost:hover {
-          background: rgba(255,255,255,0.20);
-          border-color: rgba(255,255,255,0.5);
-          transform: translateY(-3px);
-          box-shadow:
-            inset 0 1px 0 rgba(255,255,255,0.2),
-            0 10px 30px rgba(0,0,0,0.2);
-        }
-        .play-icon {
-          width: 30px; height: 30px;
-          border-radius: 50%;
-          background: rgba(255,255,255,0.2);
-          display: flex; align-items: center; justify-content: center;
-          font-size: 12px;
-          border: 1px solid rgba(255,255,255,0.3);
-        }
-
-        /* ══════════════════════════════════════
-           FLOATING STAT CARDS
-        ══════════════════════════════════════ */
-        .hero-stat {
-          position: absolute;
-          z-index: 10;
-          display: flex;
-          align-items: center;
-          gap: 12px;
-          padding: 14px 20px;
-          border-radius: 20px;
-          font-family: 'Nunito', sans-serif;
-          animation: heroFloatY 4s ease-in-out infinite;
-          /* glassmorphism */
-          background: rgba(255,255,255,0.12);
-          backdrop-filter: blur(20px);
-          border: 1px solid rgba(255,255,255,0.22);
-          box-shadow:
-            0 8px 32px rgba(0,0,0,0.2),
-            inset 0 1px 0 rgba(255,255,255,0.2);
-        }
-        .hero-stat .s-icon {
-          width: 44px; height: 44px;
-          border-radius: 14px;
-          display: flex; align-items: center; justify-content: center;
-          font-size: 22px; flex-shrink: 0;
-          background: rgba(255,255,255,0.15);
-          border: 1px solid rgba(255,255,255,0.2);
-        }
-        .hero-stat .s-val {
-          display: block;
-          font-size: 18px; font-weight: 900; line-height: 1;
-          color: #fff;
-        }
-        .hero-stat .s-label {
-          display: block;
-          font-size: 11px; font-weight: 600;
-          color: rgba(255,255,255,0.65);
-          margin-top: 2px;
-        }
-
-        .stat-students { left: 3%; top: 35%; animation-delay: 0s; }
-        .stat-courses  { right: 3%; top: 28%; animation-delay: 1.6s; }
-        .stat-rating   { right: 4%; bottom: 26%; animation-delay: 0.9s; }
-
-        /* accent color per card */
-        .stat-students .s-icon { background: linear-gradient(135deg, rgba(255,15,123,0.3), rgba(131,35,136,0.2)); }
-        .stat-courses  .s-icon { background: linear-gradient(135deg, rgba(248,155,41,0.3), rgba(227,67,107,0.2)); }
-        .stat-rating   .s-icon { background: linear-gradient(135deg, rgba(253,224,71,0.3), rgba(248,155,41,0.2)); }
-
-        .hero-stars { color: #FDE047; font-size: 12px; letter-spacing: 1px; }
-
-        /* ══════════════════════════════════════
-           BOTTOM FADE
-        ══════════════════════════════════════ */
-        .hero-bottom {
-          position: absolute;
-          bottom: 0; left: 0;
-          width: 100%; height: 100px;
-          z-index: 9;
+        .hx-cta::before {
+          content: ''; position: absolute; inset: 0;
+          background: linear-gradient(135deg, rgba(255,255,255,0.18) 0%, transparent 60%);
           pointer-events: none;
-          background: linear-gradient(to bottom, transparent, rgba(10,2,18,0.6));
+        }
+        .hx-cta::after {
+          content: ''; position: absolute; top: 0; left: -60%;
+          width: 50%; height: 100%;
+          background: linear-gradient(90deg, transparent, rgba(255,255,255,0.25), transparent);
+          transform: skewX(-25deg); animation: hxShimmer 3.5s ease infinite 1s;
+        }
+        @keyframes hxShimmer { 0% { left:-60%; } 55% { left:160%; } 100% { left:160%; } }
+        .hx-cta:hover {
+          transform: translateY(-3px) scale(1.03);
+          box-shadow: 0 0 0 1px rgba(255,15,123,0.5), 0 16px 45px rgba(255,15,123,0.65), 0 0 80px rgba(255,15,123,0.2);
+        }
+        .hx-cta-arrow {
+          width: 28px; height: 28px; border-radius: 50%;
+          background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3);
+          display: flex; align-items: center; justify-content: center;
+          flex-shrink: 0; font-size: 14px; transition: transform 0.2s ease;
+        }
+        .hx-cta:hover .hx-cta-arrow { transform: translateX(3px); }
+        .hx-ghost {
+          display: inline-flex; align-items: center; gap: 10px;
+          padding: 14px 28px; border-radius: 100px;
+          font-family: 'Outfit', sans-serif; font-weight: 600; font-size: 14px;
+          color: rgba(255,255,255,0.7); text-decoration: none; cursor: pointer;
+          border: 1px solid rgba(255,255,255,0.18); background: rgba(255,255,255,0.06);
+          backdrop-filter: blur(12px); transition: all 0.25s ease;
+        }
+        .hx-ghost:hover { color:#fff; border-color:rgba(255,255,255,0.35); background:rgba(255,255,255,0.12); transform:translateY(-2px); }
+        .hx-play {
+          width: 24px; height: 24px; border-radius: 50%;
+          background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.25);
+          display: flex; align-items: center; justify-content: center; font-size: 10px;
         }
 
-        /* ══════════════════════════════════════
-           KEYFRAMES
-        ══════════════════════════════════════ */
-        @keyframes heroFloatY {
-          0%, 100% { transform: translateY(0); }
-          50%       { transform: translateY(-14px); }
+        /* ── Stats bar ── */
+        .hx-stats {
+          display: flex; align-items: stretch; gap: 0; margin-top: 52px;
+          animation: hxFade 1s 0.65s ease both;
+          border: 1px solid rgba(255,255,255,0.1); border-radius: 20px;
+          background: rgba(0,0,0,0.35); backdrop-filter: blur(24px); overflow: hidden;
+          box-shadow: inset 0 1px 0 rgba(255,255,255,0.06), 0 0 0 1px rgba(255,15,123,0.08);
         }
-        @keyframes heroFadeDown {
-          from { opacity:0; transform:translateY(-26px); }
-          to   { opacity:1; transform:translateY(0); }
+        .hx-stat-item {
+          flex: 1; padding: 22px 28px; text-align: center;
+          border-right: 1px solid rgba(255,255,255,0.08);
+        }
+        .hx-stat-item:last-child { border-right: none; }
+        .hx-stat-val {
+          display: block; font-family: 'Outfit', sans-serif; font-weight: 800;
+          font-size: clamp(1.4rem, 2.8vw, 2rem);
+          background: var(--g1); -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent; background-clip: text; line-height: 1.1;
+        }
+        .hx-stat-lbl {
+          display: block; font-size: 10.5px; font-weight: 500;
+          color: rgba(255,255,255,0.4); letter-spacing: 0.1em;
+          text-transform: uppercase; margin-top: 5px;
+          font-family: 'Plus Jakarta Sans', sans-serif;
         }
 
-        /* ══════════════════════════════════════
-           RESPONSIVE
-        ══════════════════════════════════════ */
-        @media (max-width: 768px) {
-          .stat-students { left:2%; top:auto; bottom:44%; }
-          .stat-courses  { right:2%; top:auto; bottom:56%; }
-          .stat-rating   { display: none; }
-          .hero-content  { padding: 80px 16px 60px; }
+        /* ── Floating badges ── */
+        .hx-badge {
+          position: absolute; z-index: 12; display: flex; align-items: center; gap: 10px;
+          padding: 12px 16px; border-radius: 16px;
+          background: rgba(5,1,15,0.8); border: 1px solid rgba(255,255,255,0.12);
+          backdrop-filter: blur(24px);
+          box-shadow: 0 8px 32px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.07);
+          animation: hxFloat ease-in-out infinite;
         }
-        @media (max-width: 480px) {
-          .hero-ring { display: none; }
-          .stat-students, .stat-courses { display: none; }
+        .hx-badge-icon { font-size: 20px; line-height: 1; }
+        .hx-badge-info { display: flex; flex-direction: column; gap: 2px; }
+        .hx-badge-val { font-family: 'Outfit', sans-serif; font-size: 14px; font-weight: 700; color: #fff; line-height: 1; }
+        .hx-badge-sub { font-size: 10px; color: rgba(255,255,255,0.45); font-family: 'Plus Jakarta Sans', sans-serif; }
+        .hx-badge-dot { width:7px; height:7px; border-radius:50%; background:#4ade80; box-shadow:0 0 8px #4ade80; animation:hxPulse 1.6s ease infinite; flex-shrink:0; }
+
+        .badge-tl { top:22%; left:4%; animation-duration:5s; animation-delay:0s; }
+        .badge-tr { top:18%; right:4%; animation-duration:6s; animation-delay:-1.5s; }
+        .badge-br { bottom:26%; right:4%; animation-duration:4.5s; animation-delay:-0.8s; }
+        @keyframes hxFloat { 0%,100% { transform:translateY(0); } 50% { transform:translateY(-10px); } }
+
+        /* ── Corner accents ── */
+        .hx-corner { position:absolute; z-index:5; width:48px; height:48px; pointer-events:none; }
+        .hx-corner-tl { top:20px; left:20px; border-top:1px solid rgba(255,15,123,0.3); border-left:1px solid rgba(255,15,123,0.3); }
+        .hx-corner-tr { top:20px; right:20px; border-top:1px solid rgba(248,155,41,0.3); border-right:1px solid rgba(248,155,41,0.3); }
+        .hx-corner-bl { bottom:20px; left:20px; border-bottom:1px solid rgba(131,35,136,0.3); border-left:1px solid rgba(131,35,136,0.3); }
+        .hx-corner-br { bottom:20px; right:20px; border-bottom:1px solid rgba(227,67,107,0.3); border-right:1px solid rgba(227,67,107,0.3); }
+
+        .hx-fade-bottom {
+          position: absolute; bottom: 0; left: 0; width: 100%; height: 120px;
+          z-index: 8; pointer-events: none;
+          background: linear-gradient(to bottom, transparent, rgba(5,1,15,0.65));
+        }
+
+        @keyframes hxFade { from { opacity:0; transform:translateY(18px); } to { opacity:1; transform:translateY(0); } }
+
+        @media (max-width: 900px) {
+          .badge-tl, .badge-tr, .badge-br { display: none; }
+          .hx-stat-item { padding: 16px 16px; }
+        }
+        @media (max-width: 600px) {
+          .hx-content { padding: 0 18px; }
+          .hx-stats { flex-wrap: wrap; border-radius: 16px; }
+          .hx-stat-item { flex: 1 1 50%; border-right: 1px solid rgba(255,255,255,0.07); border-bottom: 1px solid rgba(255,255,255,0.07); padding: 14px; }
+          .hx-corner { display: none; }
+          .hx-desc-row { display: none; }
         }
       `}</style>
 
-      <section className="hero-wrap">
+      <section className="hx-wrap">
 
-        {/* ── Background image ── */}
-        <Image
-          src="/home-background-min.webp"
-          alt="Students learning"
-          fill
-          className="hero-bg"
-          priority
-          quality={92}
+        {/* ── Real education background image (Unsplash) ── */}
+        <img
+          src="https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=1920&q=85&auto=format&fit=crop"
+          alt="Students learning together"
+          className="hx-bg-img"
         />
 
-        {/* ── Layered overlays ── */}
-        <div className="hero-ov1" />
-        <div className="hero-ov2" />
-        <div className="hero-ov3" />
-        <div className="hero-ov4" />
-        <div className="hero-noise" />
+        {/* ── Overlays ── */}
+        <div className="hx-ov1" />
+        <div className="hx-ov2" />
+        <div className="hx-ov3" />
+        <div className="hx-tint" />
+        <div className="hx-scanline" />
 
-        {/* ── Glowing orbs ── */}
-        <div className="hero-orb hero-orb-1" />
-        <div className="hero-orb hero-orb-2" />
-        <div className="hero-orb hero-orb-3" />
+        {/* ── Corner accents ── */}
+        <div className="hx-corner hx-corner-tl" />
+        <div className="hx-corner hx-corner-tr" />
+        <div className="hx-corner hx-corner-bl" />
+        <div className="hx-corner hx-corner-br" />
 
-        {/* ── Sparkle stars ── */}
-        <span className="hero-spark hs1" />
-        <span className="hero-spark hs2" />
-        <span className="hero-spark hs3" />
-        <span className="hero-spark hs4" />
-        <span className="hero-spark hs5" />
+        {/* ── Floating badges ── */}
+        <div className="hx-badge badge-tl">
+          <div className="hx-badge-icon">🎓</div>
+          <div className="hx-badge-info">
+            <span className="hx-badge-val">12,000+</span>
+            <span className="hx-badge-sub">Active Learners</span>
+          </div>
+          <div className="hx-badge-dot" />
+        </div>
 
-        {/* ── Rotating rings ── */}
-        <div className="hero-ring ring-1" />
-        <div className="hero-ring ring-2" />
-        <div className="hero-ring ring-3" />
-
-        {/* ── Floating stat cards ── */}
-        <div className="hero-stat stat-students">
-          <div className="s-icon">👥</div>
-          <div>
-            <span className="s-val">12,000+</span>
-            <span className="s-label">Active Students</span>
+        <div className="hx-badge badge-tr">
+          <div className="hx-badge-icon">⭐</div>
+          <div className="hx-badge-info">
+            <span className="hx-badge-val">4.9 / 5.0</span>
+            <span className="hx-badge-sub">Student Rating</span>
           </div>
         </div>
 
-        <div className="hero-stat stat-courses">
-          <div className="s-icon">📚</div>
-          <div>
-            <span className="s-val">200+</span>
-            <span className="s-label">Courses Available</span>
-          </div>
-        </div>
-
-        <div className="hero-stat stat-rating">
-          <div className="s-icon">⭐</div>
-          <div>
-            <span className="s-val">4.9 / 5.0</span>
-            <span className="hero-stars">★★★★★</span>
+        <div className="hx-badge badge-br">
+          <div className="hx-badge-icon">📚</div>
+          <div className="hx-badge-info">
+            <span className="hx-badge-val">200+ Courses</span>
+            <span className="hx-badge-sub">Live & On-demand</span>
           </div>
         </div>
 
         {/* ── Main content ── */}
-        <div className="hero-content">
-
-          {/* Badge */}
-          <div className="hero-badge">
-            <div className="hero-badge-avatars">
-              <span>😊</span>
-              <span>🎓</span>
-              <span>✨</span>
-            </div>
-            <div className="hero-badge-divider" />
-            <div className="hero-badge-live">
-              <div className="hero-badge-live-dot" />
-              <span>1,500+ Users Learning Now</span>
-            </div>
+        <div className="hx-content">
+          <div className="hx-pill">
+            <div className="hx-pill-dot" />
+            <span className="hx-pill-text">1,500+ students learning right now</span>
+            <div className="hx-pill-icon">✦</div>
           </div>
 
-          {/* Headline */}
-          <h1 className="hero-headline">
-            <span className="hero-eyebrow">✦ Your future starts here ✦</span>
-
-            {/* Learn Smarter. */}
-            <span className="hl-l1">
-              Learn{' '}
-              <span className="hl-grad hl-underline">Smarter.</span>
+          <h1 className="hx-headline">
+            <span className="hx-line1">
+              <span className="hx-grad hx-underword">Learn</span> Smarter.
             </span>
-
-            {/* Grow Faster. */}
-            <span className="hl-l2">
-              Grow{' '}
-              <span className="hl-grad hl-box">Faster.</span>
+            <span className="hx-line2">
+              Grow <span className="hx-grad2 hx-highlight">Faster.</span>
             </span>
-
-            {/* Succeed Anywhere. */}
-            <span className="hl-l3">
-              <span className="hl-glow">Succeed Anywhere.</span>
+            <span className="hx-line3">
+              Succeed — anywhere in the world.
             </span>
           </h1>
 
-          {/* Subtext */}
-          <p className="hero-sub">
-            Practical, industry-ready courses taught by expert instructors.
-            Learn at your own pace or live from anywhere in the world.
-          </p>
+          <div className="hx-desc-row">
+            <div className="hx-desc-line" />
+            <span className="hx-desc">Practical · Expert-led · Industry-ready</span>
+            <div className="hx-desc-line right" />
+          </div>
 
-          {/* Buttons */}
-          <div className="hero-btns">
-            <a href="#" className="hero-btn">
+          <div className="hx-btns">
+            <a href="#" className="hx-cta">
               <span>Explore Courses</span>
-              <svg width="17" height="17" viewBox="0 0 24 24" fill="none"
-                stroke="currentColor" strokeWidth="2.5"
-                strokeLinecap="round" strokeLinejoin="round">
-                <path d="M5 12h14M12 5l7 7-7 7" />
-              </svg>
+              <div className="hx-cta-arrow">→</div>
             </a>
-            <a href="#" className="hero-btn-ghost">
-              <div className="play-icon">▶</div>
+            <a href="#" className="hx-ghost">
+              <div className="hx-play">▶</div>
               Watch Demo
             </a>
           </div>
+
+          <div className="hx-stats">
+            <div className="hx-stat-item">
+              <span className="hx-stat-val">12K+</span>
+              <span className="hx-stat-lbl">Students</span>
+            </div>
+            <div className="hx-stat-item">
+              <span className="hx-stat-val">200+</span>
+              <span className="hx-stat-lbl">Courses</span>
+            </div>
+            <div className="hx-stat-item">
+              <span className="hx-stat-val">4.9★</span>
+              <span className="hx-stat-lbl">Rating</span>
+            </div>
+            <div className="hx-stat-item">
+              <span className="hx-stat-val">98%</span>
+              <span className="hx-stat-lbl">Satisfaction</span>
+            </div>
+          </div>
         </div>
 
-        {/* ── Bottom fade ── */}
-        <div className="hero-bottom" />
+        <div className="hx-fade-bottom" />
       </section>
     </>
   );

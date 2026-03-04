@@ -5,8 +5,10 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "start": "next start",
-    "lint": "eslint"
+    "start": "next start -p $PORT",
+    "lint": "eslint",
+    "socket": "ts-node src/server/socket-server.ts",
+    "socket:dev": "nodemon --exec ts-node src/server/socket-server.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.78.0",
@@ -44,6 +46,7 @@
     "eslint-config-next": "16.1.6",
     "mongodb-memory-server": "^11.0.1",
     "tailwindcss": "^4",
+    "ts-node": "^10.9.2",
     "typescript": "^5"
   }
-}
+}   
