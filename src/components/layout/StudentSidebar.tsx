@@ -29,11 +29,11 @@ const StudentSidebar = () => {
       icon: <BsGrid1X2Fill />, 
       href: "/dashboard/student/Std-dashboared" 
     },
-    { 
-      name: "My Profile", 
-      icon: <BsPerson size={20} />, 
-      href: "/dashboard/student/profile" 
-    },
+    // { 
+    //   name: "My Profile", 
+    //   icon: <BsPerson size={20} />, 
+    //   href: "/dashboard/student/profile" 
+    // },
     { 
       name: "Enrolled Courses", 
       icon: <BsBook />, 
@@ -44,11 +44,11 @@ const StudentSidebar = () => {
       icon: <BsPatchCheck />, 
       href: "/dashboard/student/certificates" 
     },
-    { 
-      name: "Wishlist", 
-      icon: <BsHeart />, 
-      href: "/dashboard/student/wishlist" 
-    },
+    // { 
+    //   name: "Wishlist", 
+    //   icon: <BsHeart />, 
+    //   href: "/dashboard/student/wishlist" 
+    // },
     { 
       name: "Reviews", 
       icon: <BsStar />, 
@@ -59,26 +59,26 @@ const StudentSidebar = () => {
       icon: <BsQuestionCircle />, 
       href: "/dashboard/student/Quiz-Attempts" 
     },
-    { 
-      name: "Order History", 
-      icon: <BsCart3 />, 
-      href: "/dashboard/student/orders" 
-    },
-    { 
-      name: "Referrals", 
-      icon: <BsPeople />, 
-      href: "/dashboard/student/referrals" 
-    },
-    { 
-      name: "Messages", 
-      icon: <BsChatLeftDots />, 
-      href: "/dashboard/student/messages" 
-    },
-    { 
-      name: "Support Tickets", 
-      icon: <BsTicketPerforated />, 
-      href: "/dashboard/student/support" 
-    },
+    // { 
+    //   name: "Order History", 
+    //   icon: <BsCart3 />, 
+    //   href: "/dashboard/student/orders" 
+    // },
+    // { 
+    //   name: "Referrals", 
+    //   icon: <BsPeople />, 
+    //   href: "/dashboard/student/referrals" 
+    // },
+    // { 
+    //   name: "Messages", 
+    //   icon: <BsChatLeftDots />, 
+    //   href: "/dashboard/student/messages" 
+    // },
+    // { 
+    //   name: "Support Tickets", 
+    //   icon: <BsTicketPerforated />, 
+    //   href: "/dashboard/student/support" 
+    // },
   ];
 
   const accountSettingsItems = [
