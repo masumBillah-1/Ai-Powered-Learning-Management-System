@@ -341,7 +341,7 @@ function Sidebar({ role, setRole, items, theme }: {
               <Link
                 key={r}
                 href={roleHome[r]}
-                onClick={() => { setRole(r); setOpen(false); }}
+                onClick={() => { setRole(r); setOpen(false); localStorage.setItem("dashboardRole", r); }}
                 style={{
                   display: "block", padding: "9px 12px",
                   color: r === role ? "#4ade80" : "#ccc",
@@ -383,6 +383,60 @@ function Sidebar({ role, setRole, items, theme }: {
   );
 }
 
+
+// ─── Page Loader ─────────────────────────────────────────────────────────────
+function PageLoader({ children, theme }: { children: React.ReactNode; theme: "dark" | "light" }) {
+  const [loading, setLoading] = useState(true);
+  const pathname = usePathname();
+
+  useEffect(() => {
+    setLoading(true);
+    const t = setTimeout(() => setLoading(false), 400);
+    return () => clearTimeout(t);
+  }, [pathname]);
+
+  if (loading) {
+    return (
+      <div style={{
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        justifyContent: "center",
+        height: "100%",
+        minHeight: "400px",
+        gap: "16px",
+      }}>
+        {/* Spinner */}
+        <div style={{
+          width: "44px",
+          height: "44px",
+          borderRadius: "50%",
+          border: `3px solid ${theme === "dark" ? "#2a2a2a" : "#f0f0f0"}`,
+          borderTop: "3px solid #FF0F7B",
+          borderRight: "3px solid #F89B29",
+          animation: "spin 0.7s linear infinite",
+        }} />
+        <p style={{
+          margin: 0,
+          fontSize: "14px",
+          fontWeight: "600",
+          color: theme === "dark" ? "#aaa" : "#888",
+        }}>
+          Loading...
+        </p>
+        <style>{`
+          @keyframes spin {
+            0%   { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+          }
+        `}</style>
+      </div>
+    );
+  }
+
+  return <>{children}</>;
+}
+
 // ─── Layout ───────────────────────────────────────────────────────────────────
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const [role, setRole] = useState<Role>("admin");
@@ -400,9 +454,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     if (savedUser) {
       const parsed: UserData = JSON.parse(savedUser);
       setUser(parsed);
-      // user এর role অনুযায়ী sidebar set করো
-      if (parsed.role === "student" || parsed.role === "instructor" || parsed.role === "admin") {
+      // dashboardRole আগে check করো (manual switch), তারপর user.role
+      const savedRole = localStorage.getItem("dashboardRole");
+      if (savedRole === "student" || savedRole === "instructor" || savedRole === "admin") {
+        setRole(savedRole as Role);
+      } else if (parsed.role === "student" || parsed.role === "instructor" || parsed.role === "admin") {
         setRole(parsed.role as Role);
+        localStorage.setItem("dashboardRole", parsed.role);
       }
     }
   }, []);
@@ -434,7 +492,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           onLogout={handleLogout}
         />
         <main style={{ flex: 1, padding: "30px", background: colors[theme].mainBg }}>
-          {children}
+          <PageLoader theme={theme}>
+            {children}
+          </PageLoader>
         </main>
       </div>
     </div>
