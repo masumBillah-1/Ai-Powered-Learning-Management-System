@@ -74,7 +74,8 @@ const Logo = () => {
         <div className="relative">
           <div className="absolute -inset-1 bg-gradient-to-r from-[#FF0F7B] to-[#F89B29] rounded-2xl blur-lg opacity-40 group-hover:opacity-60 transition-all duration-500"></div>
           
-          <div className="relative w-[52px] h-[52px] bg-gradient-to-br from-[#FF0F7B] to-[#F89B29] rounded-2xl shadow-xl transform group-hover:scale-105 group-hover:rotate-[5deg] transition-all duration-300 flex items-center justify-center">
+          <div className="text-5xl">🎓</div>
+          {/* <div className="relative w-[52px] h-[52px] bg-gradient-to-br from-[#FF0F7B] to-[#F89B29] rounded-2xl shadow-xl transform group-hover:scale-105 group-hover:rotate-[5deg] transition-all duration-300 flex items-center justify-center">
             <span className="text-white text-4xl font-black italic transform -rotate-6 drop-shadow-lg" 
               style={{ 
                 fontFamily: "'Poppins', 'Inter', sans-serif",
@@ -84,8 +85,21 @@ const Logo = () => {
             </span>
             <div className="absolute -top-1 -right-1 w-3 h-3 bg-white rounded-full border-2 border-white shadow-lg"></div>
             <div className="absolute -bottom-1 -left-1 w-2 h-2 bg-yellow-300 rounded-full border border-white animate-pulse"></div>
-          </div>
+          </div> */}
         </div>
+
+
+
+                {/* Rendered size:	155 × 36 px
+                  Rendered aspect ratio:	155∶36
+                  File size:	18.7 kB
+                  Current source:	https://dreamslms.dreamstechnologies.com/html/template/assets/img/logo-white.svg */}
+
+
+
+
+
+
 
         {/* --- BrainBoost Text --- */}
         <div className="flex flex-col leading-none">
