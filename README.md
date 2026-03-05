@@ -197,6 +197,282 @@ This creates a **cohesive visual experience** throughout the entire application.
 
 ---
 
+## 📋 Complete Dashboard Structure
+
+## 📋 Complete Dashboard Structure
+
+### 📊 Dashboard Overview
+
+| Role | Pages | Shared Pages | Total Files |
+|------|-------|--------------|-------------|
+| **Shared** | profile, messages, settings | 3 | 3 |
+| **Student** | dashboard + 4 pages | - | 5 |
+| **Instructor** | dashboard + 7 pages | - | 8 |
+| **Admin** | dashboard + 4 pages | - | 5 |
+| **Total** | - | - | **21 files** |
+
+---
+
+### 📁 Final Complete Dashboard Structure
+
+```
+dashboard/
+│
+├── layout.tsx                          # role দেখে sidebar + navbar control
+│
+├── 📂 profile/
+│   └── page.tsx                        # সবার জন্য ১টা
+│       ├── Top: avatar, নাম, role badge, edit button
+│       ├── Info: email, phone, bio, social links
+│       ├── Stats: (role দেখে আলাদা)
+│       │   ├── Student → enrolled, completed, certificates
+│       │   ├── Instructor → courses, students, rating
+│       │   └── Admin → role type, last login
+│       └── Activity: (role দেখে আলাদা)
+│           ├── Student → recent quiz scores
+│           ├── Instructor → recent course activity
+│           └── Admin → recent platform actions
+│
+├── 📂 messages/
+│   └── page.tsx                        # সবার জন্য ১টা
+│       ├── Left: conversation list + search
+│       └── Right: chat window
+│           ├── Student → instructor এর সাথে
+│           ├── Instructor → student + admin
+│           └── Admin → সবার সাথে
+│
+├── 📂 settings/
+│   └── page.tsx                        # সবার জন্য ১টা
+│       ├── Tab 1: Profile (সবার)
+│       │   ├── Avatar upload
+│       │   └── নাম, email, phone, bio
+│       ├── Tab 2: Security (সবার)
+│       │   ├── Password change
+│       │   └── 2FA toggle
+│       ├── Tab 3: Notifications (সবার)
+│       │   ├── Email toggle
+│       │   └── Push toggle
+│       ├── Tab 4: Payout Info (শুধু Instructor)
+│       │   ├── Bank name, account number
+│       │   └── Routing number
+│       └── Tab 5: Platform (শুধু Admin)
+│           ├── Site name, logo
+│           ├── Maintenance mode
+│           └── Commission rate
+│
+├── 📂 student/
+│   │
+│   ├── page.tsx                        # Student Dashboard
+│   │   ├── Welcome card (নাম + ছবি)
+│   │   ├── Enrolled courses + progress bar
+│   │   ├── Upcoming assignment deadlines
+│   │   ├── Recent quiz scores
+│   │   └── Certificates earned count
+│   │
+│   ├── courses/
+│   │   └── page.tsx
+│   │       ├── Course cards (thumbnail, progress %)
+│   │       ├── Continue watching button
+│   │       └── Filter: In Progress / Completed
+│   │
+│   ├── assignments/
+│   │   └── page.tsx
+│   │       ├── Assignment list (course, deadline)
+│   │       ├── Status: Pending / Submitted / Graded
+│   │       ├── Submit button
+│   │       └── Grade + feedback দেখা
+│   │
+│   ├── quiz/
+│   │   └── page.tsx
+│   │       ├── Available quizzes (course wise)
+│   │       ├── Status: Not Started / Completed
+│   │       ├── Start quiz button
+│   │       └── Score history
+│   │
+│   └── certificates/
+│       └── page.tsx
+│           ├── Earned certificate cards
+│           ├── Course name + completion date
+│           ├── Download PDF button
+│           └── Share to LinkedIn button
+│
+├── 📂 instructor/
+│   │
+│   ├── layout.tsx                      # instructor sidebar
+│   │
+│   ├── page.tsx                        # Instructor Dashboard
+│   │   ├── Welcome card (নাম + rating)
+│   │   ├── Stats: students, courses, earnings
+│   │   ├── Recent student activity
+│   │   ├── Pending assignments to review
+│   │   └── Monthly earnings chart
+│   │
+│   ├── courses/
+│   │   └── page.tsx
+│   │       ├── Created course cards
+│   │       ├── Students count + rating
+│   │       ├── Status: Published / Draft
+│   │       ├── Add new course button
+│   │       └── Edit / Delete option
+│   │
+│   ├── announcements/
+│   │   └── page.tsx
+│   │       ├── Announcement list (title, date)
+│   │       ├── Create new announcement
+│   │       ├── Target: course / all students
+│   │       └── Edit / Delete option
+│   │
+│   ├── assignments/
+│   │   └── page.tsx
+│   │       ├── Created assignments list
+│   │       ├── Submissions count
+│   │       ├── Review / Grade submissions
+│   │       └── Add new assignment button
+│   │
+│   ├── students/
+│   │   └── page.tsx
+│   │       ├── Enrolled students table
+│   │       ├── Course wise filter
+│   │       ├── Progress per student
+│   │       └── Message student button
+│   │
+│   ├── quiz/
+│   │   └── page.tsx
+│   │       ├── Created quizzes list
+│   │       ├── Add new quiz + questions
+│   │       └── Publish / Unpublish toggle
+│   │
+│   ├── quiz-results/
+│   │   └── page.tsx
+│   │       ├── Student wise results table
+│   │       ├── Average score per quiz
+│   │       └── Pass / Fail breakdown chart
+│   │
+│   └── earnings/
+│       └── page.tsx                    # 💰 3 Tabs in 1 File
+│           ├── Tab 1: Overview
+│           │   ├── Total earned (lifetime)
+│           │   ├── This month earned
+│           │   ├── Pending payout amount
+│           │   └── Monthly bar chart
+│           ├── Tab 2: Payout
+│           │   ├── Available balance
+│           │   ├── Request payout button
+│           │   ├── Minimum payout notice
+│           │   └── Payout history table
+│           │       ├── Date
+│           │       ├── Amount
+│           │       └── Status (Pending/Paid)
+│           └── Tab 3: Statements
+│               ├── Month filter dropdown
+│               ├── Transactions table
+│               │   ├── Course name
+│               │   ├── Student name
+│               │   ├── Date
+│               │   └── Amount
+│               └── Download CSV button
+│
+└── 📂 admin/
+    │
+    ├── page.tsx                        # Admin Dashboard
+    │   ├── Platform stats (users, courses, revenue)
+    │   ├── New registrations today
+    │   ├── Active courses count
+    │   ├── Recent transactions
+    │   └── User growth chart
+    │
+    ├── courses/
+    │   └── page.tsx
+    │       ├── All courses table
+    │       ├── Filter: instructor, status, category
+    │       └── Approve / Reject / Remove
+    │
+    ├── users/
+    │   └── page.tsx                    # 👥 2 Tabs in 1 File
+    │       ├── Tab 1: Students
+    │       │   ├── Search bar
+    │       │   ├── Students table
+    │       │   │   ├── Avatar + নাম
+    │       │   │   ├── Email
+    │       │   │   ├── Enrolled courses count
+    │       │   │   ├── Join date
+    │       │   │   └── Block / Unblock button
+    │       │   └── Total students count
+    │       └── Tab 2: Instructors
+    │           ├── Search bar
+    │           ├── Instructors table
+    │           │   ├── Avatar + নাম
+    │           │   ├── Email
+    │           │   ├── Total courses + students
+    │           │   ├── Verified badge
+    │           │   └── Verify / Block button
+    │           └── Total instructors count
+    │
+    ├── announcements/
+    │   └── page.tsx
+    │       ├── All announcements list
+    │       ├── Create announcement
+    │       ├── Target: all / specific role
+    │       └── Edit / Delete option
+    │
+    └── earnings/
+        └── page.tsx                    # 💰 3 Tabs in 1 File
+            ├── Tab 1: Overview
+            │   ├── Total platform revenue
+            │   ├── This month revenue
+            │   ├── Total instructors paid
+            │   └── Revenue line chart
+            ├── Tab 2: Payouts
+            │   ├── Pending requests table
+            │   │   ├── Instructor name
+            │   │   ├── Amount requested
+            │   │   ├── Date
+            │   │   └── Approve / Reject button
+            │   └── Completed payouts history
+            └── Tab 3: Statements
+                ├── Filter (by instructor, month)
+                ├── All transactions table
+                │   ├── Instructor name
+                │   ├── Course name
+                │   ├── Student name
+                │   ├── Date
+                │   └── Amount
+                └── Export CSV button
+```
+
+---
+
+### 🎯 Key Implementation Notes
+
+#### 💡 Single File with Tabs Approach
+- **Earnings Pages**: একটাই `page.tsx` file, ভেতরে 3 tabs (Overview, Payout, Statements)
+- **Users Page**: একটাই `page.tsx` file, ভেতরে 2 tabs (Students, Instructors)  
+- **Settings Page**: একটাই `page.tsx` file, role দেখে tabs conditionally render
+
+#### 🔄 State Management Pattern
+```typescript
+const [activeTab, setActiveTab] = useState('overview');
+const { user } = useAuth(); // role check করার জন্য
+
+// Role-based tab rendering
+{user.role === 'instructor' && (
+  <Tab>Payout Info</Tab>
+)}
+```
+
+#### 📱 Responsive Design
+- Mobile: Tabs হবে dropdown/select
+- Desktop: Horizontal tab navigation
+- Sidebar: Role-based menu items
+
+#### 🎨 UI Components Reused
+- `<TabContainer>` - All tabbed pages
+- `<DataTable>` - All table displays  
+- `<StatsCard>` - Dashboard metrics
+- `<FilterBar>` - Search and filters
+
+---
+
 ## 🛠️ Technology Stack
 
 ### Frontend
