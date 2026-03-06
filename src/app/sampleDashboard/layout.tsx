@@ -296,7 +296,10 @@ function Sidebar({ role, setRole, items, theme }: {
   return (
     <aside style={{
       width: "220px",
-      minHeight: "100vh",
+      height: "100vh",
+      position: "sticky",
+      top: 0,
+      overflowY: "auto",
       background: c.sidebarBg,
       padding: "20px 0",
       flexShrink: 0,
