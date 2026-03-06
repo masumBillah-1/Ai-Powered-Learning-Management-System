@@ -199,14 +199,14 @@ const Navbar = () => {
                           </div>
                         </div>
                         <Link
-                          href={`/dashboard/${user.role}`}
+                          href={`/sampleDashboard/${user.role}`}
                           className="flex items-center gap-3 px-5 py-3 hover:bg-gray-50 dark:hover:bg-gray-800 font-bold dark:text-gray-200 text-gray-700"
                           onClick={() => setShowMenu(false)}
                         >
                           <FaThLarge className="text-[#6710C2]" /> Dashboard
                         </Link>
                         <Link
-                          href="/dashboard/profile"
+                          href="/sampleDashboard/admin"
                           className="flex items-center gap-3 px-5 py-3 hover:bg-gray-50 dark:hover:bg-gray-800 font-bold dark:text-gray-200 text-gray-700"
                           onClick={() => setShowMenu(false)}
                         >
@@ -308,7 +308,7 @@ const Navbar = () => {
               ))}
               {user && (
                 <Link
-                  href="/dashboard/my-classes"
+                  href="/sampleDashboard/admin"
                   className="flex justify-between items-center p-4 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-800 text-gray-800 dark:text-gray-200 font-bold"
                   onClick={() => setIsOpen(false)}
                 >
@@ -321,7 +321,7 @@ const Navbar = () => {
               {user ? (
                 <>
                   <Link
-                    href={`/dashboard/${user.role}`}
+                    href={`/sampleDashboard/${user.role}`}
                     className="flex items-center justify-center gap-2 w-full bg-[#f3f4f6] dark:bg-gray-800 text-gray-800 dark:text-white py-4 rounded-2xl font-bold"
                     onClick={() => setIsOpen(false)}
                   >
