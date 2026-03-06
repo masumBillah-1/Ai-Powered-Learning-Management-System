@@ -35,7 +35,7 @@ export function middleware(req: NextRequest) {
   // Auth route with token → redirect to dashboard
   if (isAuthRoute && token) {
     console.log("✅ Has token, redirecting to dashboard");
-    return NextResponse.redirect(new URL("/dashboard/student", req.url));
+    return NextResponse.redirect(new URL("sampleDashboard/admin", req.url));
   }
 
   console.log("✅ Allowing access");

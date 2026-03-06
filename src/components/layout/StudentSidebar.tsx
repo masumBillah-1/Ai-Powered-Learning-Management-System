@@ -27,7 +27,7 @@ const StudentSidebar = () => {
     { 
       name: "Dashboard", 
       icon: <BsGrid1X2Fill />, 
-      href: "/dashboard/student/Std-dashboared" 
+      href: "/sampleDashboard/admin" 
     },
     // { 
     //   name: "My Profile", 
