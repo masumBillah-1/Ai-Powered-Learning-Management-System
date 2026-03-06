@@ -157,7 +157,9 @@ const Navbar = () => {
                   </Link>
                   <button
                     onClick={() => setIsEnrollModalOpen(true)}
-                    style={{ background: "linear-gradient(90deg, #FF0F7B, #F89B29)" }}
+                    style={{
+                      background: "linear-gradient(90deg, #FF0F7B, #F89B29)",
+                    }}
                     className="text-white px-8 py-2.5 rounded-xl font-extrabold text-sm shadow-md hover:scale-105 transition-all"
                   >
                     Enroll Now
@@ -167,7 +169,9 @@ const Navbar = () => {
                 <div className="flex items-center gap-4">
                   <button
                     onClick={() => setIsEnrollModalOpen(true)}
-                    style={{ background: "linear-gradient(90deg, #FF0F7B, #F89B29)" }}
+                    style={{
+                      background: "linear-gradient(90deg, #FF0F7B, #F89B29)",
+                    }}
                     className="hidden xl:block text-white px-8 py-2.5 rounded-xl font-extrabold text-sm shadow-lg hover:scale-105 transition-all"
                   >
                     Enroll Now
@@ -324,8 +328,13 @@ const Navbar = () => {
                     <FaThLarge /> Dashboard
                   </Link>
                   <button
-                    onClick={() => { setIsOpen(false); setIsEnrollModalOpen(true); }}
-                    style={{ background: "linear-gradient(90deg, #FF0F7B, #F89B29)" }}
+                    onClick={() => {
+                      setIsOpen(false);
+                      setIsEnrollModalOpen(true);
+                    }}
+                    style={{
+                      background: "linear-gradient(90deg, #FF0F7B, #F89B29)",
+                    }}
                     className="w-full text-white py-4 rounded-2xl font-bold shadow-lg"
                   >
                     Enroll Now
@@ -346,8 +355,13 @@ const Navbar = () => {
                     Login
                   </Link>
                   <button
-                    onClick={() => { setIsOpen(false); setIsEnrollModalOpen(true); }}
-                    style={{ background: "linear-gradient(90deg, #FF0F7B, #F89B29)" }}
+                    onClick={() => {
+                      setIsOpen(false);
+                      setIsEnrollModalOpen(true);
+                    }}
+                    style={{
+                      background: "linear-gradient(90deg, #FF0F7B, #F89B29)",
+                    }}
                     className="w-full text-white py-4 rounded-2xl font-bold shadow-lg"
                   >
                     Enroll Now
@@ -361,16 +375,16 @@ const Navbar = () => {
 
       {/* ENROLL MODAL */}
       {isEnrollModalOpen && (
-        <div 
+        <div
           className="fixed inset-0 z-[200] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-300"
           onClick={() => setIsEnrollModalOpen(false)}
         >
-          <div 
+          <div
             className="relative bg-white dark:bg-[#1a2236] w-full max-w-[480px] rounded-[32px] overflow-hidden shadow-2xl animate-in zoom-in-95 duration-300"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Close Button */}
-            <button 
+            <button
               onClick={() => setIsEnrollModalOpen(false)}
               className="absolute top-5 right-5 text-gray-400 hover:text-red-500 transition-colors z-10"
             >
@@ -388,7 +402,7 @@ const Navbar = () => {
               <h2 className="text-xl md:text-2xl font-bold text-gray-800 dark:text-white leading-tight mb-4">
                 ৬ মাসে একজন প্রফেশনাল হওয়ার চ্যালেঞ্জ নিতে চাও?
               </h2>
-              
+
               <p className="text-gray-600 dark:text-gray-400 mb-8 font-medium">
                 সঠিক গাইডলাইনে তোমার শেখার যাত্রা শুরু হোক আজই।
               </p>
@@ -411,7 +425,9 @@ const Navbar = () => {
               {/* Action Button */}
               <Link href="/login" onClick={() => setIsEnrollModalOpen(false)}>
                 <button
-                  style={{ background: "linear-gradient(90deg, #FF0F7B, #F89B29)" }}
+                  style={{
+                    background: "linear-gradient(90deg, #FF0F7B, #F89B29)",
+                  }}
                   className="w-full py-4 rounded-xl text-white font-black text-lg shadow-lg hover:scale-[1.02] active:scale-95 transition-all"
                 >
                   Register Now
@@ -424,7 +440,5 @@ const Navbar = () => {
     </nav>
   );
 };
-
-
 
 export default Navbar;
