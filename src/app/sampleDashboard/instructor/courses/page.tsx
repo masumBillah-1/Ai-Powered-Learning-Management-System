@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { 
   Search, 
   Grid, 
@@ -32,6 +33,7 @@ interface Course {
 }
 
 const InstructorCoursesPage = () => {
+  const router = useRouter();
   const [viewMode, setViewMode] = useState<'list' | 'grid'>('list');
   const [searchQuery, setSearchQuery] = useState('');
   const [filterCategory, setFilterCategory] = useState('All Categories');
@@ -211,6 +213,7 @@ const InstructorCoursesPage = () => {
               
               {/* Create Course Button */}
               <button 
+                onClick={() => router.push('/sampleDashboard/instructor/courses/create')}
                 className="btn btn-md gap-2 text-white border-0 cursor-pointer hover:opacity-90"
                 style={{ backgroundColor: '#832388' }}
               >
@@ -342,6 +345,7 @@ const InstructorCoursesPage = () => {
                             <button 
                               className="btn btn-ghost btn-xs cursor-pointer"
                               title="Edit"
+                              onClick={() => router.push('/sampleDashboard/instructor/courses/create')}
                             >
                               <Edit2 size={16} />
                             </button>
@@ -443,6 +447,7 @@ const InstructorCoursesPage = () => {
                           <button 
                             className="btn btn-ghost btn-sm btn-circle cursor-pointer"
                             title="Edit Course"
+                            onClick={() => router.push('/sampleDashboard/instructor/courses/create')}
                           >
                             <Edit2 size={16} />
                           </button>
