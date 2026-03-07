@@ -1,317 +1,221 @@
 "use client";
 import { useState, useEffect } from "react";
+import { Check, Pencil, X, Mail, Phone, MapPin, Clock } from "lucide-react";
 
 type Role = "student" | "instructor" | "admin";
+interface UserData { name: string; email: string; photoURL?: string; role: string; phone?: string; bio?: string; }
 
-interface UserData {
-  name: string;
-  email: string;
-  photoURL?: string;
-  role: string;
-  phone?: string;
-  bio?: string;
-}
-
-// ─── Role stats ───────────────────────────────────────────────────────────────
-const roleStats: Record<Role, { label: string; value: string; icon: string; color: string }[]> = {
-  student: [
-    { label: "Enrolled",     value: "5",   icon: "📚", color: "#FF0F7B" },
-    { label: "Completed",    value: "2",   icon: "✅", color: "#00C48C" },
-    { label: "Certificates", value: "2",   icon: "🏆", color: "#F89B29" },
-    { label: "Avg Score",    value: "82%", icon: "🎯", color: "#832388" },
-  ],
-  instructor: [
-    { label: "Courses",  value: "4",    icon: "📚", color: "#FF0F7B" },
-    { label: "Students", value: "320",  icon: "🎓", color: "#832388" },
-    { label: "Rating",   value: "4.8",  icon: "⭐", color: "#F89B29" },
-    { label: "Earnings", value: "৳48k", icon: "💰", color: "#00C48C" },
-  ],
-  admin: [
-    { label: "Total Users",   value: "1,278", icon: "👥", color: "#FF0F7B" },
-    { label: "Courses Live",  value: "94",    icon: "📚", color: "#832388" },
-    { label: "Revenue",       value: "৳4.8L", icon: "💰", color: "#F89B29" },
-    { label: "Pending Tasks", value: "3",     icon: "⚡", color: "#E3436B" },
-  ],
+const roleStats: Record<Role, { label: string; value: string; color: string }[]> = {
+  student:    [{ label: "Enrolled", value: "5", color: "#FF0F7B" }, { label: "Completed", value: "2", color: "#00C48C" }, { label: "Certificates", value: "2", color: "#F89B29" }, { label: "Avg Score", value: "82%", color: "#832388" }],
+  instructor: [{ label: "Courses", value: "4", color: "#FF0F7B" }, { label: "Students", value: "320", color: "#832388" }, { label: "Rating", value: "4.8", color: "#F89B29" }, { label: "Earnings", value: "৳48k", color: "#00C48C" }],
+  admin:      [{ label: "Users", value: "1,278", color: "#FF0F7B" }, { label: "Courses", value: "94", color: "#832388" }, { label: "Revenue", value: "৳4.8L", color: "#F89B29" }, { label: "Pending", value: "3", color: "#E3436B" }],
 };
 
-// ─── Role activity ─────────────────────────────────────────────────────────────
-const roleActivity: Record<Role, { text: string; time: string; icon: string }[]> = {
-  student: [
-    { text: "Scored 85% on HTML Basics Quiz",    time: "2 days ago",  icon: "🎯" },
-    { text: "Submitted Todo App Assignment",       time: "5 days ago",  icon: "📝" },
-    { text: "Enrolled in Python for Beginners",    time: "1 week ago",  icon: "📚" },
-    { text: "Earned Web Fundamentals Certificate", time: "2 weeks ago", icon: "🏆" },
-  ],
-  instructor: [
-    { text: "Rahim submitted Build a Todo App",         time: "1 day ago",   icon: "📝" },
-    { text: "New student enrolled in Web Dev Bootcamp", time: "3 days ago",  icon: "🎓" },
-    { text: "Published Python for Beginners course",    time: "1 week ago",  icon: "🚀" },
-    { text: "Received payout of ৳5,000",                time: "2 weeks ago", icon: "💸" },
-  ],
-  admin: [
-    { text: "Approved payout for Karim Hossain", time: "2 hours ago", icon: "💸" },
-    { text: "Approved course: React Advanced",   time: "1 day ago",   icon: "✅" },
-    { text: "Verified instructor: Sadia Islam",  time: "2 days ago",  icon: "👨‍🏫" },
-    { text: "Blocked suspicious user account",   time: "3 days ago",  icon: "🚫" },
-  ],
+const roleActivity: Record<Role, { text: string; time: string; color: string }[]> = {
+  student:    [{ text: "Scored 85% on HTML Basics Quiz", time: "2 days ago", color: "#832388" }, { text: "Submitted Todo App Assignment", time: "5 days ago", color: "#F89B29" }, { text: "Enrolled in Python for Beginners", time: "1 week ago", color: "#00C48C" }, { text: "Earned Web Fundamentals Certificate", time: "2 weeks ago", color: "#FF0F7B" }],
+  instructor: [{ text: "Rahim submitted Build a Todo App", time: "1 day ago", color: "#832388" }, { text: "New student enrolled in Web Dev Bootcamp", time: "3 days ago", color: "#F89B29" }, { text: "Published Python for Beginners course", time: "1 week ago", color: "#00C48C" }, { text: "Received payout of ৳5,000", time: "2 weeks ago", color: "#FF0F7B" }],
+  admin:      [{ text: "Approved payout for Karim Hossain", time: "2 hours ago", color: "#00C48C" }, { text: "Approved course: React Advanced", time: "1 day ago", color: "#832388" }, { text: "Verified instructor: Sadia Islam", time: "2 days ago", color: "#F89B29" }, { text: "Blocked suspicious user account", time: "3 days ago", color: "#FF0F7B" }],
 };
 
-const roleBadge: Record<Role, { bg: string; color: string; label: string }> = {
-  student:    { bg: "#fff5f8", color: "#FF0F7B", label: "Student"    },
-  instructor: { bg: "#f5f0ff", color: "#832388", label: "Instructor" },
-  admin:      { bg: "#fff8f0", color: "#F89B29", label: "Admin"      },
+const roleCfg: Record<Role, { accent: string; label: string }> = {
+  student:    { accent: "#FF0F7B", label: "Student"    },
+  instructor: { accent: "#832388", label: "Instructor" },
+  admin:      { accent: "#F89B29", label: "Admin"      },
 };
 
-// ─── Input Field ──────────────────────────────────────────────────────────────
-const Field = ({ label, value, onChange, type = "text", multiline = false }: {
-  label: string; value: string; onChange: (v: string) => void; type?: string; multiline?: boolean;
-}) => (
-  <div>
-    <label style={{ fontSize: "12px", fontWeight: "700", color: "#888", display: "block", marginBottom: "6px", textTransform: "uppercase", letterSpacing: "0.5px" }}>
-      {label}
-    </label>
-    {multiline ? (
-      <textarea value={value} onChange={e => onChange(e.target.value)} rows={3}
-        style={{ width: "100%", padding: "10px 14px", borderRadius: "8px", border: "1px solid #e5e5e5", fontSize: "14px", outline: "none", resize: "vertical", boxSizing: "border-box", fontFamily: "inherit" }} />
-    ) : (
-      <input type={type} value={value} onChange={e => onChange(e.target.value)}
-        style={{ width: "100%", padding: "10px 14px", borderRadius: "8px", border: "1px solid #e5e5e5", fontSize: "14px", outline: "none", boxSizing: "border-box" }} />
-    )}
-  </div>
-);
-
-// ─── Main Page ────────────────────────────────────────────────────────────────
 export default function ProfilePage() {
   const [user, setUser]     = useState<UserData | null>(null);
   const [role, setRole]     = useState<Role>("student");
-  const [editMode, setEditMode] = useState(false);
-  const [name,  setName]    = useState("");
+  const [theme, setTheme]   = useState("light");
+  const [editMode, setEdit] = useState(false);
+  const [name, setName]     = useState("");
   const [phone, setPhone]   = useState("");
-  const [bio,   setBio]     = useState("");
-  const [imgError, setImgError] = useState(false);
+  const [bio, setBio]       = useState("");
+  const [imgError, setErr]  = useState(false);
+  const [saved, setSaved]   = useState(false);
 
   useEffect(() => {
-    const saved = localStorage.getItem("user");
-    if (saved) {
-      const parsed: UserData = JSON.parse(saved);
-      setUser(parsed);
-      setName(parsed.name || "");
-      setPhone(parsed.phone || "");
-      setBio(parsed.bio || "");
-    }
-
-    // ── sidebar এ যে role select করা আছে সেটা নাও ──
-    const dashRole = localStorage.getItem("dashboardRole");
-    if (dashRole === "student" || dashRole === "instructor" || dashRole === "admin") {
-      setRole(dashRole as Role);
-    }
-  }, []);
-
-  // storage event — sidebar role change হলে এই page update হবে
-  useEffect(() => {
-    const onStorage = () => {
-      const dashRole = localStorage.getItem("dashboardRole");
-      if (dashRole === "student" || dashRole === "instructor" || dashRole === "admin") {
-        setRole(dashRole as Role);
-      }
-    };
-    window.addEventListener("storage", onStorage);
-    return () => window.removeEventListener("storage", onStorage);
-  }, []);
-
-  // polling fallback (same-tab localStorage change detect)
-  useEffect(() => {
-    const interval = setInterval(() => {
-      const dashRole = localStorage.getItem("dashboardRole");
-      if (dashRole && dashRole !== role) {
-        if (dashRole === "student" || dashRole === "instructor" || dashRole === "admin") {
-          setRole(dashRole as Role);
-        }
-      }
-    }, 300);
-    return () => clearInterval(interval);
-  }, [role]);
+    const t = localStorage.getItem("theme") || "light";
+    const r = (localStorage.getItem("dashboardRole") as Role) || "student";
+    setTheme(t); setRole(r);
+    document.documentElement.setAttribute("data-theme", t);
+    const u = localStorage.getItem("user");
+    if (u) { const p: UserData = JSON.parse(u); setUser(p); setName(p.name||""); setPhone(p.phone||""); setBio(p.bio||""); }
+    const iv = setInterval(() => {
+      const ct = localStorage.getItem("theme") || "light";
+      const cr = (localStorage.getItem("dashboardRole") as Role) || "student";
+      if (ct !== theme) { setTheme(ct); document.documentElement.setAttribute("data-theme", ct); }
+      if (cr !== role) setRole(cr);
+    }, 100);
+    return () => clearInterval(iv);
+  }, [theme, role]);
 
   const handleSave = () => {
     if (!user) return;
     const updated = { ...user, name, phone, bio };
-    setUser(updated);
-    localStorage.setItem("user", JSON.stringify(updated));
-    setEditMode(false);
+    setUser(updated); localStorage.setItem("user", JSON.stringify(updated));
+    setSaved(true); setTimeout(() => { setSaved(false); setEdit(false); }, 1200);
   };
 
-  if (!user) return (
-    <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "200px" }}>
-      <p style={{ color: "#aaa" }}>Loading profile...</p>
-    </div>
-  );
+  if (!user) return <div className="flex items-center justify-center h-48 opacity-30 text-sm font-semibold">Loading…</div>;
 
-  const badge    = roleBadge[role];
   const stats    = roleStats[role];
   const activity = roleActivity[role];
-  const firstLetter = (user.name || user.email || "?").charAt(0).toUpperCase();
+  const cfg      = roleCfg[role];
+  const letter   = (user.name || user.email || "?").charAt(0).toUpperCase();
   const showPhoto = !!user.photoURL && !imgError;
 
   return (
-    <div style={{ fontFamily: "system-ui, sans-serif", maxWidth: "920px" }}>
+    <div className="min-h-screen p-4 md:p-6 lg:p-8">
 
-      {/* ── Cover + Avatar Card ─────────────────────────────────────────── */}
-      <div style={{ background: "#fff", borderRadius: "16px", border: "1px solid #f0f0f0", marginBottom: "16px", position: "relative" }}>
+      {/* ── Hero Card ── */}
+      <div className="rounded-3xl bg-base-100 border border-base-300 overflow-hidden mb-5">
 
-        {/* Cover — solid color */}
-        <div style={{
-          height: "130px",
-          background: "#FF0F7B",
-          borderRadius: "16px 16px 0 0",
-        }} />
-
-        {/* Avatar — absolute, cover এর উপরে থাকবে */}
-        <div style={{
-          position: "absolute", top: "80px", left: "28px",
-          width: "96px", height: "96px", borderRadius: "50%",
-          border: "4px solid #fff",
-          boxShadow: "0 4px 16px rgba(0,0,0,0.15)",
-          overflow: "hidden",
-          background: "linear-gradient(135deg, #FF0F7B, #F89B29)",
-          display: "flex", alignItems: "center", justifyContent: "center",
-          zIndex: 10,
-        }}>
-          {showPhoto ? (
-            <img
-              src={user.photoURL}
-              alt={user.name}
-              onError={() => setImgError(true)}
-              style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
-            />
-          ) : (
-            <span style={{ color: "#fff", fontWeight: "800", fontSize: "34px", lineHeight: 1 }}>
-              {firstLetter}
-            </span>
-          )}
+        {/* Cover — mesh gradient with geometric accent */}
+        <div className="relative h-36 overflow-hidden" style={{ background: `linear-gradient(135deg, ${cfg.accent}22 0%, #83238822 50%, #F89B2922 100%)` }}>
+          {/* decorative circles */}
+          <div className="absolute -top-8 -right-8 w-40 h-40 rounded-full opacity-20" style={{ background: cfg.accent }} />
+          <div className="absolute top-4 right-24 w-16 h-16 rounded-full opacity-10" style={{ background: "#832388" }} />
+          <div className="absolute -bottom-4 left-32 w-24 h-24 rounded-full opacity-10" style={{ background: "#F89B29" }} />
+          {/* role watermark */}
+          <span className="absolute bottom-3 right-5 text-5xl font-black opacity-5 select-none uppercase tracking-widest">{cfg.label}</span>
         </div>
 
-        {/* Edit button */}
-        <div style={{ position: "absolute", top: "148px", right: "28px" }}>
-          <button onClick={() => setEditMode(!editMode)} style={{
-            padding: "9px 22px", borderRadius: "8px", border: "none", cursor: "pointer",
-            fontWeight: "700", fontSize: "14px",
-            background: editMode ? "#f0f0f0" : "linear-gradient(90deg, #FF0F7B, #F89B29)",
-            color: editMode ? "#555" : "#fff",
-          }}>
-            {editMode ? "✕ Cancel" : "✏️ Edit Profile"}
-          </button>
-        </div>
+        {/* Avatar + Info row */}
+        <div className="px-6 pb-6">
+          <div className="flex items-end justify-between -mt-10 mb-4">
+            {/* Avatar */}
+            <div
+              className="w-20 h-20 rounded-2xl border-4 border-base-100 flex items-center justify-center text-white text-3xl font-black overflow-hidden shadow-lg flex-shrink-0"
+              style={{ background: `linear-gradient(135deg,${cfg.accent},#F89B29)` }}
+            >
+              {showPhoto
+                ? <img src={user.photoURL} alt={user.name} onError={() => setErr(true)} className="w-full h-full object-cover" />
+                : letter
+              }
+            </div>
 
-        <div style={{ padding: "64px 28px 28px" }}>
-          <div style={{ marginBottom: "14px" }} />
-
-          {/* Name + meta */}
-          <h2 style={{ margin: "0 0 8px", fontSize: "22px", fontWeight: "800", color: "#1a1a1a" }}>
-            {user.name}
-          </h2>
-          <div style={{ display: "flex", flexWrap: "wrap", gap: "10px", alignItems: "center", marginBottom: "10px" }}>
-            <span style={{ padding: "3px 14px", borderRadius: "20px", fontSize: "12px", fontWeight: "700", background: badge.bg, color: badge.color }}>
-              {badge.label}
-            </span>
-            <span style={{ fontSize: "13px", color: "#888" }}>📧 {user.email}</span>
-            {user.phone && <span style={{ fontSize: "13px", color: "#888" }}>📞 {user.phone}</span>}
+            {/* Edit btn */}
+            <button
+              onClick={() => setEdit(v => !v)}
+              className="btn btn-sm gap-1.5 border-0 cursor-pointer text-white mb-1"
+              style={{ backgroundColor: editMode ? "#64748b" : cfg.accent }}
+            >
+              {editMode ? <><X size={13} /> Cancel</> : <><Pencil size={13} /> Edit Profile</>}
+            </button>
           </div>
-          {user.bio && (
-            <p style={{ margin: 0, fontSize: "14px", color: "#666", lineHeight: "1.6", maxWidth: "560px" }}>{user.bio}</p>
-          )}
+
+          {/* Name + badges */}
+          <div className="flex flex-wrap items-center gap-2 mb-2">
+            <h2 className="text-2xl font-black tracking-tight">{user.name}</h2>
+            <span
+              className="px-3 py-0.5 rounded-full text-xs font-black uppercase tracking-wider text-white"
+              style={{ backgroundColor: cfg.accent }}
+            >
+              {cfg.label}
+            </span>
+          </div>
+
+          {/* Meta row */}
+          <div className="flex flex-wrap gap-4">
+            <span className="flex items-center gap-1.5 text-xs opacity-50 font-medium"><Mail size={12} /> {user.email}</span>
+            {user.phone && <span className="flex items-center gap-1.5 text-xs opacity-50 font-medium"><Phone size={12} /> {user.phone}</span>}
+          </div>
+          {user.bio && <p className="text-sm opacity-60 mt-2 max-w-lg leading-relaxed">{user.bio}</p>}
         </div>
       </div>
 
-      {/* ── Stats Row ───────────────────────────────────────────────────── */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "12px", marginBottom: "16px" }}>
-        {stats.map(s => (
-          <div key={s.label} style={{ background: "#fff", borderRadius: "12px", padding: "16px 18px", border: "1px solid #f0f0f0", display: "flex", alignItems: "center", gap: "12px" }}>
-            <div style={{ width: "42px", height: "42px", borderRadius: "10px", fontSize: "20px", display: "flex", alignItems: "center", justifyContent: "center", background: s.color + "18", flexShrink: 0 }}>
-              {s.icon}
-            </div>
-            <div>
-              <p style={{ margin: 0, fontSize: "11px", color: "#aaa", fontWeight: "600", textTransform: "uppercase" }}>{s.label}</p>
-              <p style={{ margin: "2px 0 0", fontSize: "18px", fontWeight: "800", color: s.color }}>{s.value}</p>
-            </div>
+      {/* ── Stats row ── */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-5">
+        {stats.map((s, i) => (
+          <div key={s.label} className="rounded-2xl bg-base-100 border border-base-300 p-5 overflow-hidden relative group">
+            {/* left accent bar */}
+            <div className="absolute left-0 top-0 h-full w-1 rounded-l-2xl" style={{ background: s.color }} />
+            <p className="text-xs font-bold uppercase tracking-widest opacity-40 mb-2 pl-2">{s.label}</p>
+            <p className="text-3xl font-black pl-2" style={{ color: s.color }}>{s.value}</p>
           </div>
         ))}
       </div>
 
-      {/* ── Bottom ──────────────────────────────────────────────────────── */}
-      {editMode ? (
-        <div style={{ background: "#fff", borderRadius: "12px", border: "1px solid #f0f0f0", padding: "28px" }}>
-          <h3 style={{ margin: "0 0 20px", fontSize: "16px", fontWeight: "800" }}>Edit Profile</h3>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
-            <Field label="Full Name" value={name} onChange={setName} />
-            <Field label="Phone" value={phone} onChange={setPhone} />
+      {/* ── Edit Form ── */}
+      {editMode && (
+        <div className="rounded-2xl bg-base-100 border border-base-300 p-6 mb-5">
+          <p className="text-xs font-black uppercase tracking-widest opacity-40 mb-5">Edit Profile</p>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+            {[{ label: "Full Name", val: name, set: setName, type: "text" }, { label: "Phone", val: phone, set: setPhone, type: "tel" }].map(f => (
+              <div key={f.label}>
+                <label className="text-xs font-bold opacity-50 block mb-1.5">{f.label}</label>
+                <input type={f.type} value={f.val} onChange={e => f.set(e.target.value)}
+                  className="input input-sm w-full bg-base-200 border-base-300 focus:outline-none" />
+              </div>
+            ))}
           </div>
-          <div style={{ marginTop: "16px" }}>
-            <Field label="Bio" value={bio} onChange={setBio} multiline />
+          <div className="mb-5">
+            <label className="text-xs font-bold opacity-50 block mb-1.5">Bio</label>
+            <textarea value={bio} onChange={e => setBio(e.target.value)} rows={3}
+              className="textarea w-full bg-base-200 border-base-300 text-sm focus:outline-none resize-none" />
           </div>
-          <div style={{ marginTop: "24px", paddingTop: "20px", borderTop: "1px solid #f0f0f0" }}>
-            <h4 style={{ margin: "0 0 16px", fontSize: "14px", fontWeight: "700", color: "#555" }}>Change Password</h4>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "14px" }}>
-              <Field label="Current Password" value="" onChange={() => {}} type="password" />
-              <Field label="New Password"     value="" onChange={() => {}} type="password" />
-              <Field label="Confirm Password" value="" onChange={() => {}} type="password" />
-            </div>
-          </div>
-          <button onClick={handleSave} style={{
-            marginTop: "22px", width: "100%", padding: "12px", borderRadius: "8px",
-            border: "none", cursor: "pointer",
-            background: "linear-gradient(90deg, #FF0F7B, #F89B29)",
-            color: "#fff", fontWeight: "700", fontSize: "15px",
-          }}>
-            💾 Save Changes
+          <button onClick={handleSave} className="btn btn-sm gap-2 w-full border-0 text-white cursor-pointer font-bold" style={{ backgroundColor: cfg.accent }}>
+            {saved ? <><Check size={13} /> Saved!</> : <><Check size={13} /> Save Changes</>}
           </button>
         </div>
-      ) : (
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 340px", gap: "16px" }}>
+      )}
 
-          {/* Account Info */}
-          <div style={{ background: "#fff", borderRadius: "12px", border: "1px solid #f0f0f0", padding: "24px" }}>
-            <h3 style={{ margin: "0 0 4px", fontSize: "16px", fontWeight: "800" }}>Account Info</h3>
-            <p style={{ margin: "0 0 18px", fontSize: "13px", color: "#aaa" }}>Your personal details</p>
+      {/* ── Info + Activity ── */}
+      {!editMode && (
+        <div className="grid grid-cols-1 lg:grid-cols-5 gap-5">
+
+          {/* Account Info — 2 cols */}
+          <div className="lg:col-span-2 rounded-2xl bg-base-100 border border-base-300 overflow-hidden">
+            <div className="px-5 py-4 border-b border-base-300">
+              <p className="text-xs font-black uppercase tracking-widest opacity-40">Account Info</p>
+            </div>
             {[
-              { label: "Full Name", value: user.name,           icon: "👤" },
-              { label: "Email",     value: user.email,          icon: "📧" },
-              { label: "Phone",     value: user.phone || "—",   icon: "📞" },
-              { label: "Role",      value: badge.label,         icon: "🎭" },
-              { label: "Bio",       value: user.bio   || "—",   icon: "📄" },
-            ].map(item => (
-              <div key={item.label} style={{ display: "flex", gap: "14px", padding: "13px 0", borderBottom: "1px solid #f7f7f7", alignItems: "flex-start" }}>
-                <span style={{ fontSize: "18px", marginTop: "1px" }}>{item.icon}</span>
-                <div>
-                  <p style={{ margin: 0, fontSize: "11px", color: "#aaa", fontWeight: "700", textTransform: "uppercase", letterSpacing: "0.5px" }}>{item.label}</p>
-                  <p style={{ margin: "3px 0 0", fontSize: "14px", fontWeight: "600", color: "#1a1a1a" }}>{item.value}</p>
+              { label: "Full Name", value: user.name,         icon: <User size={13}/> },
+              { label: "Email",     value: user.email,        icon: <Mail size={13}/> },
+              { label: "Phone",     value: user.phone || "—", icon: <Phone size={13}/> },
+              { label: "Role",      value: cfg.label,         icon: <MapPin size={13}/> },
+              { label: "Bio",       value: user.bio || "—",   icon: <Clock size={13}/> },
+            ].map((item, i, arr) => (
+              <div key={item.label} className={`flex items-start gap-3 px-5 py-3.5 ${i < arr.length - 1 ? "border-b border-base-300" : ""}`}>
+                <span className="opacity-30 mt-0.5 flex-shrink-0">{item.icon}</span>
+                <div className="min-w-0">
+                  <p className="text-xs font-bold opacity-40 uppercase tracking-wider">{item.label}</p>
+                  <p className="text-sm font-semibold mt-0.5 break-words">{item.value}</p>
                 </div>
               </div>
             ))}
           </div>
 
-          {/* Recent Activity */}
-          <div style={{ background: "#fff", borderRadius: "12px", border: "1px solid #f0f0f0", padding: "24px" }}>
-            <h3 style={{ margin: "0 0 4px", fontSize: "16px", fontWeight: "800" }}>Recent Activity</h3>
-            <p style={{ margin: "0 0 18px", fontSize: "13px", color: "#aaa" }}>Your latest actions</p>
-            {activity.map((a, i) => (
-              <div key={i} style={{
-                display: "flex", gap: "12px", alignItems: "flex-start",
-                padding: "12px 0", borderBottom: i < activity.length - 1 ? "1px solid #f7f7f7" : "none",
-              }}>
-                <div style={{
-                  width: "36px", height: "36px", borderRadius: "8px", flexShrink: 0,
-                  background: "linear-gradient(135deg, #FF0F7B12, #F89B2912)",
-                  display: "flex", alignItems: "center", justifyContent: "center", fontSize: "17px",
-                }}>{a.icon}</div>
-                <div>
-                  <p style={{ margin: 0, fontSize: "13px", color: "#333", fontWeight: "500", lineHeight: "1.5" }}>{a.text}</p>
-                  <p style={{ margin: "3px 0 0", fontSize: "11px", color: "#bbb" }}>{a.time}</p>
+          {/* Activity — 3 cols */}
+          <div className="lg:col-span-3 rounded-2xl bg-base-100 border border-base-300 overflow-hidden">
+            <div className="px-5 py-4 border-b border-base-300">
+              <p className="text-xs font-black uppercase tracking-widest opacity-40">Recent Activity</p>
+            </div>
+            <div className="p-5 space-y-1">
+              {activity.map((a, i) => (
+                <div key={i} className="flex items-start gap-4 py-3 group">
+                  {/* timeline */}
+                  <div className="flex flex-col items-center flex-shrink-0">
+                    <div className="w-2.5 h-2.5 rounded-full mt-1" style={{ backgroundColor: a.color }} />
+                    {i < activity.length - 1 && <div className="w-px flex-1 mt-1 bg-base-300" style={{ minHeight: "24px" }} />}
+                  </div>
+                  <div className="pb-3 flex-1">
+                    <p className="text-sm font-semibold leading-snug">{a.text}</p>
+                    <p className="text-xs opacity-40 mt-0.5 flex items-center gap-1"><Clock size={10} /> {a.time}</p>
+                  </div>
                 </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
+
         </div>
       )}
     </div>
   );
+}
+
+// tiny icon stub to avoid import error if lucide doesn't have User
+function User({ size }: { size: number }) {
+  return <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>;
 }
