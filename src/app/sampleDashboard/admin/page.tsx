@@ -37,7 +37,7 @@ export default function AdminDashboard() {
   ];
 
   return (
-    <div className="min-h-screen p-4 md:p-6 lg:p-8">
+    <div className="min-h-screen ">
 
       {/* Header */}
       <div className="mb-8">

@@ -170,7 +170,7 @@ export default function StudentAssignmentsPage() {
   };
 
   return (
-    <div className="min-h-screen p-4 md:p-6 lg:p-8">
+    <div className="min-h-screen">
       {/* Header */}
       <div className="mb-8">
         <h1 className="text-2xl font-bold mb-2">My Assignments</h1>
