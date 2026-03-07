@@ -1,83 +1,230 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { Star, Users, CheckCircle, XCircle, Trash2 } from "lucide-react";
+
+type Status = "published" | "pending" | "rejected";
 
 export default function AdminCoursesPage() {
   const [filter, setFilter] = useState("all");
+  const [theme, setTheme] = useState("light");
 
-  const courses = [
-    { id: 1, title: "Complete Web Development Bootcamp", instructor: "Karim Hossain", students: 150, price: "৳1,500", status: "published", rating: 4.7, category: "Web Dev" },
-    { id: 2, title: "Python for Beginners", instructor: "Karim Hossain", students: 98, price: "৳1,200", status: "published", rating: 4.5, category: "Programming" },
-    { id: 3, title: "React Advanced", instructor: "Sadia Islam", students: 0, price: "৳2,000", status: "pending", rating: 0, category: "Web Dev" },
-    { id: 4, title: "UI/UX Design Fundamentals", instructor: "Tanvir Ahmed", students: 72, price: "৳1,800", status: "published", rating: 4.8, category: "Design" },
-    { id: 5, title: "Data Science with Python", instructor: "Nusrat Jahan", students: 0, price: "৳2,500", status: "rejected", rating: 0, category: "Data" },
-  ];
+  // ── Dark/Light sync ──
+  useEffect(() => {
+    const saved = localStorage.getItem("theme") || "light";
+    setTheme(saved);
+    document.documentElement.setAttribute("data-theme", saved);
+    const interval = setInterval(() => {
+      const current = localStorage.getItem("theme") || "light";
+      if (current !== theme) {
+        setTheme(current);
+        document.documentElement.setAttribute("data-theme", current);
+      }
+    }, 100);
+    return () => clearInterval(interval);
+  }, [theme]);
 
-  const statusColor = { published: "#00C48C", pending: "#F89B29", rejected: "#FF0F7B" };
-  const statusBg    = { published: "#f0fff8", pending: "#fff8f0", rejected: "#fff5f8" };
+  const [courses, setCourses] = useState([
+    { id: 1, title: "Complete Web Development Bootcamp", instructor: "Karim Hossain", students: 150, price: "৳1,500", status: "published" as Status, rating: 4.7, category: "Web Dev"     },
+    { id: 2, title: "Python for Beginners",              instructor: "Karim Hossain", students: 98,  price: "৳1,200", status: "published" as Status, rating: 4.5, category: "Programming" },
+    { id: 3, title: "React Advanced",                   instructor: "Sadia Islam",   students: 0,   price: "৳2,000", status: "pending"   as Status, rating: 0,   category: "Web Dev"     },
+    { id: 4, title: "UI/UX Design Fundamentals",        instructor: "Tanvir Ahmed",  students: 72,  price: "৳1,800", status: "published" as Status, rating: 4.8, category: "Design"      },
+    { id: 5, title: "Data Science with Python",         instructor: "Nusrat Jahan",  students: 0,   price: "৳2,500", status: "rejected"  as Status, rating: 0,   category: "Data"        },
+  ]);
+
+  const handleApprove = (id: number) =>
+    setCourses(prev => prev.map(c => c.id === id ? { ...c, status: "published" as Status } : c));
+
+  const handleReject = (id: number) =>
+    setCourses(prev => prev.map(c => c.id === id ? { ...c, status: "rejected" as Status } : c));
+
+  const handleRemove = (id: number) =>
+    setCourses(prev => prev.filter(c => c.id !== id));
 
   const filtered = filter === "all" ? courses : courses.filter(c => c.status === filter);
 
+  const statusCfg: Record<Status, { bg: string; text: string; label: string }> = {
+    published: { bg: "bg-success/10", text: "text-success",  label: "Published" },
+    pending:   { bg: "bg-warning/10", text: "text-warning",  label: "Pending"   },
+    rejected:  { bg: "bg-error/10",   text: "text-error",    label: "Rejected"  },
+  };
+
+  const counts = {
+    all:       courses.length,
+    published: courses.filter(c => c.status === "published").length,
+    pending:   courses.filter(c => c.status === "pending").length,
+    rejected:  courses.filter(c => c.status === "rejected").length,
+  };
+
   return (
-    <div style={{ fontFamily: "system-ui, sans-serif" }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "24px" }}>
+    <div className="min-h-screen ">
+
+      {/* Header */}
+      <div className="mb-8 flex items-end justify-between flex-wrap gap-4">
         <div>
-          <h2 style={{ margin: 0, fontSize: "22px", fontWeight: "800" }}>All Courses</h2>
-          <p style={{ margin: "4px 0 0", color: "#888", fontSize: "14px" }}>{courses.length} total courses</p>
+          <p className="text-xs font-bold uppercase tracking-widest opacity-40 mb-1">Admin Panel</p>
+          <h1 className="text-3xl font-black tracking-tight">All Courses</h1>
+          <p className="text-sm opacity-50 mt-1">{courses.length} total courses on the platform</p>
         </div>
-        <div style={{ display: "flex", gap: "8px" }}>
-          {["all", "published", "pending", "rejected"].map(f => (
-            <button key={f} onClick={() => setFilter(f)} style={{
-              padding: "7px 16px", borderRadius: "8px", border: "none", cursor: "pointer",
-              fontSize: "13px", fontWeight: "600", textTransform: "capitalize",
-              background: filter === f ? "linear-gradient(90deg, #FF0F7B, #F89B29)" : "#f0f0f0",
-              color: filter === f ? "#fff" : "#555",
-            }}>{f}</button>
+
+        {/* Filter Tabs */}
+        <div className="flex gap-1 bg-base-200 p-1 rounded-xl">
+          {(["all", "published", "pending", "rejected"] as const).map(f => (
+            <button
+              key={f}
+              onClick={() => setFilter(f)}
+              className="px-4 py-2 rounded-lg text-sm font-bold capitalize transition-all cursor-pointer flex items-center gap-1.5"
+              style={filter === f ? { backgroundColor: "#832388", color: "#fff" } : {}}
+            >
+              {f}
+              <span
+                className="text-xs font-black px-1.5 py-0.5 rounded-full"
+                style={filter === f
+                  ? { backgroundColor: "rgba(255,255,255,0.2)", color: "#fff" }
+                  : { backgroundColor: "rgba(0,0,0,0.08)" }
+                }
+              >
+                {counts[f]}
+              </span>
+            </button>
           ))}
         </div>
       </div>
 
-      <div style={{ background: "#fff", borderRadius: "12px", border: "1px solid #f0f0f0", overflow: "hidden" }}>
-        <table style={{ width: "100%", borderCollapse: "collapse" }}>
-          <thead>
-            <tr style={{ background: "#fafafa" }}>
-              {["Course", "Instructor", "Category", "Students", "Price", "Rating", "Status", "Action"].map(h => (
-                <th key={h} style={{ padding: "12px 16px", textAlign: "left", fontSize: "12px", color: "#888", fontWeight: "600", textTransform: "uppercase" }}>{h}</th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {filtered.map((c) => (
-              <tr key={c.id} style={{ borderTop: "1px solid #f7f7f7" }}>
-                <td style={{ padding: "14px 16px" }}>
-                  <p style={{ margin: 0, fontSize: "14px", fontWeight: "700", color: "#1a1a1a" }}>{c.title}</p>
-                </td>
-                <td style={{ padding: "14px 16px", fontSize: "13px", color: "#666" }}>{c.instructor}</td>
-                <td style={{ padding: "14px 16px" }}>
-                  <span style={{ padding: "3px 10px", borderRadius: "20px", background: "#f0f0f0", fontSize: "12px", fontWeight: "600", color: "#555" }}>{c.category}</span>
-                </td>
-                <td style={{ padding: "14px 16px", fontSize: "14px", fontWeight: "600", color: "#1a1a1a" }}>{c.students}</td>
-                <td style={{ padding: "14px 16px", fontSize: "14px", fontWeight: "700", color: "#832388" }}>{c.price}</td>
-                <td style={{ padding: "14px 16px", fontSize: "13px", color: "#F89B29", fontWeight: "600" }}>{c.rating > 0 ? `⭐ ${c.rating}` : "—"}</td>
-                <td style={{ padding: "14px 16px" }}>
-                  <span style={{
-                    padding: "4px 12px", borderRadius: "20px", fontSize: "12px", fontWeight: "700",
-                    color: statusColor[c.status as keyof typeof statusColor],
-                    background: statusBg[c.status as keyof typeof statusBg],
-                    textTransform: "capitalize",
-                  }}>{c.status}</span>
-                </td>
-                <td style={{ padding: "14px 16px" }}>
-                  <div style={{ display: "flex", gap: "6px" }}>
-                    {c.status === "pending" && (
-                      <button style={{ padding: "5px 12px", borderRadius: "6px", border: "none", cursor: "pointer", background: "linear-gradient(90deg, #FF0F7B, #F89B29)", color: "#fff", fontSize: "12px", fontWeight: "600" }}>Approve</button>
-                    )}
-                    <button style={{ padding: "5px 12px", borderRadius: "6px", border: "1px solid #f0f0f0", cursor: "pointer", background: "#fff", color: "#FF0F7B", fontSize: "12px", fontWeight: "600" }}>Remove</button>
-                  </div>
-                </td>
+      {/* Table */}
+      <div className="rounded-2xl bg-base-100 border border-base-300 overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="table table-md w-full">
+            <thead>
+              <tr>
+                {["#", "Course", "Instructor", "Category", "Students", "Price", "Rating", "Status", "Action"].map(h => (
+                  <th key={h} className="text-xs font-bold uppercase tracking-wider opacity-50">{h}</th>
+                ))}
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {filtered.length === 0 && (
+                <tr>
+                  <td colSpan={9} className="text-center py-12 opacity-40 text-sm font-semibold">
+                    No courses found
+                  </td>
+                </tr>
+              )}
+              {filtered.map((c, i) => {
+                const s = statusCfg[c.status];
+                return (
+                  <tr key={c.id} className="hover">
+
+                    {/* Index */}
+                    <td className="text-xs font-black opacity-25">{String(i + 1).padStart(2, "0")}</td>
+
+                    {/* Title */}
+                    <td style={{ maxWidth: "160px" }}>
+                      <span className="font-bold text-sm block overflow-hidden" style={{ display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" }}>{c.title}</span>
+                    </td>
+
+                    {/* Instructor */}
+                    <td>
+                      <div className="flex items-center gap-1.5">
+                        <div
+                          className="w-6 h-6 rounded-full flex items-center justify-center text-white text-xs font-black flex-shrink-0"
+                          style={{ background: "linear-gradient(135deg,#FF0F7B,#F89B29)" }}
+                        >
+                          {c.instructor.charAt(0)}
+                        </div>
+                        <span className="text-xs font-semibold opacity-80 whitespace-nowrap">{c.instructor}</span>
+                      </div>
+                    </td>
+
+                    {/* Category */}
+                    <td>
+                      <span className="inline-flex px-2.5 py-1 rounded-full text-xs font-bold bg-info/10 text-info">
+                        {c.category}
+                      </span>
+                    </td>
+
+                    {/* Students */}
+                    <td>
+                      <div className="flex items-center gap-1 text-sm font-bold opacity-70">
+                        <Users size={12} />
+                        {c.students}
+                      </div>
+                    </td>
+
+                    {/* Price */}
+                    <td className="font-black text-sm" style={{ color: "#832388" }}>{c.price}</td>
+
+                    {/* Rating */}
+                    <td>
+                      {c.rating > 0 ? (
+                        <div className="flex items-center gap-1">
+                          <Star size={12} fill="#F89B29" color="#F89B29" />
+                          <span className="text-sm font-bold" style={{ color: "#F89B29" }}>{c.rating}</span>
+                        </div>
+                      ) : (
+                        <span className="text-xs opacity-30 font-bold">—</span>
+                      )}
+                    </td>
+
+                    {/* Status */}
+                    <td>
+                      <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold ${s.bg} ${s.text}`}>
+                        {s.label}
+                      </span>
+                    </td>
+
+                    {/* Actions */}
+                    <td>
+                      <div className="flex gap-1.5">
+                        {c.status === "pending" && (
+                          <>
+                            <button
+                              onClick={() => handleApprove(c.id)}
+                              className="btn btn-xs btn-square border-0 text-white cursor-pointer tooltip"
+                              data-tip="Approve"
+                              style={{ backgroundColor: "#00C48C" }}
+                            >
+                              <CheckCircle size={13} />
+                            </button>
+                            <button
+                              onClick={() => handleReject(c.id)}
+                              className="btn btn-xs btn-square border-0 text-white cursor-pointer tooltip"
+                              data-tip="Reject"
+                              style={{ backgroundColor: "#F89B29" }}
+                            >
+                              <XCircle size={13} />
+                            </button>
+                          </>
+                        )}
+                        <button
+                          onClick={() => handleRemove(c.id)}
+                          className="btn btn-xs btn-square border-0 text-white cursor-pointer tooltip"
+                          data-tip="Remove"
+                          style={{ backgroundColor: "#FF0F7B" }}
+                        >
+                          <Trash2 size={13} />
+                        </button>
+                      </div>
+                    </td>
+
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+
+        {/* Footer */}
+        <div className="flex justify-between items-center px-6 py-4 border-t border-base-300 bg-base-200/50">
+          <p className="text-xs opacity-50 font-semibold">
+            Showing <span className="font-black opacity-100">{filtered.length}</span> of{" "}
+            <span className="font-black opacity-100">{courses.length}</span> courses
+          </p>
+          <div className="flex items-center gap-4 text-xs font-bold">
+            <span className="text-success">{counts.published} Published</span>
+            <span className="text-warning">{counts.pending} Pending</span>
+            <span className="text-error">{counts.rejected} Rejected</span>
+          </div>
+        </div>
       </div>
     </div>
   );

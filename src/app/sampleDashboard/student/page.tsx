@@ -1,4 +1,6 @@
-import React from 'react';
+"use client";
+
+import React, { useState, useEffect } from 'react';
 import { 
   BookOpen, 
   PlayCircle, 
@@ -6,179 +8,404 @@ import {
   Star, 
   Download, 
   ChevronRight,
-  Heart
+  Heart,
+  Clock,
+  TrendingUp,
+  Award,
+  Calendar
 } from 'lucide-react';
 
-const Dashboard = () => {
-  // Stats Data based on brand colors
+const StudentDashboard = () => {
+  const [likedCourses, setLikedCourses] = useState<number[]>([]);
+  const [theme, setTheme] = useState("light");
+
+  // Load theme from localStorage
+  useEffect(() => {
+    const savedTheme = localStorage.getItem("theme") || "light";
+    setTheme(savedTheme);
+    document.documentElement.setAttribute('data-theme', savedTheme);
+
+    // Listen for theme changes
+    const interval = setInterval(() => {
+      const currentTheme = localStorage.getItem("theme") || "light";
+      if (currentTheme !== theme) {
+        setTheme(currentTheme);
+        document.documentElement.setAttribute('data-theme', currentTheme);
+      }
+    }, 100);
+
+    return () => clearInterval(interval);
+  }, [theme]);
+
+  // Stats Data - Your exact colors
   const stats = [
-    { label: 'Enrolled Courses', value: '12', icon: <BookOpen className="text-white" />, bgColor: 'bg-gradient-to-br from-[#FF0F7B] to-[#E3436B]' },
-    { label: 'Active Courses', value: '03', icon: <PlayCircle className="text-white" />, bgColor: 'bg-gradient-to-br from-[#832388] to-[#E3436B]' },
-    { label: 'Completed Courses', value: '10', icon: <CheckCircle className="text-white" />, bgColor: 'bg-gradient-to-br from-[#00C48C] to-[#00ED64]' },
+    { 
+      label: 'Enrolled Courses', 
+      value: '12', 
+      icon: BookOpen, 
+      color: '#832388', // Brand Purple
+      bgLight: '#f3e8ff',
+      bgDark: '#2a1f35'
+    },
+    { 
+      label: 'Active Courses', 
+      value: '03', 
+      icon: PlayCircle, 
+      color: '#FF0F7B', // Brand Pink
+      bgLight: '#fce7f3',
+      bgDark: '#2a1520'
+    },
+    { 
+      label: 'Completed Courses', 
+      value: '10', 
+      icon: CheckCircle, 
+      color: '#00C48C', // Success Green
+      bgLight: '#d1fae5',
+      bgDark: '#0f2520'
+    },
   ];
 
   const courses = [
     {
+      id: 1,
       title: 'Information About UI/UX Design Degree',
       instructor: 'Brenda Staton',
       category: 'Design',
       rating: '4.9',
       reviews: '200',
       price: '$120',
-      img: 'https://images.unsplash.com/photo-1586717791821-3f44a563de4c?w=400'
+      progress: 65,
+      img: 'https://images.unsplash.com/photo-1586717791821-3f44a563de4c?w=400&h=250&fit=crop'
     },
     {
+      id: 2,
       title: 'Wordpress for Beginners - Master Wordpress Quickly',
       instructor: 'Ana Reyes',
-      category: 'Wordpress',
+      category: 'Development',
       rating: '4.4',
       reviews: '180',
       price: '$140',
-      img: 'https://images.unsplash.com/photo-1461742308919-0146b73e00f7?w=400'
+      progress: 45,
+      img: 'https://images.unsplash.com/photo-1461742308919-0146b73e00f7?w=400&h=250&fit=crop'
     },
     {
+      id: 3,
       title: 'Sketch from A to Z (2024): Become an app designer',
       instructor: 'Andrew Pirte',
       category: 'Design',
       rating: '4.4',
       reviews: '180',
       price: '$140',
-      img: 'https://images.unsplash.com/photo-1581291518633-83b4ebd1d83e?w=400'
+      progress: 30,
+      img: 'https://images.unsplash.com/photo-1581291518633-83b4ebd1d83e?w=400&h=250&fit=crop'
     }
   ];
 
   const invoices = [
-    { id: '#INV001', title: 'Build Responsive Real World Websites...', amount: '$200' },
-    { id: '#INV002', title: 'Wordpress for Beginners', amount: '$170' },
-    { id: '#INV003', title: 'Information About UI/UX Design Degree', amount: '$170' },
-    { id: '#INV004', title: 'Sketch from A to Z (2024)', amount: '$180' },
-    { id: '#INV005', title: 'Become an app designer', amount: '$170' },
+    { id: '#INV001', title: 'Build Responsive Real World Websites...', amount: '$200', date: 'Jan 15, 2024' },
+    { id: '#INV002', title: 'Wordpress for Beginners', amount: '$310', date: 'Jan 12, 2024' },
+    { id: '#INV003', title: 'Information About UI/UX Design Degree', amount: '$270', date: 'Jan 10, 2024' },
+    { id: '#INV004', title: 'Sketch from A to Z (2024)', amount: '$180', date: 'Jan 08, 2024' },
+    { id: '#INV005', title: 'Become an app designer', amount: '$220', date: 'Jan 05, 2024' },
   ];
 
+  const quizzes = [
+    { title: 'Sketch from A to Z (2024)', score: '15/22', percentage: 68, color: '#00C48C' },
+    { title: 'Build Responsive Real World', score: '18/22', percentage: 82, color: '#832388' },
+    { title: 'UI/UX Design Degree', score: '25/30', percentage: 83, color: '#FF0F7B' },
+    { title: 'Become an app designer', score: '12/20', percentage: 60, color: '#F89B29' },
+  ];
+
+  const toggleLike = (id: number) => {
+    setLikedCourses(prev => 
+      prev.includes(id) ? prev.filter(cId => cId !== id) : [...prev, id]
+    );
+  };
+
+  const getProgressColor = (progress: number) => {
+    if (progress >= 80) return '#00C48C'; // Green
+    if (progress >= 50) return '#F89B29'; // Orange
+    return '#FF0F7B'; // Pink
+  };
+
   return (
-    <div className="min-h-screen bg-[#f9fafb] p-4 md:p-8 font-sans">
-      <div className="max-w-6xl mx-auto space-y-8">
-        
-        {/* Top Quiz Banner - Using Secondary Gradient */}
-        <div className="bg-gradient-to-r from-[#832388] via-[#E3436B] to-[#F89B29] rounded-2xl p-6 flex justify-between items-center shadow-lg text-white">
-          <div>
-            <h3 className="font-bold text-lg">Quiz: Build Responsive Real World</h3>
-            <p className="text-sm opacity-90">Answered: 15/22</p>
+    <div className="min-h-screen space-y-6">
+      
+      {/* Quiz Banner - Purple Theme */}
+      <div className="card bg-base-100 shadow-lg border border-base-300 overflow-hidden">
+        <div className="card-body p-6">
+          <div className="flex flex-col lg:flex-row gap-4 items-start lg:items-center justify-between">
+            <div className="flex-1 w-full">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-12 h-12 rounded-xl flex items-center justify-center" style={{ 
+                  backgroundColor: theme === 'dark' ? '#2a1f35' : '#f3e8ff'
+                }}>
+                  <Award className="w-6 h-6" style={{ color: '#832388' }} />
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold">Quiz: Build Responsive Real World</h3>
+                  <p className="text-sm opacity-60">Answered: 15/22</p>
+                </div>
+              </div>
+              <div className="w-full bg-base-300 rounded-full h-2.5 overflow-hidden">
+                <div 
+                  className="h-full rounded-full transition-all duration-500"
+                  style={{ 
+                    width: '68%',
+                    background: 'linear-gradient(90deg, #832388, #E3436B)'
+                  }}
+                />
+              </div>
+            </div>
+            <button 
+              className="btn btn-md px-6 border-0 text-white whitespace-nowrap hover:opacity-90 transition-opacity"
+              style={{ background: '#832388' }}
+            >
+              Continue Quiz
+            </button>
           </div>
-          <button className="bg-white text-[#E3436B] px-6 py-2.5 rounded-xl text-sm font-bold hover:scale-105 transition shadow-md">
-            Continue Quiz
+        </div>
+      </div>
+
+      {/* Stats Cards - Brand Colors */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+        {stats.map((stat, idx) => (
+          <div 
+            key={idx} 
+            className="card bg-base-100 shadow-lg border hover:shadow-xl transition-all duration-300 cursor-pointer"
+            style={{ 
+              borderColor: theme === 'dark' ? stat.bgDark : stat.bgLight
+            }}
+          >
+            <div className="card-body p-6">
+              <div className="flex items-start justify-between">
+                <div className="flex-1">
+                  <p className="text-xs font-bold uppercase tracking-wider mb-2 opacity-60">
+                    {stat.label}
+                  </p>
+                  <h2 className="text-4xl font-bold mb-2">{stat.value}</h2>
+                  <div className="flex items-center gap-1.5 text-xs opacity-60">
+                    <TrendingUp className="w-3.5 h-3.5" />
+                    <span className="font-semibold">+12% from last month</span>
+                  </div>
+                </div>
+                <div 
+                  className="w-14 h-14 rounded-xl flex items-center justify-center"
+                  style={{ 
+                    backgroundColor: theme === 'dark' ? stat.bgDark : stat.bgLight
+                  }}
+                >
+                  <stat.icon className="w-7 h-7" style={{ color: stat.color }} />
+                </div>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Recently Enrolled Courses */}
+      <section>
+        <div className="flex justify-between items-center mb-6">
+          <h2 className="text-2xl font-bold">Recently Enrolled Courses</h2>
+          <button 
+            className="btn btn-ghost btn-sm gap-1.5 hover:bg-transparent font-semibold"
+            style={{ color: '#832388' }}
+          >
+            View All <ChevronRight className="w-4 h-4" />
           </button>
         </div>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {courses.map((course) => (
+            <div 
+              key={course.id} 
+              className="card bg-base-100 shadow-lg border border-base-300 hover:shadow-2xl transition-all duration-300 group overflow-hidden"
+            >
+              {/* Image */}
+              <figure className="relative overflow-hidden h-48">
+                <img 
+                  src={course.img} 
+                  alt={course.title} 
+                  className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                />
+                <button 
+                  onClick={() => toggleLike(course.id)}
+                  className="absolute top-3 right-3 w-9 h-9 rounded-full flex items-center justify-center backdrop-blur-md border-0 transition-transform hover:scale-110"
+                  style={{ 
+                    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                  }}
+                >
+                  <Heart 
+                    className={`w-4 h-4 transition-all ${
+                      likedCourses.includes(course.id) 
+                        ? 'fill-[#FF0F7B] text-[#FF0F7B]' 
+                        : 'text-gray-400'
+                    }`}
+                  />
+                </button>
+                <div 
+                  className="absolute top-3 left-3 px-3 py-1.5 rounded-full text-xs font-bold backdrop-blur-md border-0"
+                  style={{ 
+                    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                    color: '#832388'
+                  }}
+                >
+                  {course.category}
+                </div>
+              </figure>
 
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {stats.map((stat, idx) => (
-            <div key={idx} className="bg-white p-6 rounded-2xl flex items-center space-x-5 shadow-sm border border-[#f3f4f6]">
-              <div className={`${stat.bgColor} p-4 rounded-2xl shadow-lg`}>
-                {stat.icon}
-              </div>
-              <div>
-                <p className="text-[10px] text-gray-400 font-black uppercase tracking-widest">{stat.label}</p>
-                <h2 className="text-2xl font-black text-[#171717]">{stat.value}</h2>
+              {/* Content */}
+              <div className="card-body p-5">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-1.5">
+                    <Star className="w-4 h-4 fill-[#FDE047] text-[#FDE047]" />
+                    <span className="text-sm font-bold">{course.rating}</span>
+                    <span className="text-xs opacity-60">({course.reviews})</span>
+                  </div>
+                  <div className="flex items-center gap-1 text-xs opacity-60">
+                    <Clock className="w-3.5 h-3.5" />
+                    <span className="font-semibold">12h 30m</span>
+                  </div>
+                </div>
+
+                <h3 className="text-base font-bold leading-snug mb-3 line-clamp-2 group-hover:text-[#832388] transition-colors">
+                  {course.title}
+                </h3>
+
+                <p className="text-sm opacity-60 mb-4 font-medium">by {course.instructor}</p>
+
+                {/* Progress Bar */}
+                <div className="mb-4">
+                  <div className="flex justify-between items-center mb-2">
+                    <span className="text-xs font-bold opacity-60">Progress</span>
+                    <span className="text-xs font-bold">{course.progress}%</span>
+                  </div>
+                  <div className="w-full bg-base-300 rounded-full h-2 overflow-hidden">
+                    <div 
+                      className="h-full rounded-full transition-all duration-500"
+                      style={{ 
+                        width: `${course.progress}%`,
+                        backgroundColor: getProgressColor(course.progress)
+                      }}
+                    />
+                  </div>
+                </div>
+
+                {/* Footer */}
+                <div className="flex items-center justify-between pt-4 border-t border-base-300">
+                  <span className="text-2xl font-bold" style={{ color: '#832388' }}>
+                    {course.price}
+                  </span>
+                  <button 
+                    className="btn btn-sm px-4 text-white border-0 gap-1.5 hover:opacity-90"
+                    style={{ backgroundColor: '#1a1a1a' }}
+                  >
+                    Continue
+                    <ChevronRight className="w-4 h-4" />
+                  </button>
+                </div>
               </div>
             </div>
           ))}
         </div>
+      </section>
 
-        {/* Recently Enrolled Courses */}
-        <section>
-          <div className="flex justify-between items-center mb-6">
-            <h2 className="text-xl font-black text-[#171717]">Recently Enrolled Courses</h2>
-            <button className="text-[#FF0F7B] font-bold text-sm hover:underline">View All</button>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {courses.map((course, idx) => (
-              <div key={idx} className="bg-white rounded-2xl overflow-hidden shadow-sm border border-[#f3f4f6] group hover:shadow-xl transition-all duration-300">
-                <div className="relative">
-                  <img src={course.img} alt={course.title} className="w-full h-44 object-cover group-hover:scale-105 transition-transform duration-500" />
-                  <button className="absolute top-3 right-3 bg-white/90 p-2 rounded-full backdrop-blur-sm text-[#FF0F7B] shadow-sm">
-                    <Heart size={16} fill="currentColor" />
-                  </button>
-                </div>
-                <div className="p-5 space-y-3">
-                  <div className="flex justify-between items-center">
-                    <span className="text-[10px] font-black text-[#832388] uppercase tracking-widest">{course.category}</span>
-                    <div className="flex items-center text-xs text-[#FDE047]">
-                      <Star size={12} fill="currentColor" />
-                      <span className="ml-1 font-bold text-gray-700">{course.rating}</span>
-                    </div>
-                  </div>
-                  <h3 className="font-bold text-[#171717] text-sm leading-tight h-10 line-clamp-2 group-hover:text-[#FF0F7B] transition-colors">
-                    {course.title}
-                  </h3>
-                  <div className="flex items-center justify-between pt-4 border-t border-gray-50">
-                    <span className="text-[#FF0F7B] font-black text-lg">{course.price}</span>
-                    <button className="flex items-center text-[11px] font-bold bg-[#171717] text-white px-4 py-2 rounded-lg hover:bg-black transition">
-                      View Course <ChevronRight size={14} className="ml-1" />
-                    </button>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </section>
-
-        {/* Bottom Section: Invoices & Quizzes */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          
-          {/* Recent Invoices */}
-          <div className="bg-white p-6 rounded-2xl shadow-sm border border-[#f3f4f6]">
-            <h2 className="text-lg font-black text-[#171717] mb-6 flex items-center gap-2">
-               <span className="w-1.5 h-6 bg-[#832388] rounded-full"></span> Recent Invoices
-            </h2>
-            <div className="space-y-4">
+      {/* Bottom Section: Invoices & Quizzes */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        
+        {/* Recent Invoices */}
+        <div className="card bg-base-100 shadow-lg border border-base-300">
+          <div className="card-body p-6">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="w-1.5 h-7 rounded-full" style={{ backgroundColor: '#FF0F7B' }} />
+              <h2 className="text-xl font-bold">Recent Invoices</h2>
+            </div>
+            
+            <div className="space-y-3">
               {invoices.map((inv, idx) => (
-                <div key={idx} className="flex items-center justify-between p-3 rounded-xl hover:bg-gray-50 transition-colors">
-                  <div className="flex-1">
-                    <h4 className="text-xs font-bold text-[#171717] truncate max-w-[200px]">{inv.title}</h4>
-                    <div className="flex items-center gap-3 mt-1">
-                      <span className="text-[9px] font-bold text-[#832388]">{inv.id}</span>
-                      <span className="text-[9px] text-gray-400 font-bold uppercase tracking-tighter">Amt: {inv.amount}</span>
+                <div 
+                  key={idx} 
+                  className="flex items-center justify-between p-4 rounded-xl hover:bg-base-200 transition-all duration-200 border border-transparent hover:border-base-300 cursor-pointer"
+                >
+                  <div className="flex-1 min-w-0">
+                    <h4 className="text-sm font-bold truncate mb-1.5">
+                      {inv.title}
+                    </h4>
+                    <div className="flex items-center gap-3 text-xs opacity-70">
+                      <span className="font-bold" style={{ color: '#832388' }}>
+                        {inv.id}
+                      </span>
+                      <span>•</span>
+                      <span className="flex items-center gap-1.5 font-semibold">
+                        <Calendar className="w-3 h-3" />
+                        {inv.date}
+                      </span>
                     </div>
                   </div>
-                  <div className="flex items-center space-x-4">
-                    <span className="bg-[#00C48C]/10 text-[#00C48C] text-[9px] font-black px-2 py-1 rounded">PAID</span>
-                    <Download size={16} className="text-gray-400 cursor-pointer hover:text-[#FF0F7B]" />
+                  <div className="flex items-center gap-4 ml-4">
+                    <span className="text-base font-bold">{inv.amount}</span>
+                    <div className="flex items-center gap-2">
+                      <span 
+                        className="px-3 py-1 rounded-lg text-xs font-bold"
+                        style={{ 
+                          backgroundColor: theme === 'dark' ? '#0f2520' : '#d1fae5',
+                          color: '#00C48C'
+                        }}
+                      >
+                        PAID
+                      </span>
+                      <button className="btn btn-ghost btn-xs hover:bg-transparent hover:opacity-70">
+                        <Download className="w-4 h-4" style={{ color: '#832388' }} />
+                      </button>
+                    </div>
                   </div>
                 </div>
               ))}
             </div>
           </div>
-
-          {/* Latest Quizzes */}
-          <div className="bg-white p-6 rounded-2xl shadow-sm border border-[#f3f4f6]">
-            <h2 className="text-lg font-black text-[#171717] mb-6 flex items-center gap-2">
-               <span className="w-1.5 h-6 bg-[#F89B29] rounded-full"></span> Latest Quizzes
-            </h2>
-            <div className="space-y-6">
-              {[
-                { title: 'Sketch from A to Z (2024)', score: '15/22', pct: '68%', color: '#00C48C' },
-                { title: 'Build Responsive Real World', score: '18/22', pct: '82%', color: '#FF0F7B' },
-                { title: 'UI/UX Design Degree', score: '25/30', pct: '83%', color: '#832388' },
-                { title: 'Become an app designer', score: '12/20', pct: '20%', color: '#ef4444' },
-              ].map((quiz, idx) => (
-                <div key={idx} className="flex items-center justify-between">
-                  <div>
-                    <h4 className="text-xs font-bold text-[#171717]">{quiz.title}</h4>
-                    <p className="text-[10px] text-gray-400 font-bold">Correct: {quiz.score}</p>
-                  </div>
-                  <div className="text-[10px] font-black w-10 h-10 rounded-full border-2 flex items-center justify-center transition-all" style={{ borderColor: quiz.color, color: quiz.color }}>
-                    {quiz.pct}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-
         </div>
+
+        {/* Latest Quizzes */}
+        <div className="card bg-base-100 shadow-lg border border-base-300">
+          <div className="card-body p-6">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="w-1.5 h-7 rounded-full" style={{ backgroundColor: '#F89B29' }} />
+              <h2 className="text-xl font-bold">Latest Quizzes</h2>
+            </div>
+            
+            <div className="space-y-4">
+              {quizzes.map((quiz, idx) => (
+                <div 
+                  key={idx} 
+                  className="flex items-center justify-between p-4 rounded-xl border border-base-300 hover:border-base-content/30 hover:shadow-md transition-all duration-200 cursor-pointer"
+                >
+                  <div className="flex-1">
+                    <h4 className="text-sm font-bold mb-1.5">{quiz.title}</h4>
+                    <p className="text-xs opacity-60 font-semibold">Correct: {quiz.score}</p>
+                  </div>
+                  <div className="relative ml-4">
+                    <div 
+                      className="radial-progress font-bold"
+                      style={{ 
+                        "--value": quiz.percentage,
+                        "--size": "4rem",
+                        "--thickness": "5px",
+                        color: quiz.color
+                      } as React.CSSProperties}
+                      role="progressbar"
+                    >
+                      <span className="text-sm">{quiz.percentage}%</span>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
       </div>
     </div>
   );
 };
 
-export default Dashboard;
+export default StudentDashboard;
