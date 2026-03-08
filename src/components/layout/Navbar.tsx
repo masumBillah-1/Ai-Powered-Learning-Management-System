@@ -157,7 +157,9 @@ const Navbar = () => {
                   </Link>
                   <button
                     onClick={() => setIsEnrollModalOpen(true)}
-                    style={{ background: "linear-gradient(90deg, #FF0F7B, #F89B29)" }}
+                    style={{
+                      background: "linear-gradient(90deg, #FF0F7B, #F89B29)",
+                    }}
                     className="text-white px-8 py-2.5 rounded-xl font-extrabold text-sm shadow-md hover:scale-105 transition-all"
                   >
                     Enroll Now
@@ -167,7 +169,9 @@ const Navbar = () => {
                 <div className="flex items-center gap-4">
                   <button
                     onClick={() => setIsEnrollModalOpen(true)}
-                    style={{ background: "linear-gradient(90deg, #FF0F7B, #F89B29)" }}
+                    style={{
+                      background: "linear-gradient(90deg, #FF0F7B, #F89B29)",
+                    }}
                     className="hidden xl:block text-white px-8 py-2.5 rounded-xl font-extrabold text-sm shadow-lg hover:scale-105 transition-all"
                   >
                     Enroll Now
@@ -199,29 +203,27 @@ const Navbar = () => {
 
                         {/* View Profile Button */}
                         <Link
+                          href={`/sampleDashboard/${user.role}`}
+                          className="flex items-center gap-3 px-5 py-3 hover:bg-gray-50 dark:hover:bg-gray-800 font-bold dark:text-gray-200 text-gray-700"
                           href="/viewprofile"
                           className="w-full py-3 mb-6 bg-gradient-to-r from-[#832388] via-[#E3436B] to-[#F0772F] text-white font-bold rounded-xl hover:opacity-90 transition-opacity text-center shadow-lg"
                           onClick={() => setShowMenu(false)}
                         >
                           View Profile
                         </Link>
-
-                        {/* Menu Links */}
-                        <div className="w-full flex flex-col gap-2 border-t border-white/10 pt-4">
-                          <Link
-                            href={`/dashboard/${user.role}`}
-                            className="flex items-center gap-3 px-2 py-2  dark:text-white/90  font-medium transition-colors"
-                            onClick={() => setShowMenu(false)}
-                          >
-                            <FaThLarge className="text-purple-400" /> Dashboard
-                          </Link>                   
-                          <button
-                            onClick={handleLogout}
-                            className="flex items-center gap-3 px-2 py-2 text-red-400 font-bold hover:text-red-300 transition-colors mt-2"
-                          >
-                            <FaSignOutAlt /> Logout
-                          </button>
-                        </div>
+                        <Link
+                          href="/dashboard/profile"
+                          className="flex items-center gap-3 px-5 py-3 hover:bg-gray-50 dark:hover:bg-gray-800 font-bold dark:text-gray-200 text-gray-700"
+                          onClick={() => setShowMenu(false)}
+                        >
+                          <FaUser className="text-[#6710C2]" /> My Profile
+                        </Link>
+                        <button
+                          onClick={handleLogout}
+                          className="w-full flex items-center gap-3 px-5 py-3 text-red-600 font-bold hover:bg-red-50 dark:hover:bg-red-900/20 border-t dark:border-gray-700 mt-2"
+                        >
+                          <FaSignOutAlt /> Logout
+                        </button>
                       </div>
                     )}
                   </div>
@@ -310,7 +312,7 @@ const Navbar = () => {
               ))}
               {user && (
                 <Link
-                  href="/dashboard/my-classes"
+                  href="/sampleDashboard/admin"
                   className="flex justify-between items-center p-4 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-800 text-gray-800 dark:text-gray-200 font-bold"
                   onClick={() => setIsOpen(false)}
                 >
@@ -323,15 +325,20 @@ const Navbar = () => {
               {user ? (
                 <>
                   <Link
-                    href={`/dashboard/${user.role}`}
+                    href={`/sampleDashboard/${user.role}`}
                     className="flex items-center justify-center gap-2 w-full bg-[#f3f4f6] dark:bg-gray-800 text-gray-800 dark:text-white py-4 rounded-2xl font-bold"
                     onClick={() => setIsOpen(false)}
                   >
                     <FaThLarge /> Dashboard
                   </Link>
                   <button
-                    onClick={() => { setIsOpen(false); setIsEnrollModalOpen(true); }}
-                    style={{ background: "linear-gradient(90deg, #FF0F7B, #F89B29)" }}
+                    onClick={() => {
+                      setIsOpen(false);
+                      setIsEnrollModalOpen(true);
+                    }}
+                    style={{
+                      background: "linear-gradient(90deg, #FF0F7B, #F89B29)",
+                    }}
                     className="w-full text-white py-4 rounded-2xl font-bold shadow-lg"
                   >
                     Enroll Now
@@ -352,8 +359,13 @@ const Navbar = () => {
                     Login
                   </Link>
                   <button
-                    onClick={() => { setIsOpen(false); setIsEnrollModalOpen(true); }}
-                    style={{ background: "linear-gradient(90deg, #FF0F7B, #F89B29)" }}
+                    onClick={() => {
+                      setIsOpen(false);
+                      setIsEnrollModalOpen(true);
+                    }}
+                    style={{
+                      background: "linear-gradient(90deg, #FF0F7B, #F89B29)",
+                    }}
                     className="w-full text-white py-4 rounded-2xl font-bold shadow-lg"
                   >
                     Enroll Now
@@ -417,7 +429,9 @@ const Navbar = () => {
               {/* Action Button */}
               <Link href="/login" onClick={() => setIsEnrollModalOpen(false)}>
                 <button
-                  style={{ background: "linear-gradient(90deg, #FF0F7B, #F89B29)" }}
+                  style={{
+                    background: "linear-gradient(90deg, #FF0F7B, #F89B29)",
+                  }}
                   className="w-full py-4 rounded-xl text-white font-black text-lg shadow-lg hover:scale-[1.02] active:scale-95 transition-all"
                 >
                   Register Now
@@ -430,7 +444,5 @@ const Navbar = () => {
     </nav>
   );
 };
-
-
 
 export default Navbar;

@@ -1,128 +1,472 @@
 "use client";
-import React from 'react';
-import { motion } from 'framer-motion';
-import { 
-  Search, Grid, List, Edit2, Star, 
-  PlayCircle, HelpCircle, Clock 
+
+import React, { useState, useEffect, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
+import {
+  Search, Grid, List, Edit2, Star, PlayCircle,
+  FileText, Clock, Users, Plus, Trash2, Eye,
+  BarChart3, RefreshCw, BookOpen
 } from 'lucide-react';
+import toast, { Toaster } from 'react-hot-toast';
 
-const Course = () => {
-  // Soft & Muted Stats Data
+// ─── Types ────────────────────────────────────────────────────────────────────
+interface ICourse {
+  _id: string;
+  title: string;
+  category: string;
+  level: string;
+  status: 'draft' | 'published';
+  visibility: 'public' | 'private';
+  coverImage?: { type: string; url: string };
+  pricing: { type: 'paid' | 'free'; price: number; discountPrice?: number };
+  modules: { lessons: any[] }[];
+  enrolledCount: number;
+  rating?: number;
+  reviewCount?: number;
+  createdAt: string;
+}
+
+// ─── Toast styles ─────────────────────────────────────────────────────────────
+const tErr = {
+  position: 'bottom-left' as const,
+  duration: 3500,
+  style: { borderRadius: '10px', background: '#dc2626', color: '#fff', fontWeight: '600' },
+};
+const tOk = {
+  position: 'bottom-left' as const,
+  duration: 3000,
+  style: { borderRadius: '10px', background: '#1e1e2e', color: '#fff', fontWeight: '600' },
+};
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+const getLessons = (modules: { lessons: any[] }[]) =>
+  modules?.reduce((a, m) => a + (m.lessons?.length || 0), 0) || 0;
+
+const getStatusStyle = (status: string, theme: string) => {
+  switch (status) {
+    case 'published': return { bg: theme === 'dark' ? '#0f2520' : '#d1fae5', text: '#00C48C', label: 'Published' };
+    case 'draft':     return { bg: theme === 'dark' ? '#2a1520' : '#fce7f3', text: '#FF0F7B', label: 'Draft' };
+    default:          return { bg: '#f3f4f6', text: '#6b7280', label: status };
+  }
+};
+
+const formatPrice = (course: ICourse) => {
+  if (course.pricing?.type === 'free') return 'Free';
+  const p = course.pricing?.discountPrice || course.pricing?.price || 0;
+  return `৳${p.toLocaleString()}`;
+};
+
+// ─── Skeletons ────────────────────────────────────────────────────────────────
+const SkeletonRow = () => (
+  <tr>
+    {[200, 80, 60, 80, 70, 90].map((w, i) => (
+      <td key={i}><div className={`skeleton h-5 rounded`} style={{ width: w }} /></td>
+    ))}
+  </tr>
+);
+const SkeletonCard = () => (
+  <div className="card bg-base-100 border border-base-300">
+    <div className="skeleton w-full h-32 rounded-t-2xl rounded-b-none" />
+    <div className="card-body p-4 space-y-3">
+      <div className="skeleton h-4 w-3/4 rounded" />
+      <div className="skeleton h-3 w-1/2 rounded" />
+      <div className="grid grid-cols-2 gap-2">
+        <div className="skeleton h-8 rounded" /><div className="skeleton h-8 rounded" />
+      </div>
+    </div>
+  </div>
+);
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// MAIN PAGE
+// ═══════════════════════════════════════════════════════════════════════════════
+const InstructorCoursesPage = () => {
+  const router = useRouter();
+  const [viewMode, setViewMode]             = useState<'list' | 'grid'>('list');
+  const [searchQuery, setSearchQuery]       = useState('');
+  const [filterCategory, setFilterCategory] = useState('All Categories');
+  const [filterStatus, setFilterStatus]     = useState('All Status');
+  const [theme, setTheme]                   = useState('light');
+  const [courses, setCourses]               = useState<ICourse[]>([]);
+  const [loading, setLoading]               = useState(true);
+  const [deleting, setDeleting]             = useState<string | null>(null);
+
+  // ── Dark mode sync ──────────────────────────────────────────────────────────
+  useEffect(() => {
+    const saved = localStorage.getItem('theme') || 'light';
+    setTheme(saved);
+    const iv = setInterval(() => {
+      const cur = localStorage.getItem('theme') || 'light';
+      if (cur !== theme) setTheme(cur);
+    }, 100);
+    return () => clearInterval(iv);
+  }, [theme]);
+
+  // ── Fetch from MongoDB ──────────────────────────────────────────────────────
+  const fetchCourses = useCallback(async (silent = false) => {
+    if (!silent) setLoading(true);
+    try {
+      // TODO: add ?instructorId=SESSION_USER_ID when auth is ready
+      const res  = await fetch('/api/courses');
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to load');
+      setCourses(data.courses || []);
+    } catch (err: any) {
+      toast.error(`❌ ${err.message}`, tErr);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => { fetchCourses(); }, [fetchCourses]);
+
+  // ── Delete ──────────────────────────────────────────────────────────────────
+  const handleDelete = async (id: string, title: string) => {
+    if (!confirm(`Delete "${title}"?\nThis cannot be undone.`)) return;
+    setDeleting(id);
+    const tid = toast.loading('Deleting...', { position: 'bottom-left', style: { borderRadius: '10px', background: '#1e1e2e', color: '#fff' } });
+    try {
+      const res  = await fetch(`/api/courses/${id}`, { method: 'DELETE' });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Delete failed');
+      setCourses(prev => prev.filter(c => c._id !== id));
+      toast.success('Course deleted! 🗑️', { id: tid, ...tOk });
+    } catch (err: any) {
+      toast.error(`❌ ${err.message}`, { id: tid, ...tErr });
+    } finally {
+      setDeleting(null);
+    }
+  };
+
+  // ── Stats from real data ────────────────────────────────────────────────────
+  const published     = courses.filter(c => c.status === 'published').length;
+  const drafts        = courses.filter(c => c.status === 'draft').length;
+  const totalStudents = courses.reduce((a, c) => a + (c.enrolledCount || 0), 0);
+  const totalRevenue  = courses
+    .filter(c => c.pricing?.type === 'paid')
+    .reduce((a, c) => a + (c.pricing?.price || 0) * (c.enrolledCount || 0), 0);
+
   const stats = [
-    { label: 'Active Courses', count: 45, bg: 'bg-indigo-50', text: 'text-indigo-600', border: 'border-indigo-100' },
-    { label: 'Pending Courses', count: 21, bg: 'bg-amber-50', text: 'text-amber-600', border: 'border-amber-100' },
-    { label: 'Draft Courses', count: 15, bg: 'bg-rose-50', text: 'text-rose-600', border: 'border-rose-100' },
-    { label: 'Free Courses', count: 16, bg: 'bg-emerald-50', text: 'text-emerald-600', border: 'border-emerald-100' },
-    { label: 'Paid Courses', count: 21, bg: 'bg-sky-50', text: 'text-sky-600', border: 'border-sky-100' },
+    { label: 'Published',      count: published,                        color: '#832388', bgL: '#f3e8ff', bgD: '#2a1f35' },
+    { label: 'Drafts',         count: drafts,                           color: '#FF0F7B', bgL: '#fce7f3', bgD: '#2a1520' },
+    { label: 'Total Courses',  count: courses.length,                   color: '#F89B29', bgL: '#fef3c7', bgD: '#2a1f15' },
+    { label: 'Total Students', count: totalStudents,                    color: '#00C48C', bgL: '#d1fae5', bgD: '#0f2520' },
+    { label: 'Est. Revenue',   count: `৳${totalRevenue.toLocaleString()}`, color: '#E3436B', bgL: '#fce7f3', bgD: '#2a1520' },
   ];
 
-  const courseList = [
-    { id: 1, name: "Information About UI/UX Design Degree", students: 600, price: 160, rating: 4.5, reviews: 300, status: "Published", lessons: 11, quizzes: 2, hours: "03:15:00" },
-    { id: 2, name: "Wordpress for Beginners - Master Wordpress Quickly", students: 500, price: 180, rating: 4.2, reviews: 430, status: "Pending", lessons: 11, quizzes: 2, hours: "03:15:00" },
-    { id: 3, name: "Sketch from A to Z (2024): Become an app designer", students: 300, price: 200, rating: 4.7, reviews: 140, status: "Draft", lessons: 11, quizzes: 2, hours: "03:15:00" },
-  ];
+  // ── Filter ──────────────────────────────────────────────────────────────────
+  const filtered = courses.filter(c => {
+    const s = c.title?.toLowerCase().includes(searchQuery.toLowerCase());
+    const cat = filterCategory === 'All Categories' || c.category === filterCategory;
+    const st  = filterStatus   === 'All Status'     || c.status   === filterStatus.toLowerCase();
+    return s && cat && st;
+  });
 
+  // ── Unique categories from real data ────────────────────────────────────────
+  const categories = ['All Categories', ...Array.from(new Set(courses.map(c => c.category).filter(Boolean)))];
+
+  // ─── Render ─────────────────────────────────────────────────────────────────
   return (
-    <div className="p-6 bg-[#F8FAFC] dark:bg-slate-950 min-h-screen font-sans">
-      
-      {/* 1. Muted Stats Cards (No Harsh Gradients) */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-5 mb-8">
-        {stats.map((stat, index) => (
-          <motion.div 
-            key={index}
-            whileHover={{ y: -4 }}
-            className={`${stat.bg} ${stat.border} border p-5 rounded-2xl transition-all shadow-sm`}
-          >
-            <p className={`text-xs font-bold uppercase tracking-wider opacity-80 ${stat.text}`}>{stat.label}</p>
-            <h2 className={`text-3xl font-black mt-1 ${stat.text}`}>{stat.count}</h2>
-          </motion.div>
+    <div className="min-h-screen" data-theme={theme}>
+
+      <Toaster containerStyle={{ bottom: 24, left: 24 }} toastOptions={{ style: { maxWidth: 380 } }} />
+
+      {/* ── Stats ── */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 mb-8">
+        {stats.map((s, i) => (
+          <div key={i} className="card bg-base-100 shadow-sm border hover:shadow-md transition-all"
+            style={{ borderColor: theme === 'dark' ? s.bgD : s.bgL }}>
+            <div className="card-body p-4">
+              <p className="text-xs font-bold uppercase tracking-wider opacity-50">{s.label}</p>
+              {loading
+                ? <div className="skeleton h-8 w-16 mt-1 rounded" />
+                : <h2 className="text-2xl font-bold mt-1" style={{ color: s.color }}>{s.count}</h2>}
+            </div>
+          </div>
         ))}
       </div>
 
-      {/* 2. Content Card */}
-      <div className="bg-white dark:bg-slate-900 rounded-3xl p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-gray-100 dark:border-slate-800">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-10">
-          <h1 className="text-2xl font-black text-slate-800 dark:text-white">Course Overview</h1>
-          
-          <div className="flex items-center gap-3">
-            <div className="flex bg-slate-100 dark:bg-slate-800 p-1 rounded-xl">
-              <button className="p-2 bg-white dark:bg-slate-700 shadow-sm rounded-lg text-indigo-600"><List size={18} /></button>
-              <button className="p-2 text-slate-400 hover:text-slate-600"><Grid size={18} /></button>
+      {/* ── Main Card ── */}
+      <div className="card bg-base-100 shadow-xl border border-base-300">
+        <div className="card-body p-6 md:p-8">
+
+          {/* ── Header ── */}
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+            <div className="flex items-center gap-3">
+              <h1 className="text-2xl font-bold">Course Management</h1>
+              {!loading && (
+                <div className="badge badge-ghost text-xs">{courses.length} courses</div>
+              )}
+              <button onClick={() => fetchCourses(true)} disabled={loading}
+                className="btn btn-xs btn-ghost btn-circle opacity-40 hover:opacity-100 cursor-pointer" title="Refresh">
+                <RefreshCw size={13} className={loading ? 'animate-spin' : ''} />
+              </button>
             </div>
-            <button className="bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2.5 rounded-xl font-bold text-sm transition-all shadow-lg shadow-indigo-100">
-              + Create Course
-            </button>
-          </div>
-        </div>
 
-        {/* Filters */}
-        <div className="flex flex-col md:flex-row gap-4 mb-8">
-          <div className="relative flex-1">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-            <input 
-              type="text" 
-              placeholder="Search by course name..." 
-              className="w-full pl-11 pr-4 py-3 bg-slate-50 dark:bg-slate-800 border-transparent rounded-2xl focus:bg-white focus:ring-2 focus:ring-indigo-500/20 outline-none text-sm transition-all border border-gray-100 dark:border-slate-700"
-            />
-          </div>
-          <select className="px-6 py-3 bg-slate-50 dark:bg-slate-800 border border-gray-100 dark:border-slate-700 rounded-2xl text-sm font-bold text-slate-600 outline-none cursor-pointer">
-            <option>All Categories</option>
-            <option>Design</option>
-            <option>Development</option>
-          </select>
-        </div>
+            <div className="flex items-center gap-3">
+              {/* View toggle */}
+              <div className="flex bg-base-200 p-1 rounded-xl border border-base-300">
+                {(['list', 'grid'] as const).map(v => (
+                  <button key={v} onClick={() => setViewMode(v)}
+                    className={`p-2 rounded-lg transition-all cursor-pointer ${viewMode === v ? 'bg-base-100 shadow-md' : 'hover:bg-base-300'}`}
+                    style={{ color: viewMode === v ? '#832388' : '' }}>
+                    {v === 'list' ? <List size={17} /> : <Grid size={17} />}
+                  </button>
+                ))}
+              </div>
 
-        {/* 3. Refined Table */}
-        <div className="overflow-x-auto">
-          <table className="w-full text-left">
-            <thead>
-              <tr className="text-slate-400 text-[11px] font-black uppercase tracking-[0.1em] border-b border-slate-50 dark:border-slate-800">
-                <th className="pb-5 px-2">Course Name</th>
-                <th className="pb-5 text-center">Students</th>
-                <th className="pb-5 text-center">Price</th>
-                <th className="pb-5">Status</th>
-                <th className="pb-5 text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-50 dark:divide-slate-800">
-              {courseList.map((course) => (
-                <tr key={course.id} className="group hover:bg-slate-50/50 dark:hover:bg-slate-800/50 transition-all">
-                  <td className="py-6 px-2">
-                    <div className="flex items-center gap-4">
-                      <div className="w-12 h-12 rounded-xl bg-indigo-50 flex items-center justify-center text-indigo-500 group-hover:bg-indigo-500 group-hover:text-white transition-all">
-                        <PlayCircle size={24} />
-                      </div>
-                      <div>
-                        <h4 className="text-sm font-bold text-slate-700 dark:text-slate-200">{course.name}</h4>
-                        <div className="flex gap-3 mt-1 text-[11px] font-bold text-slate-400 uppercase">
-                          <span className="flex items-center gap-1"><Clock size={12}/> {course.hours}</span>
-                          <span className="flex items-center gap-1"><HelpCircle size={12}/> {course.quizzes} Quiz</span>
+              <button onClick={() => router.push('/sampleDashboard/instructor/courses/create')}
+                className="btn gap-2 text-white border-0 cursor-pointer"
+                style={{ background: 'linear-gradient(135deg, #832388, #FF0F7B)' }}>
+                <Plus size={17} /> Create Course
+              </button>
+            </div>
+          </div>
+
+          {/* ── Filters ── */}
+          <div className="flex flex-col md:flex-row gap-3 mb-6">
+            <label className="input input-bordered flex items-center gap-2 flex-1 bg-base-200 focus-within:border-purple-400">
+              <Search size={15} className="opacity-40" />
+              <input type="text" placeholder="Search courses..." value={searchQuery}
+                onChange={e => setSearchQuery(e.target.value)}
+                className="grow bg-transparent focus:outline-none text-sm" />
+              {searchQuery && (
+                <button onClick={() => setSearchQuery('')} className="opacity-40 hover:opacity-100 text-xs cursor-pointer">✕</button>
+              )}
+            </label>
+            <select value={filterCategory} onChange={e => setFilterCategory(e.target.value)}
+              className="select select-bordered bg-base-200 focus:outline-none cursor-pointer md:w-48 text-sm">
+              {categories.map(c => <option key={c}>{c}</option>)}
+            </select>
+            <select value={filterStatus} onChange={e => setFilterStatus(e.target.value)}
+              className="select select-bordered bg-base-200 focus:outline-none cursor-pointer md:w-36 text-sm">
+              <option>All Status</option>
+              <option value="published">Published</option>
+              <option value="draft">Draft</option>
+            </select>
+          </div>
+
+          {/* ════════════════════ LIST VIEW ════════════════════ */}
+          {viewMode === 'list' ? (
+            <div className="overflow-x-auto rounded-xl border border-base-300">
+              <table className="table table-zebra w-full">
+                <thead>
+                  <tr className="bg-base-200 text-xs uppercase tracking-wider opacity-70">
+                    <th>Course</th>
+                    <th className="text-center">Students</th>
+                    <th className="text-center">Price</th>
+                    <th className="text-center">Rating</th>
+                    <th className="text-center">Status</th>
+                    <th className="text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {loading
+                    ? Array.from({ length: 5 }).map((_, i) => <SkeletonRow key={i} />)
+                    : filtered.map(course => {
+                        const st      = getStatusStyle(course.status, theme);
+                        const lessons = getLessons(course.modules);
+                        const cover   = course.coverImage?.url;
+                        return (
+                          <tr key={course._id} className="hover">
+
+                            {/* Course info */}
+                            <td className="min-w-[260px]">
+                              <div className="flex items-center gap-3">
+                                <div className="w-12 h-12 rounded-xl overflow-hidden flex-shrink-0 bg-base-300">
+                                  {cover
+                                    ? <img src={cover} alt={course.title}
+                                        className="w-full h-full object-cover"
+                                        onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+                                    : <div className="w-full h-full flex items-center justify-center"
+                                        style={{ backgroundColor: theme === 'dark' ? '#2a1f35' : '#f3e8ff' }}>
+                                        <PlayCircle className="w-5 h-5" style={{ color: '#832388' }} />
+                                      </div>}
+                                </div>
+                                <div className="min-w-0">
+                                  <p className="text-sm font-bold line-clamp-1 leading-snug">{course.title}</p>
+                                  <div className="flex flex-wrap gap-2 mt-1 text-xs opacity-50">
+                                    <span className="flex items-center gap-1"><FileText size={10} /> {lessons} Lessons</span>
+                                    <span className="flex items-center gap-1"><BookOpen size={10} /> {course.modules?.length || 0} Modules</span>
+                                    <span className="capitalize">{course.category}</span>
+                                  </div>
+                                </div>
+                              </div>
+                            </td>
+
+                            {/* Students */}
+                            <td className="text-center">
+                              <div className="flex items-center justify-center gap-1">
+                                <Users size={13} className="opacity-40" />
+                                <span className="text-sm font-bold">{course.enrolledCount || 0}</span>
+                              </div>
+                            </td>
+
+                            {/* Price */}
+                            <td className="text-center">
+                              <span className="text-sm font-bold" style={{ color: '#832388' }}>
+                                {formatPrice(course)}
+                              </span>
+                            </td>
+
+                            {/* Rating */}
+                            <td className="text-center">
+                              <div className="flex items-center justify-center gap-1">
+                                <Star size={12} className="fill-[#FDE047] text-[#FDE047]" />
+                                <span className="text-sm font-semibold">
+                                  {course.rating ? course.rating.toFixed(1) : '—'}
+                                </span>
+                                {course.reviewCount ? (
+                                  <span className="text-xs opacity-40">({course.reviewCount})</span>
+                                ) : null}
+                              </div>
+                            </td>
+
+                            {/* Status */}
+                            <td className="text-center">
+                              <span className="px-3 py-1 rounded-full text-xs font-bold whitespace-nowrap"
+                                style={{ backgroundColor: st.bg, color: st.text }}>
+                                {st.label}
+                              </span>
+                            </td>
+
+                            {/* Actions */}
+                            <td>
+                              <div className="flex items-center justify-end gap-1">
+                                <button className="btn btn-ghost btn-xs btn-circle cursor-pointer" title="View">
+                                  <Eye size={14} />
+                                </button>
+                                <button className="btn btn-ghost btn-xs btn-circle cursor-pointer" title="Edit"
+                                  onClick={() => router.push(`/sampleDashboard/instructor/courses/create?id=${course._id}`)}>
+                                  <Edit2 size={14} />
+                                </button>
+                                <button className="btn btn-ghost btn-xs btn-circle cursor-pointer text-error" title="Delete"
+                                  disabled={deleting === course._id}
+                                  onClick={() => handleDelete(course._id, course.title)}>
+                                  {deleting === course._id
+                                    ? <span className="loading loading-spinner loading-xs" />
+                                    : <Trash2 size={14} />}
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                </tbody>
+              </table>
+            </div>
+
+          ) : (
+            /* ════════════════════ GRID VIEW ════════════════════ */
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+              {loading
+                ? Array.from({ length: 6 }).map((_, i) => <SkeletonCard key={i} />)
+                : filtered.map(course => {
+                    const st      = getStatusStyle(course.status, theme);
+                    const lessons = getLessons(course.modules);
+                    const cover   = course.coverImage?.url;
+                    return (
+                      <div key={course._id}
+                        className="card bg-base-100 border border-base-300 shadow-sm hover:shadow-lg transition-all duration-300 overflow-hidden">
+
+                        {/* Cover */}
+                        {cover
+                          ? <img src={cover} alt={course.title} className="w-full h-32 object-cover"
+                              onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+                          : <div className="w-full h-28 flex items-center justify-center"
+                              style={{ backgroundColor: theme === 'dark' ? '#2a1f35' : '#f3e8ff' }}>
+                              <PlayCircle className="w-10 h-10 opacity-30" style={{ color: '#832388' }} />
+                            </div>}
+
+                        <div className="card-body p-4 space-y-3">
+                          {/* Badge row */}
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs font-bold px-2 py-1 rounded-full"
+                              style={{ backgroundColor: st.bg, color: st.text }}>
+                              {st.label}
+                            </span>
+                            <span className="text-xs opacity-40 capitalize">{course.category}</span>
+                          </div>
+
+                          {/* Title */}
+                          <h3 className="text-sm font-bold leading-snug line-clamp-2">{course.title}</h3>
+
+                          {/* Stats */}
+                          <div className="grid grid-cols-2 gap-x-3 gap-y-1 text-xs opacity-60">
+                            <span className="flex items-center gap-1"><Users size={11} />{course.enrolledCount || 0} Students</span>
+                            <span className="flex items-center gap-1"><FileText size={11} />{lessons} Lessons</span>
+                            <span className="flex items-center gap-1"><Star size={11} className="fill-[#FDE047] text-[#FDE047]" />{course.rating?.toFixed(1) || '—'}</span>
+                            <span className="flex items-center gap-1 capitalize"><Clock size={11} />{course.level}</span>
+                          </div>
+
+                          {/* Footer */}
+                          <div className="flex items-center justify-between pt-3 border-t border-base-300">
+                            <span className="text-base font-bold" style={{ color: '#832388' }}>
+                              {formatPrice(course)}
+                            </span>
+                            <div className="flex gap-1">
+                              <button className="btn btn-ghost btn-sm btn-circle cursor-pointer" title="Analytics">
+                                <BarChart3 size={14} />
+                              </button>
+                              <button className="btn btn-ghost btn-sm btn-circle cursor-pointer" title="Edit"
+                                onClick={() => router.push(`/sampleDashboard/instructor/courses/create?id=${course._id}`)}>
+                                <Edit2 size={14} />
+                              </button>
+                              <button className="btn btn-ghost btn-sm btn-circle cursor-pointer text-error" title="Delete"
+                                disabled={deleting === course._id}
+                                onClick={() => handleDelete(course._id, course.title)}>
+                                {deleting === course._id
+                                  ? <span className="loading loading-spinner loading-xs" />
+                                  : <Trash2 size={14} />}
+                              </button>
+                            </div>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  </td>
-                  <td className="py-6 text-center text-sm font-bold text-slate-600 dark:text-slate-400">{course.students}</td>
-                  <td className="py-6 text-center text-sm font-black text-slate-800 dark:text-white">${course.price}</td>
-                  <td className="py-6">
-                    <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase ${
-                      course.status === 'Published' ? 'bg-emerald-100 text-emerald-600' : 'bg-amber-100 text-amber-600'
-                    }`}>
-                      {course.status}
-                    </span>
-                  </td>
-                  <td className="py-6 text-right">
-                    <button className="p-2 hover:bg-white dark:hover:bg-slate-700 shadow-sm border border-transparent hover:border-slate-100 rounded-lg text-slate-400 hover:text-indigo-600 transition-all">
-                      <Edit2 size={16} />
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+                    );
+                  })}
+            </div>
+          )}
+
+          {/* ── Empty State ── */}
+          {!loading && filtered.length === 0 && (
+            <div className="text-center py-20">
+              <div className="text-6xl mb-4">📚</div>
+              {courses.length === 0 ? (
+                <>
+                  <h3 className="text-xl font-bold mb-2">No Courses Yet</h3>
+                  <p className="opacity-50 mb-6">Create your first course to get started!</p>
+                  <button onClick={() => router.push('/sampleDashboard/instructor/courses/create')}
+                    className="btn gap-2 text-white border-0 cursor-pointer"
+                    style={{ background: 'linear-gradient(135deg, #832388, #FF0F7B)' }}>
+                    <Plus size={17} /> Create First Course
+                  </button>
+                </>
+              ) : (
+                <>
+                  <h3 className="text-xl font-bold mb-2">No Results Found</h3>
+                  <p className="opacity-50 mb-6">Try different search or filter</p>
+                  <button onClick={() => { setSearchQuery(''); setFilterCategory('All Categories'); setFilterStatus('All Status'); }}
+                    className="btn border-0 text-white cursor-pointer" style={{ backgroundColor: '#832388' }}>
+                    Clear Filters
+                  </button>
+                </>
+              )}
+            </div>
+          )}
+
+          {/* ── Footer count ── */}
+          {!loading && filtered.length > 0 && (
+            <div className="mt-4 pt-4 border-t border-base-300 flex items-center justify-between text-xs opacity-50">
+              <span>Showing <strong>{filtered.length}</strong> of <strong>{courses.length}</strong> courses</span>
+              <span>Last updated just now</span>
+            </div>
+          )}
+
         </div>
       </div>
     </div>
   );
 };
 
-export default Course;
+export default InstructorCoursesPage;

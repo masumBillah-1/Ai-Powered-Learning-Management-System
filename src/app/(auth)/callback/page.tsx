@@ -25,7 +25,7 @@ export default function AuthCallback() {
       } else if (userData.role === "instructor") {
         router.replace("/dashboard/instructor");
       } else {
-        router.replace("/dashboard/student");
+        router.replace("/sampleDashboard/admin");
       }
     } else {
       router.replace("/login?error=auth_failed");

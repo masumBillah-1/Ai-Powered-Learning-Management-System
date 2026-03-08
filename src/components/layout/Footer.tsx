@@ -16,6 +16,18 @@ import {
 } from "react-icons/fa";
 import Logo from "./Logo";
 
+const footerLinks = [
+  { name: "About Us", path: "/about" },
+  { name: "Success Page", path: "/" },
+  { name: "Blog", path: "/blog" },
+  { name: "Refund policy", path: "/refound" },
+  { name: "Privacy Policy", path: "/privacy-policy" },
+  { name: "Terms and condition", path: "/terms" },
+  { name: "Newsletter", path: "/privacy" },
+
+  // New Link
+  { name: "Become an Instructor", path: "/become-instructor" },
+];
 const Footer = () => {
   return (
     // Important: We use !important styles via Tailwind for background to override any conflicts
@@ -66,21 +78,13 @@ const Footer = () => {
               লিঙ্কসমূহ
             </h4>
             <ul className="space-y-4 text-sm font-medium">
-              {[
-                "About Us",
-                "Success Page",
-                "Blog",
-                "Refund policy",
-                "Privacy Policy",
-                "Terms and condition",
-                "Newsletter",
-              ].map((item) => (
-                <li key={item}>
+              {footerLinks.map((item) => (
+                <li key={item.name}>
                   <Link
-                    href="#"
+                    href={item.path}
                     className="text-gray-600 dark:text-gray-400 hover:text-[#007BFF] dark:hover:text-[#F89B29] transition-colors"
                   >
-                    {item}
+                    {item.name}
                   </Link>
                 </li>
               ))}
@@ -94,7 +98,7 @@ const Footer = () => {
             </h4>
             <div className="space-y-4">
               <a
-                href="#"
+                href="https://www.facebook.com/"
                 className="flex items-center gap-3 text-sm text-gray-600 dark:text-gray-400 group"
               >
                 <div className="w-8 h-8 flex items-center justify-center bg-blue-100 dark:bg-blue-900/30 rounded-full text-blue-600 dark:text-blue-400 group-hover:scale-110 transition-transform">
@@ -103,7 +107,7 @@ const Footer = () => {
                 ফেসবুক
               </a>
               <a
-                href="#"
+                href="https://www.instagram.com/?hl=en"
                 className="flex items-center gap-3 text-sm text-gray-600 dark:text-gray-400 group"
               >
                 <div className="w-8 h-8 flex items-center justify-center bg-pink-100 dark:bg-pink-900/30 rounded-full text-pink-600 dark:text-pink-400 group-hover:scale-110 transition-transform">
@@ -112,7 +116,7 @@ const Footer = () => {
                 ইন্সটাগ্রাম
               </a>
               <a
-                href="#"
+                href="https://www.youtube.com/"
                 className="flex items-center gap-3 text-sm text-gray-600 dark:text-gray-400 group"
               >
                 <div className="w-8 h-8 flex items-center justify-center bg-red-100 dark:bg-red-900/30 rounded-full text-red-600 dark:text-red-400 group-hover:scale-110 transition-transform">
@@ -121,7 +125,7 @@ const Footer = () => {
                 ইউটিউব
               </a>
               <a
-                href="#"
+                href="https://www.linkedin.com/feed/"
                 className="flex items-center gap-3 text-sm text-gray-600 dark:text-gray-400 group"
               >
                 <div className="w-8 h-8 flex items-center justify-center bg-blue-50 dark:bg-blue-900/40 rounded-full text-blue-700 dark:text-blue-300 group-hover:scale-110 transition-transform">
@@ -144,7 +148,13 @@ const Footer = () => {
                   <p className="text-[9px] uppercase font-semibold text-gray-400">
                     Download on the
                   </p>
-                  <p className="text-base font-bold">App Store</p>
+                  <a
+                    href="https://www.apple.com/app-store/"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    <p className="text-base font-bold">App Store</p>
+                  </a>
                 </div>
               </button>
 
@@ -154,7 +164,13 @@ const Footer = () => {
                   <p className="text-[9px] uppercase font-semibold text-gray-400">
                     Get it on
                   </p>
-                  <p className="text-base font-bold">Google Play</p>
+                  <a
+                    href="https://play.google.com/store/apps?hl=en"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    <p className="text-base font-bold">Google Play</p>
+                  </a>
                 </div>
               </button>
 
@@ -164,7 +180,13 @@ const Footer = () => {
                   <p className="text-[9px] uppercase font-semibold text-gray-400">
                     Download for
                   </p>
-                  <p className="text-base font-bold">Microsoft</p>
+                  <a
+                    href="https://apps.microsoft.com/home?hl=en-US&gl=BD"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    <p className="text-base font-bold">Microsoft</p>
+                  </a>
                 </div>
               </button>
             </div>
