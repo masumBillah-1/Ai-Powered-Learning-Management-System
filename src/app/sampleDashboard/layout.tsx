@@ -11,7 +11,7 @@ interface UserData {
   name: string;
   email: string;
   photoURL?: string;
-  role: string;
+  role: Role;
 }
 
 // ─── Menu Config ─────────────────────────────────────────────────────────────
@@ -51,12 +51,6 @@ const menus: Record<Role, { label: string; href: string }[]> = {
   ],
 };
 
-const roleHome: Record<Role, string> = {
-  student:    "/sampleDashboard/student",
-  instructor: "/sampleDashboard/instructor",
-  admin:      "/sampleDashboard/admin",
-};
-
 // ─── Theme Colors ─────────────────────────────────────────────────────────────
 const colors = {
   dark: {
@@ -73,8 +67,6 @@ const colors = {
     mainBg:            "#111111",
     sidebarBg:         "#1A1A1A",
     sidebarBorder:     "#2a2a2a",
-    sidebarRoleBg:     "#2a2a2a",
-    sidebarRoleBorder: "#3a3a3a",
     sidebarItemActive: "#2a2a2a",
     sidebarItemBorder: "#3a3a3a",
   },
@@ -92,8 +84,6 @@ const colors = {
     mainBg:            "#f5f5f5",
     sidebarBg:         "#1a1a1a",
     sidebarBorder:     "#333",
-    sidebarRoleBg:     "#2a2a2a",
-    sidebarRoleBorder: "#3a3a3a",
     sidebarItemActive: "#333",
     sidebarItemBorder: "#3a3a3a",
   },
@@ -115,7 +105,6 @@ function TopNavbar({ role, items, theme, toggleTheme, user, onLogout }: {
 
   const currentPage = items.find((item) => item.href === pathname)?.label || "Dashboard";
 
-  // user এর নাম বা email এর প্রথম অক্ষর
   const firstLetter =
     user?.name?.charAt(0).toUpperCase() ||
     user?.email?.charAt(0).toUpperCase() ||
@@ -262,7 +251,6 @@ function TopNavbar({ role, items, theme, toggleTheme, user, onLogout }: {
                 style={{ display: "block", padding: "11px 16px", fontSize: "14px", color: c.dropText, textDecoration: "none", borderBottom: `1px solid ${c.dropBorder}` }}>
                 ⚙️ Settings
               </Link>
-              {/* ── Logout ── */}
               <button
                 onClick={() => { setShowUserMenu(false); onLogout(); }}
                 style={{
@@ -282,15 +270,12 @@ function TopNavbar({ role, items, theme, toggleTheme, user, onLogout }: {
 }
 
 // ─── Sidebar ──────────────────────────────────────────────────────────────────
-function Sidebar({ role, setRole, items, theme }: {
+function Sidebar({ role, items, theme }: {
   role: Role;
-  setRole: (r: Role) => void;
   items: { label: string; href: string }[];
   theme: "dark" | "light";
 }) {
   const pathname = usePathname();
-  const [open, setOpen] = useState(false);
-  const roles: Role[] = ["student", "instructor", "admin"];
   const c = colors[theme];
 
   return (
@@ -319,46 +304,24 @@ function Sidebar({ role, setRole, items, theme }: {
         </Link>
       </div>
 
-      {/* Role Dropdown */}
-      <div style={{ position: "relative", padding: "8px 20px", marginBottom: "10px" }}>
-        <button
-          onClick={() => setOpen(!open)}
-          style={{
-            width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between",
-            background: c.sidebarRoleBg, border: `1px solid ${c.sidebarRoleBorder}`,
-            borderRadius: "6px", padding: "7px 12px", color: "#fff",
-            fontSize: "12px", textTransform: "uppercase", letterSpacing: "1px", cursor: "pointer",
-          }}
-        >
-          <span>{role}</span>
-          <span style={{ fontSize: "10px" }}>{open ? "▲" : "▼"}</span>
-        </button>
-
-        {open && (
-          <div style={{
-            position: "absolute", top: "100%", left: "20px", right: "20px",
-            background: c.sidebarRoleBg, border: `1px solid ${c.sidebarRoleBorder}`,
-            borderRadius: "6px", zIndex: 100, overflow: "hidden",
-          }}>
-            {roles.map((r) => (
-              <Link
-                key={r}
-                href={roleHome[r]}
-                onClick={() => { setRole(r); setOpen(false); localStorage.setItem("dashboardRole", r); }}
-                style={{
-                  display: "block", padding: "9px 12px",
-                  color: r === role ? "#4ade80" : "#ccc",
-                  fontSize: "13px", textDecoration: "none",
-                  background: r === role ? c.sidebarItemActive : "transparent",
-                  borderBottom: `1px solid ${c.sidebarItemBorder}`,
-                  textTransform: "capitalize",
-                }}
-              >
-                {r === role ? "✓ " : "  "}{r}
-              </Link>
-            ))}
-          </div>
-        )}
+      {/* Role Badge (No dropdown, just display) */}
+      <div style={{ padding: "8px 20px", marginBottom: "10px" }}>
+        <div style={{
+          width: "100%",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          background: "linear-gradient(135deg, #832388, #FF0F7B)",
+          borderRadius: "6px",
+          padding: "8px 12px",
+          color: "#fff",
+          fontSize: "12px",
+          textTransform: "uppercase",
+          letterSpacing: "1px",
+          fontWeight: "700",
+        }}>
+          {role} Dashboard
+        </div>
       </div>
 
       {/* Menu Items */}
@@ -386,7 +349,6 @@ function Sidebar({ role, setRole, items, theme }: {
   );
 }
 
-
 // ─── Page Loader ─────────────────────────────────────────────────────────────
 function PageLoader({ children, theme }: { children: React.ReactNode; theme: "dark" | "light" }) {
   const [loading, setLoading] = useState(true);
@@ -409,7 +371,6 @@ function PageLoader({ children, theme }: { children: React.ReactNode; theme: "da
         minHeight: "400px",
         gap: "16px",
       }}>
-        {/* Spinner */}
         <div style={{
           width: "44px",
           height: "44px",
@@ -442,49 +403,118 @@ function PageLoader({ children, theme }: { children: React.ReactNode; theme: "da
 
 // ─── Layout ───────────────────────────────────────────────────────────────────
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
-  const [role, setRole] = useState<Role>("admin");
+  const [role, setRole] = useState<Role>("student");
   const [theme, setTheme] = useState<"dark" | "light">("light");
   const [user, setUser] = useState<UserData | null>(null);
-  const items = menus[role];
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // theme load
+    console.log("\n" + "=".repeat(80));
+    console.log("🔄 DASHBOARD LAYOUT - LOADING USER DATA");
+    console.log("=".repeat(80));
+
+    // ✅ Load theme
     const savedTheme = (localStorage.getItem("theme") || "light") as "dark" | "light";
     setTheme(savedTheme);
+    console.log("🎨 Theme loaded:", savedTheme);
 
-    // user load — Navbar এর মতো same key "user"
+    // ✅ Load user from localStorage
     const savedUser = localStorage.getItem("user");
-    if (savedUser) {
-      const parsed: UserData = JSON.parse(savedUser);
-      setUser(parsed);
-      // dashboardRole আগে check করো (manual switch), তারপর user.role
-      const savedRole = localStorage.getItem("dashboardRole");
-      if (savedRole === "student" || savedRole === "instructor" || savedRole === "admin") {
-        setRole(savedRole as Role);
-      } else if (parsed.role === "student" || parsed.role === "instructor" || parsed.role === "admin") {
-        setRole(parsed.role as Role);
-        localStorage.setItem("dashboardRole", parsed.role);
-      }
+    
+    if (!savedUser) {
+      console.log("⚠️  No user found in localStorage");
+      console.log("🔄 Redirecting to login...");
+      console.log("=".repeat(80) + "\n");
+      window.location.href = "/login";
+      return;
     }
+
+    try {
+      const parsed: UserData = JSON.parse(savedUser);
+      console.log("✅ User loaded from localStorage:");
+      console.log("   Name:", parsed.name);
+      console.log("   Email:", parsed.email);
+      console.log("   Role:", parsed.role);
+      
+      setUser(parsed);
+      
+      // ✅ Set role based on user.role (not from dropdown)
+      if (parsed.role === "student" || parsed.role === "instructor" || parsed.role === "admin") {
+        setRole(parsed.role);
+        console.log("✅ Role set to:", parsed.role);
+      } else {
+        console.log("⚠️  Invalid role, defaulting to 'student'");
+        setRole("student");
+      }
+      
+    } catch (error) {
+      console.error("❌ Error parsing user data:", error);
+      console.log("🔄 Redirecting to login...");
+      window.location.href = "/login";
+      return;
+    }
+
+    console.log("=".repeat(80) + "\n");
+    setIsLoading(false);
   }, []);
 
   const toggleTheme = () => {
     const next = theme === "light" ? "dark" : "light";
     setTheme(next);
-    localStorage.setItem("theme", next); // Navbar এর মতো same key
+    localStorage.setItem("theme", next);
+    console.log("🎨 Theme toggled to:", next);
   };
 
-  // ── Logout — Navbar এর মতো same logic ──
   const handleLogout = async () => {
+    console.log("\n" + "=".repeat(80));
+    console.log("🚪 LOGGING OUT");
+    console.log("=".repeat(80));
+    
     await fetch("/api/auth/logout", { method: "POST" });
     localStorage.removeItem("user");
     localStorage.removeItem("token");
+    
+    console.log("✅ User data cleared from localStorage");
+    console.log("🔄 Redirecting to login...");
+    console.log("=".repeat(80) + "\n");
+    
     window.location.href = "/login";
   };
 
+  // ✅ Show loading state while checking user
+  if (isLoading) {
+    return (
+      <div style={{
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        height: "100vh",
+        background: colors[theme].mainBg,
+      }}>
+        <div style={{
+          width: "44px",
+          height: "44px",
+          borderRadius: "50%",
+          border: `3px solid ${theme === "dark" ? "#2a2a2a" : "#f0f0f0"}`,
+          borderTop: "3px solid #FF0F7B",
+          borderRight: "3px solid #F89B29",
+          animation: "spin 0.7s linear infinite",
+        }} />
+        <style>{`
+          @keyframes spin {
+            0%   { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+          }
+        `}</style>
+      </div>
+    );
+  }
+
+  const items = menus[role];
+
   return (
     <div style={{ display: "flex", minHeight: "100vh" }}>
-      <Sidebar role={role} setRole={setRole} items={items} theme={theme} />
+      <Sidebar role={role} items={items} theme={theme} />
       <div style={{ flex: 1, display: "flex", flexDirection: "column" }}>
         <TopNavbar
           role={role}

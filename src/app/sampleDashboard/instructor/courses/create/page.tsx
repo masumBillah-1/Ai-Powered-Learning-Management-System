@@ -919,7 +919,7 @@ export default function CreateCoursePage() {
       </div>
 
       {/* ── Bottom Bar ── */}
-      <div className="fixed bottom-0 left-0 right-0 bg-base-100 border-t border-base-300 px-6 py-4 flex items-center justify-between z-20 shadow-lg">
+      <div className="fixed bottom-0 left-54 right-0 bg-base-100 border-t border-base-300 px-6 py-4 flex items-center justify-between z-20 shadow-lg">
         <button type="button" onClick={handleBack} disabled={step === 1 || loading}
           className="btn btn-sm btn-outline gap-2 disabled:opacity-30 cursor-pointer">
           ← Back
