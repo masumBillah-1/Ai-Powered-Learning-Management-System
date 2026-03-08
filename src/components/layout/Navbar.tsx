@@ -76,7 +76,7 @@ const Navbar = () => {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  if (!mounted) return null;
+  // if (!mounted) return null;
 
   const firstLetter =
     user?.name?.charAt(0).toUpperCase() ||
