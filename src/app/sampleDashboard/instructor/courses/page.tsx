@@ -1,484 +1,468 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { 
-  Search, 
-  Grid, 
-  List, 
-  Edit2, 
-  Star, 
-  PlayCircle, 
-  FileText, 
-  Clock,
-  Users,
-  Plus,
-  Trash2,
-  Eye,
-  BarChart3
+import {
+  Search, Grid, List, Edit2, Star, PlayCircle,
+  FileText, Clock, Users, Plus, Trash2, Eye,
+  BarChart3, RefreshCw, BookOpen
 } from 'lucide-react';
+import toast, { Toaster } from 'react-hot-toast';
 
-interface Course {
-  id: number;
-  name: string;
-  students: number;
-  price: number;
-  rating: number;
-  reviews: number;
-  status: 'Published' | 'Pending' | 'Draft';
-  lessons: number;
-  quizzes: number;
-  hours: string;
+// ─── Types ────────────────────────────────────────────────────────────────────
+interface ICourse {
+  _id: string;
+  title: string;
   category: string;
+  level: string;
+  status: 'draft' | 'published';
+  visibility: 'public' | 'private';
+  coverImage?: { type: string; url: string };
+  pricing: { type: 'paid' | 'free'; price: number; discountPrice?: number };
+  modules: { lessons: any[] }[];
+  enrolledCount: number;
+  rating?: number;
+  reviewCount?: number;
+  createdAt: string;
 }
 
+// ─── Toast styles ─────────────────────────────────────────────────────────────
+const tErr = {
+  position: 'bottom-left' as const,
+  duration: 3500,
+  style: { borderRadius: '10px', background: '#dc2626', color: '#fff', fontWeight: '600' },
+};
+const tOk = {
+  position: 'bottom-left' as const,
+  duration: 3000,
+  style: { borderRadius: '10px', background: '#1e1e2e', color: '#fff', fontWeight: '600' },
+};
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+const getLessons = (modules: { lessons: any[] }[]) =>
+  modules?.reduce((a, m) => a + (m.lessons?.length || 0), 0) || 0;
+
+const getStatusStyle = (status: string, theme: string) => {
+  switch (status) {
+    case 'published': return { bg: theme === 'dark' ? '#0f2520' : '#d1fae5', text: '#00C48C', label: 'Published' };
+    case 'draft':     return { bg: theme === 'dark' ? '#2a1520' : '#fce7f3', text: '#FF0F7B', label: 'Draft' };
+    default:          return { bg: '#f3f4f6', text: '#6b7280', label: status };
+  }
+};
+
+const formatPrice = (course: ICourse) => {
+  if (course.pricing?.type === 'free') return 'Free';
+  const p = course.pricing?.discountPrice || course.pricing?.price || 0;
+  return `৳${p.toLocaleString()}`;
+};
+
+// ─── Skeletons ────────────────────────────────────────────────────────────────
+const SkeletonRow = () => (
+  <tr>
+    {[200, 80, 60, 80, 70, 90].map((w, i) => (
+      <td key={i}><div className={`skeleton h-5 rounded`} style={{ width: w }} /></td>
+    ))}
+  </tr>
+);
+const SkeletonCard = () => (
+  <div className="card bg-base-100 border border-base-300">
+    <div className="skeleton w-full h-32 rounded-t-2xl rounded-b-none" />
+    <div className="card-body p-4 space-y-3">
+      <div className="skeleton h-4 w-3/4 rounded" />
+      <div className="skeleton h-3 w-1/2 rounded" />
+      <div className="grid grid-cols-2 gap-2">
+        <div className="skeleton h-8 rounded" /><div className="skeleton h-8 rounded" />
+      </div>
+    </div>
+  </div>
+);
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// MAIN PAGE
+// ═══════════════════════════════════════════════════════════════════════════════
 const InstructorCoursesPage = () => {
   const router = useRouter();
-  const [viewMode, setViewMode] = useState<'list' | 'grid'>('list');
-  const [searchQuery, setSearchQuery] = useState('');
+  const [viewMode, setViewMode]             = useState<'list' | 'grid'>('list');
+  const [searchQuery, setSearchQuery]       = useState('');
   const [filterCategory, setFilterCategory] = useState('All Categories');
-  const [filterStatus, setFilterStatus] = useState('All Status');
-  const [theme, setTheme] = useState("light");
+  const [filterStatus, setFilterStatus]     = useState('All Status');
+  const [theme, setTheme]                   = useState('light');
+  const [courses, setCourses]               = useState<ICourse[]>([]);
+  const [loading, setLoading]               = useState(true);
+  const [deleting, setDeleting]             = useState<string | null>(null);
 
-  // Load theme from localStorage
+  // ── Dark mode sync ──────────────────────────────────────────────────────────
   useEffect(() => {
-    const savedTheme = localStorage.getItem("theme") || "light";
-    setTheme(savedTheme);
-    document.documentElement.setAttribute('data-theme', savedTheme);
-
-    const interval = setInterval(() => {
-      const currentTheme = localStorage.getItem("theme") || "light";
-      if (currentTheme !== theme) {
-        setTheme(currentTheme);
-        document.documentElement.setAttribute('data-theme', currentTheme);
-      }
+    const saved = localStorage.getItem('theme') || 'light';
+    setTheme(saved);
+    const iv = setInterval(() => {
+      const cur = localStorage.getItem('theme') || 'light';
+      if (cur !== theme) setTheme(cur);
     }, 100);
-
-    return () => clearInterval(interval);
+    return () => clearInterval(iv);
   }, [theme]);
 
-  // Stats Data with brand colors
-  const stats = [
-    { label: 'Active Courses', count: 45, color: '#832388', bgLight: '#f3e8ff', bgDark: '#2a1f35' },
-    { label: 'Pending Courses', count: 21, color: '#F89B29', bgLight: '#fef3c7', bgDark: '#2a1f15' },
-    { label: 'Draft Courses', count: 15, color: '#FF0F7B', bgLight: '#fce7f3', bgDark: '#2a1520' },
-    { label: 'Total Students', count: 1600, color: '#00C48C', bgLight: '#d1fae5', bgDark: '#0f2520' },
-    { label: 'Total Revenue', count: '$12,450', color: '#E3436B', bgLight: '#fce7f3', bgDark: '#2a1520' },
-  ];
+  // ── Fetch from MongoDB ──────────────────────────────────────────────────────
+  const fetchCourses = useCallback(async (silent = false) => {
+    if (!silent) setLoading(true);
+    try {
+      // TODO: add ?instructorId=SESSION_USER_ID when auth is ready
+      const res  = await fetch('/api/courses');
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to load');
+      setCourses(data.courses || []);
+    } catch (err: any) {
+      toast.error(`❌ ${err.message}`, tErr);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
-  const courseList: Course[] = [
-    { 
-      id: 1, 
-      name: "Information About UI/UX Design Degree", 
-      students: 600, 
-      price: 160, 
-      rating: 4.5, 
-      reviews: 300, 
-      status: "Published", 
-      lessons: 11, 
-      quizzes: 2, 
-      hours: "03:15:00",
-      category: "Design"
-    },
-    { 
-      id: 2, 
-      name: "Wordpress for Beginners - Master Wordpress Quickly", 
-      students: 500, 
-      price: 180, 
-      rating: 4.2, 
-      reviews: 430, 
-      status: "Pending", 
-      lessons: 11, 
-      quizzes: 2, 
-      hours: "03:15:00",
-      category: "Development"
-    },
-    { 
-      id: 3, 
-      name: "Sketch from A to Z (2024): Become an app designer", 
-      students: 300, 
-      price: 200, 
-      rating: 4.7, 
-      reviews: 140, 
-      status: "Draft", 
-      lessons: 11, 
-      quizzes: 2, 
-      hours: "03:15:00",
-      category: "Design"
-    },
-    { 
-      id: 4, 
-      name: "Build Responsive Real World Websites", 
-      students: 450, 
-      price: 150, 
-      rating: 4.6, 
-      reviews: 220, 
-      status: "Published", 
-      lessons: 15, 
-      quizzes: 3, 
-      hours: "04:30:00",
-      category: "Development"
-    },
-    { 
-      id: 5, 
-      name: "Advanced JavaScript Programming", 
-      students: 380, 
-      price: 190, 
-      rating: 4.8, 
-      reviews: 310, 
-      status: "Published", 
-      lessons: 18, 
-      quizzes: 4, 
-      hours: "05:00:00",
-      category: "Programming"
-    },
-  ];
+  useEffect(() => { fetchCourses(); }, [fetchCourses]);
 
-  // Filter courses
-  const filteredCourses = courseList.filter(course => {
-    const matchesSearch = course.name.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesCategory = filterCategory === 'All Categories' || course.category === filterCategory;
-    const matchesStatus = filterStatus === 'All Status' || course.status === filterStatus;
-    return matchesSearch && matchesCategory && matchesStatus;
-  });
-
-  const getStatusColor = (status: string) => {
-    switch(status) {
-      case 'Published': return { bg: theme === 'dark' ? '#0f2520' : '#d1fae5', text: '#00C48C' };
-      case 'Pending': return { bg: theme === 'dark' ? '#2a1f15' : '#fef3c7', text: '#F89B29' };
-      case 'Draft': return { bg: theme === 'dark' ? '#2a1520' : '#fce7f3', text: '#FF0F7B' };
-      default: return { bg: '#f3f4f6', text: '#6b7280' };
+  // ── Delete ──────────────────────────────────────────────────────────────────
+  const handleDelete = async (id: string, title: string) => {
+    if (!confirm(`Delete "${title}"?\nThis cannot be undone.`)) return;
+    setDeleting(id);
+    const tid = toast.loading('Deleting...', { position: 'bottom-left', style: { borderRadius: '10px', background: '#1e1e2e', color: '#fff' } });
+    try {
+      const res  = await fetch(`/api/courses/${id}`, { method: 'DELETE' });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Delete failed');
+      setCourses(prev => prev.filter(c => c._id !== id));
+      toast.success('Course deleted! 🗑️', { id: tid, ...tOk });
+    } catch (err: any) {
+      toast.error(`❌ ${err.message}`, { id: tid, ...tErr });
+    } finally {
+      setDeleting(null);
     }
   };
 
+  // ── Stats from real data ────────────────────────────────────────────────────
+  const published     = courses.filter(c => c.status === 'published').length;
+  const drafts        = courses.filter(c => c.status === 'draft').length;
+  const totalStudents = courses.reduce((a, c) => a + (c.enrolledCount || 0), 0);
+  const totalRevenue  = courses
+    .filter(c => c.pricing?.type === 'paid')
+    .reduce((a, c) => a + (c.pricing?.price || 0) * (c.enrolledCount || 0), 0);
+
+  const stats = [
+    { label: 'Published',      count: published,                        color: '#832388', bgL: '#f3e8ff', bgD: '#2a1f35' },
+    { label: 'Drafts',         count: drafts,                           color: '#FF0F7B', bgL: '#fce7f3', bgD: '#2a1520' },
+    { label: 'Total Courses',  count: courses.length,                   color: '#F89B29', bgL: '#fef3c7', bgD: '#2a1f15' },
+    { label: 'Total Students', count: totalStudents,                    color: '#00C48C', bgL: '#d1fae5', bgD: '#0f2520' },
+    { label: 'Est. Revenue',   count: `৳${totalRevenue.toLocaleString()}`, color: '#E3436B', bgL: '#fce7f3', bgD: '#2a1520' },
+  ];
+
+  // ── Filter ──────────────────────────────────────────────────────────────────
+  const filtered = courses.filter(c => {
+    const s = c.title?.toLowerCase().includes(searchQuery.toLowerCase());
+    const cat = filterCategory === 'All Categories' || c.category === filterCategory;
+    const st  = filterStatus   === 'All Status'     || c.status   === filterStatus.toLowerCase();
+    return s && cat && st;
+  });
+
+  // ── Unique categories from real data ────────────────────────────────────────
+  const categories = ['All Categories', ...Array.from(new Set(courses.map(c => c.category).filter(Boolean)))];
+
+  // ─── Render ─────────────────────────────────────────────────────────────────
   return (
-    <div className="min-h-screen">
-      
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-5 mb-8">
-        {stats.map((stat, index) => (
-          <div 
-            key={index}
-            className="card bg-base-100 shadow-lg border hover:shadow-xl transition-all duration-300 cursor-pointer"
-            style={{ 
-              borderColor: theme === 'dark' ? stat.bgDark : stat.bgLight
-            }}
-          >
-            <div className="card-body p-5">
-              <p className="text-xs font-bold uppercase tracking-wider opacity-60">
-                {stat.label}
-              </p>
-              <h2 className="text-3xl font-bold mt-1" style={{ color: stat.color }}>
-                {stat.count}
-              </h2>
+    <div className="min-h-screen" data-theme={theme}>
+
+      <Toaster containerStyle={{ bottom: 24, left: 24 }} toastOptions={{ style: { maxWidth: 380 } }} />
+
+      {/* ── Stats ── */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 mb-8">
+        {stats.map((s, i) => (
+          <div key={i} className="card bg-base-100 shadow-sm border hover:shadow-md transition-all"
+            style={{ borderColor: theme === 'dark' ? s.bgD : s.bgL }}>
+            <div className="card-body p-4">
+              <p className="text-xs font-bold uppercase tracking-wider opacity-50">{s.label}</p>
+              {loading
+                ? <div className="skeleton h-8 w-16 mt-1 rounded" />
+                : <h2 className="text-2xl font-bold mt-1" style={{ color: s.color }}>{s.count}</h2>}
             </div>
           </div>
         ))}
       </div>
 
-      {/* Main Content Card */}
+      {/* ── Main Card ── */}
       <div className="card bg-base-100 shadow-xl border border-base-300">
         <div className="card-body p-6 md:p-8">
-          
-          {/* Header */}
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-8">
-            <h1 className="text-2xl font-bold">Course Management</h1>
-            
+
+          {/* ── Header ── */}
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
             <div className="flex items-center gap-3">
-              {/* View Toggle */}
+              <h1 className="text-2xl font-bold">Course Management</h1>
+              {!loading && (
+                <div className="badge badge-ghost text-xs">{courses.length} courses</div>
+              )}
+              <button onClick={() => fetchCourses(true)} disabled={loading}
+                className="btn btn-xs btn-ghost btn-circle opacity-40 hover:opacity-100 cursor-pointer" title="Refresh">
+                <RefreshCw size={13} className={loading ? 'animate-spin' : ''} />
+              </button>
+            </div>
+
+            <div className="flex items-center gap-3">
+              {/* View toggle */}
               <div className="flex bg-base-200 p-1 rounded-xl border border-base-300">
-                <button 
-                  onClick={() => setViewMode('list')}
-                  className={`p-2 rounded-lg transition-all cursor-pointer ${
-                    viewMode === 'list' 
-                      ? 'bg-base-100 shadow-md' 
-                      : 'hover:bg-base-300'
-                  }`}
-                  style={{ color: viewMode === 'list' ? '#832388' : '' }}
-                >
-                  <List size={18} />
-                </button>
-                <button 
-                  onClick={() => setViewMode('grid')}
-                  className={`p-2 rounded-lg transition-all cursor-pointer ${
-                    viewMode === 'grid' 
-                      ? 'bg-base-100 shadow-md' 
-                      : 'hover:bg-base-300'
-                  }`}
-                  style={{ color: viewMode === 'grid' ? '#832388' : '' }}
-                >
-                  <Grid size={18} />
-                </button>
+                {(['list', 'grid'] as const).map(v => (
+                  <button key={v} onClick={() => setViewMode(v)}
+                    className={`p-2 rounded-lg transition-all cursor-pointer ${viewMode === v ? 'bg-base-100 shadow-md' : 'hover:bg-base-300'}`}
+                    style={{ color: viewMode === v ? '#832388' : '' }}>
+                    {v === 'list' ? <List size={17} /> : <Grid size={17} />}
+                  </button>
+                ))}
               </div>
-              
-              {/* Create Course Button */}
-              <button 
-                onClick={() => router.push('/sampleDashboard/instructor/courses/create')}
-                className="btn btn-md gap-2 text-white border-0 cursor-pointer hover:opacity-90"
-                style={{ backgroundColor: '#832388' }}
-              >
-                <Plus size={18} />
-                Create Course
+
+              <button onClick={() => router.push('/sampleDashboard/instructor/courses/create')}
+                className="btn gap-2 text-white border-0 cursor-pointer"
+                style={{ background: 'linear-gradient(135deg, #832388, #FF0F7B)' }}>
+                <Plus size={17} /> Create Course
               </button>
             </div>
           </div>
 
-          {/* Filters */}
-          <div className="flex flex-col md:flex-row gap-4 mb-8">
-            {/* Search */}
-            <div className="relative flex-1">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 opacity-40" size={18} />
-              <input 
-                type="text" 
-                placeholder="Search by course name..." 
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="input input-bordered w-full pl-11 bg-base-100"
-              />
-            </div>
-            
-            {/* Category Filter */}
-            <select 
-              className="select select-bordered bg-base-100 cursor-pointer"
-              value={filterCategory}
-              onChange={(e) => setFilterCategory(e.target.value)}
-            >
-              <option>All Categories</option>
-              <option>Design</option>
-              <option>Development</option>
-              <option>Programming</option>
+          {/* ── Filters ── */}
+          <div className="flex flex-col md:flex-row gap-3 mb-6">
+            <label className="input input-bordered flex items-center gap-2 flex-1 bg-base-200 focus-within:border-purple-400">
+              <Search size={15} className="opacity-40" />
+              <input type="text" placeholder="Search courses..." value={searchQuery}
+                onChange={e => setSearchQuery(e.target.value)}
+                className="grow bg-transparent focus:outline-none text-sm" />
+              {searchQuery && (
+                <button onClick={() => setSearchQuery('')} className="opacity-40 hover:opacity-100 text-xs cursor-pointer">✕</button>
+              )}
+            </label>
+            <select value={filterCategory} onChange={e => setFilterCategory(e.target.value)}
+              className="select select-bordered bg-base-200 focus:outline-none cursor-pointer md:w-48 text-sm">
+              {categories.map(c => <option key={c}>{c}</option>)}
             </select>
-
-            {/* Status Filter */}
-            <select 
-              className="select select-bordered bg-base-100 cursor-pointer"
-              value={filterStatus}
-              onChange={(e) => setFilterStatus(e.target.value)}
-            >
+            <select value={filterStatus} onChange={e => setFilterStatus(e.target.value)}
+              className="select select-bordered bg-base-200 focus:outline-none cursor-pointer md:w-36 text-sm">
               <option>All Status</option>
-              <option>Published</option>
-              <option>Pending</option>
-              <option>Draft</option>
+              <option value="published">Published</option>
+              <option value="draft">Draft</option>
             </select>
           </div>
 
-          {/* Course List/Grid */}
+          {/* ════════════════════ LIST VIEW ════════════════════ */}
           {viewMode === 'list' ? (
-            /* List View */
-            <div className="overflow-x-auto">
-              <table className="table table-zebra">
+            <div className="overflow-x-auto rounded-xl border border-base-300">
+              <table className="table table-zebra w-full">
                 <thead>
-                  <tr>
-                    <th className="text-xs font-bold uppercase tracking-wider opacity-60">Course Name</th>
-                    <th className="text-center text-xs font-bold uppercase tracking-wider opacity-60">Students</th>
-                    <th className="text-center text-xs font-bold uppercase tracking-wider opacity-60">Price</th>
-                    <th className="text-center text-xs font-bold uppercase tracking-wider opacity-60">Rating</th>
-                    <th className="text-xs font-bold uppercase tracking-wider opacity-60">Status</th>
-                    <th className="text-right text-xs font-bold uppercase tracking-wider opacity-60">Actions</th>
+                  <tr className="bg-base-200 text-xs uppercase tracking-wider opacity-70">
+                    <th>Course</th>
+                    <th className="text-center">Students</th>
+                    <th className="text-center">Price</th>
+                    <th className="text-center">Rating</th>
+                    <th className="text-center">Status</th>
+                    <th className="text-right">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {filteredCourses.map((course) => {
-                    const statusColor = getStatusColor(course.status);
-                    return (
-                      <tr key={course.id} className="hover">
-                        <td>
-                          <div className="flex items-center gap-4">
-                            <div 
-                              className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0"
-                              style={{ 
-                                backgroundColor: theme === 'dark' ? '#2a1f35' : '#f3e8ff'
-                              }}
-                            >
-                              <PlayCircle className="w-6 h-6" style={{ color: '#832388' }} />
-                            </div>
-                            <div>
-                              <h4 className="text-sm font-bold">{course.name}</h4>
-                              <div className="flex gap-3 mt-1 text-xs opacity-60">
-                                <span className="flex items-center gap-1">
-                                  <Clock size={12}/> {course.hours}
-                                </span>
-                                <span className="flex items-center gap-1">
-                                  <FileText size={12}/> {course.lessons} Lessons
-                                </span>
+                  {loading
+                    ? Array.from({ length: 5 }).map((_, i) => <SkeletonRow key={i} />)
+                    : filtered.map(course => {
+                        const st      = getStatusStyle(course.status, theme);
+                        const lessons = getLessons(course.modules);
+                        const cover   = course.coverImage?.url;
+                        return (
+                          <tr key={course._id} className="hover">
+
+                            {/* Course info */}
+                            <td className="min-w-[260px]">
+                              <div className="flex items-center gap-3">
+                                <div className="w-12 h-12 rounded-xl overflow-hidden flex-shrink-0 bg-base-300">
+                                  {cover
+                                    ? <img src={cover} alt={course.title}
+                                        className="w-full h-full object-cover"
+                                        onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+                                    : <div className="w-full h-full flex items-center justify-center"
+                                        style={{ backgroundColor: theme === 'dark' ? '#2a1f35' : '#f3e8ff' }}>
+                                        <PlayCircle className="w-5 h-5" style={{ color: '#832388' }} />
+                                      </div>}
+                                </div>
+                                <div className="min-w-0">
+                                  <p className="text-sm font-bold line-clamp-1 leading-snug">{course.title}</p>
+                                  <div className="flex flex-wrap gap-2 mt-1 text-xs opacity-50">
+                                    <span className="flex items-center gap-1"><FileText size={10} /> {lessons} Lessons</span>
+                                    <span className="flex items-center gap-1"><BookOpen size={10} /> {course.modules?.length || 0} Modules</span>
+                                    <span className="capitalize">{course.category}</span>
+                                  </div>
+                                </div>
                               </div>
-                            </div>
-                          </div>
-                        </td>
-                        <td className="text-center">
-                          <div className="flex items-center justify-center gap-1">
-                            <Users size={14} className="opacity-60" />
-                            <span className="text-sm font-bold">{course.students}</span>
-                          </div>
-                        </td>
-                        <td className="text-center">
-                          <span className="text-sm font-bold" style={{ color: '#832388' }}>
-                            ${course.price}
-                          </span>
-                        </td>
-                        <td className="text-center">
-                          <div className="flex items-center justify-center gap-1">
-                            <Star size={14} className="fill-[#FDE047] text-[#FDE047]" />
-                            <span className="text-sm font-bold">{course.rating}</span>
-                            <span className="text-xs opacity-60">({course.reviews})</span>
-                          </div>
-                        </td>
-                        <td>
-                          <span 
-                            className="px-3 py-1 rounded-full text-xs font-bold"
-                            style={{ 
-                              backgroundColor: statusColor.bg,
-                              color: statusColor.text
-                            }}
-                          >
-                            {course.status}
-                          </span>
-                        </td>
-                        <td>
-                          <div className="flex items-center justify-end gap-2">
-                            <button 
-                              className="btn btn-ghost btn-xs cursor-pointer"
-                              title="View"
-                            >
-                              <Eye size={16} />
-                            </button>
-                            <button 
-                              className="btn btn-ghost btn-xs cursor-pointer"
-                              title="Edit"
-                              onClick={() => router.push('/sampleDashboard/instructor/courses/create')}
-                            >
-                              <Edit2 size={16} />
-                            </button>
-                            <button 
-                              className="btn btn-ghost btn-xs cursor-pointer text-error"
-                              title="Delete"
-                            >
-                              <Trash2 size={16} />
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    );
-                  })}
+                            </td>
+
+                            {/* Students */}
+                            <td className="text-center">
+                              <div className="flex items-center justify-center gap-1">
+                                <Users size={13} className="opacity-40" />
+                                <span className="text-sm font-bold">{course.enrolledCount || 0}</span>
+                              </div>
+                            </td>
+
+                            {/* Price */}
+                            <td className="text-center">
+                              <span className="text-sm font-bold" style={{ color: '#832388' }}>
+                                {formatPrice(course)}
+                              </span>
+                            </td>
+
+                            {/* Rating */}
+                            <td className="text-center">
+                              <div className="flex items-center justify-center gap-1">
+                                <Star size={12} className="fill-[#FDE047] text-[#FDE047]" />
+                                <span className="text-sm font-semibold">
+                                  {course.rating ? course.rating.toFixed(1) : '—'}
+                                </span>
+                                {course.reviewCount ? (
+                                  <span className="text-xs opacity-40">({course.reviewCount})</span>
+                                ) : null}
+                              </div>
+                            </td>
+
+                            {/* Status */}
+                            <td className="text-center">
+                              <span className="px-3 py-1 rounded-full text-xs font-bold whitespace-nowrap"
+                                style={{ backgroundColor: st.bg, color: st.text }}>
+                                {st.label}
+                              </span>
+                            </td>
+
+                            {/* Actions */}
+                            <td>
+                              <div className="flex items-center justify-end gap-1">
+                                <button className="btn btn-ghost btn-xs btn-circle cursor-pointer" title="View">
+                                  <Eye size={14} />
+                                </button>
+                                <button className="btn btn-ghost btn-xs btn-circle cursor-pointer" title="Edit"
+                                  onClick={() => router.push(`/sampleDashboard/instructor/courses/create?id=${course._id}`)}>
+                                  <Edit2 size={14} />
+                                </button>
+                                <button className="btn btn-ghost btn-xs btn-circle cursor-pointer text-error" title="Delete"
+                                  disabled={deleting === course._id}
+                                  onClick={() => handleDelete(course._id, course.title)}>
+                                  {deleting === course._id
+                                    ? <span className="loading loading-spinner loading-xs" />
+                                    : <Trash2 size={14} />}
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })}
                 </tbody>
               </table>
             </div>
+
           ) : (
-            /* Grid View */
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filteredCourses.map((course) => {
-                const statusColor = getStatusColor(course.status);
-                return (
-                  <div 
-                    key={course.id}
-                    className="card bg-base-100 shadow-lg border border-base-300 hover:shadow-xl transition-all duration-300"
-                  >
-                    <div className="card-body p-5">
-                      {/* Header */}
-                      <div className="flex items-start justify-between mb-3">
-                        <div 
-                          className="w-12 h-12 rounded-xl flex items-center justify-center"
-                          style={{ 
-                            backgroundColor: theme === 'dark' ? '#2a1f35' : '#f3e8ff'
-                          }}
-                        >
-                          <PlayCircle className="w-6 h-6" style={{ color: '#832388' }} />
-                        </div>
-                        <span 
-                          className="px-3 py-1 rounded-full text-xs font-bold"
-                          style={{ 
-                            backgroundColor: statusColor.bg,
-                            color: statusColor.text
-                          }}
-                        >
-                          {course.status}
-                        </span>
-                      </div>
+            /* ════════════════════ GRID VIEW ════════════════════ */
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+              {loading
+                ? Array.from({ length: 6 }).map((_, i) => <SkeletonCard key={i} />)
+                : filtered.map(course => {
+                    const st      = getStatusStyle(course.status, theme);
+                    const lessons = getLessons(course.modules);
+                    const cover   = course.coverImage?.url;
+                    return (
+                      <div key={course._id}
+                        className="card bg-base-100 border border-base-300 shadow-sm hover:shadow-lg transition-all duration-300 overflow-hidden">
 
-                      {/* Title */}
-                      <h3 className="text-base font-bold leading-snug mb-3 line-clamp-2 h-12">
-                        {course.name}
-                      </h3>
+                        {/* Cover */}
+                        {cover
+                          ? <img src={cover} alt={course.title} className="w-full h-32 object-cover"
+                              onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+                          : <div className="w-full h-28 flex items-center justify-center"
+                              style={{ backgroundColor: theme === 'dark' ? '#2a1f35' : '#f3e8ff' }}>
+                              <PlayCircle className="w-10 h-10 opacity-30" style={{ color: '#832388' }} />
+                            </div>}
 
-                      {/* Stats */}
-                      <div className="grid grid-cols-2 gap-3 mb-4">
-                        <div>
-                          <p className="text-xs opacity-60 font-semibold">Students</p>
-                          <p className="text-sm font-bold flex items-center gap-1">
-                            <Users size={14} />
-                            {course.students}
-                          </p>
-                        </div>
-                        <div>
-                          <p className="text-xs opacity-60 font-semibold">Rating</p>
-                          <p className="text-sm font-bold flex items-center gap-1">
-                            <Star size={14} className="fill-[#FDE047] text-[#FDE047]" />
-                            {course.rating}
-                          </p>
-                        </div>
-                        <div>
-                          <p className="text-xs opacity-60 font-semibold">Lessons</p>
-                          <p className="text-sm font-bold flex items-center gap-1">
-                            <FileText size={14} />
-                            {course.lessons}
-                          </p>
-                        </div>
-                        <div>
-                          <p className="text-xs opacity-60 font-semibold">Duration</p>
-                          <p className="text-sm font-bold flex items-center gap-1">
-                            <Clock size={14} />
-                            {course.hours}
-                          </p>
-                        </div>
-                      </div>
+                        <div className="card-body p-4 space-y-3">
+                          {/* Badge row */}
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs font-bold px-2 py-1 rounded-full"
+                              style={{ backgroundColor: st.bg, color: st.text }}>
+                              {st.label}
+                            </span>
+                            <span className="text-xs opacity-40 capitalize">{course.category}</span>
+                          </div>
 
-                      {/* Footer */}
-                      <div className="flex items-center justify-between pt-4 border-t border-base-300">
-                        <span className="text-xl font-bold" style={{ color: '#832388' }}>
-                          ${course.price}
-                        </span>
-                        <div className="flex items-center gap-2">
-                          <button 
-                            className="btn btn-ghost btn-sm btn-circle cursor-pointer"
-                            title="View Analytics"
-                          >
-                            <BarChart3 size={16} />
-                          </button>
-                          <button 
-                            className="btn btn-ghost btn-sm btn-circle cursor-pointer"
-                            title="Edit Course"
-                            onClick={() => router.push('/sampleDashboard/instructor/courses/create')}
-                          >
-                            <Edit2 size={16} />
-                          </button>
+                          {/* Title */}
+                          <h3 className="text-sm font-bold leading-snug line-clamp-2">{course.title}</h3>
+
+                          {/* Stats */}
+                          <div className="grid grid-cols-2 gap-x-3 gap-y-1 text-xs opacity-60">
+                            <span className="flex items-center gap-1"><Users size={11} />{course.enrolledCount || 0} Students</span>
+                            <span className="flex items-center gap-1"><FileText size={11} />{lessons} Lessons</span>
+                            <span className="flex items-center gap-1"><Star size={11} className="fill-[#FDE047] text-[#FDE047]" />{course.rating?.toFixed(1) || '—'}</span>
+                            <span className="flex items-center gap-1 capitalize"><Clock size={11} />{course.level}</span>
+                          </div>
+
+                          {/* Footer */}
+                          <div className="flex items-center justify-between pt-3 border-t border-base-300">
+                            <span className="text-base font-bold" style={{ color: '#832388' }}>
+                              {formatPrice(course)}
+                            </span>
+                            <div className="flex gap-1">
+                              <button className="btn btn-ghost btn-sm btn-circle cursor-pointer" title="Analytics">
+                                <BarChart3 size={14} />
+                              </button>
+                              <button className="btn btn-ghost btn-sm btn-circle cursor-pointer" title="Edit"
+                                onClick={() => router.push(`/sampleDashboard/instructor/courses/create?id=${course._id}`)}>
+                                <Edit2 size={14} />
+                              </button>
+                              <button className="btn btn-ghost btn-sm btn-circle cursor-pointer text-error" title="Delete"
+                                disabled={deleting === course._id}
+                                onClick={() => handleDelete(course._id, course.title)}>
+                                {deleting === course._id
+                                  ? <span className="loading loading-spinner loading-xs" />
+                                  : <Trash2 size={14} />}
+                              </button>
+                            </div>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  </div>
-                );
-              })}
+                    );
+                  })}
             </div>
           )}
 
-          {/* Empty State */}
-          {filteredCourses.length === 0 && (
+          {/* ── Empty State ── */}
+          {!loading && filtered.length === 0 && (
             <div className="text-center py-20">
               <div className="text-6xl mb-4">📚</div>
-              <h3 className="text-xl font-bold mb-2">No Courses Found</h3>
-              <p className="opacity-60 mb-6">Try adjusting your search or filters</p>
-              <button 
-                className="btn gap-2 text-white border-0 cursor-pointer"
-                style={{ backgroundColor: '#832388' }}
-                onClick={() => {
-                  setSearchQuery('');
-                  setFilterCategory('All Categories');
-                  setFilterStatus('All Status');
-                }}
-              >
-                Clear Filters
-              </button>
+              {courses.length === 0 ? (
+                <>
+                  <h3 className="text-xl font-bold mb-2">No Courses Yet</h3>
+                  <p className="opacity-50 mb-6">Create your first course to get started!</p>
+                  <button onClick={() => router.push('/sampleDashboard/instructor/courses/create')}
+                    className="btn gap-2 text-white border-0 cursor-pointer"
+                    style={{ background: 'linear-gradient(135deg, #832388, #FF0F7B)' }}>
+                    <Plus size={17} /> Create First Course
+                  </button>
+                </>
+              ) : (
+                <>
+                  <h3 className="text-xl font-bold mb-2">No Results Found</h3>
+                  <p className="opacity-50 mb-6">Try different search or filter</p>
+                  <button onClick={() => { setSearchQuery(''); setFilterCategory('All Categories'); setFilterStatus('All Status'); }}
+                    className="btn border-0 text-white cursor-pointer" style={{ backgroundColor: '#832388' }}>
+                    Clear Filters
+                  </button>
+                </>
+              )}
             </div>
           )}
+
+          {/* ── Footer count ── */}
+          {!loading && filtered.length > 0 && (
+            <div className="mt-4 pt-4 border-t border-base-300 flex items-center justify-between text-xs opacity-50">
+              <span>Showing <strong>{filtered.length}</strong> of <strong>{courses.length}</strong> courses</span>
+              <span>Last updated just now</span>
+            </div>
+          )}
+
         </div>
       </div>
     </div>
