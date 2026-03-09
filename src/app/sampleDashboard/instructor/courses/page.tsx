@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import {
   Search, Grid, List, Edit2, Star, PlayCircle,
   FileText, Clock, Users, Plus, Trash2, Eye,
-  BarChart3, RefreshCw, BookOpen
+  BarChart3, RefreshCw, BookOpen, CheckCircle2, XCircle
 } from 'lucide-react';
 import toast, { Toaster } from 'react-hot-toast';
 
@@ -28,12 +28,12 @@ interface ICourse {
 
 // ─── Toast styles ─────────────────────────────────────────────────────────────
 const tErr = {
-  position: 'bottom-left' as const,
+  position: 'top-right' as const,
   duration: 3500,
   style: { borderRadius: '10px', background: '#dc2626', color: '#fff', fontWeight: '600' },
 };
 const tOk = {
-  position: 'bottom-left' as const,
+  position: 'top-right' as const,
   duration: 3000,
   style: { borderRadius: '10px', background: '#1e1e2e', color: '#fff', fontWeight: '600' },
 };
@@ -56,14 +56,27 @@ const formatPrice = (course: ICourse) => {
   return `৳${p.toLocaleString()}`;
 };
 
+// ─── Safe JSON fetch ──────────────────────────────────────────────────────────
+async function safeFetch(url: string, options?: RequestInit) {
+  const res = await fetch(url, options);
+  const contentType = res.headers.get('content-type') || '';
+  if (!contentType.includes('application/json')) {
+    throw new Error(`API route not found: ${url} (${res.status})`);
+  }
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || `Request failed (${res.status})`);
+  return data;
+}
+
 // ─── Skeletons ────────────────────────────────────────────────────────────────
 const SkeletonRow = () => (
   <tr>
-    {[200, 80, 60, 80, 70, 90].map((w, i) => (
-      <td key={i}><div className={`skeleton h-5 rounded`} style={{ width: w }} /></td>
+    {[200, 80, 60, 80, 70, 110].map((w, i) => (
+      <td key={i}><div className="skeleton h-5 rounded" style={{ width: w }} /></td>
     ))}
   </tr>
 );
+
 const SkeletonCard = () => (
   <div className="card bg-base-100 border border-base-300">
     <div className="skeleton w-full h-32 rounded-t-2xl rounded-b-none" />
@@ -90,6 +103,8 @@ const InstructorCoursesPage = () => {
   const [courses, setCourses]               = useState<ICourse[]>([]);
   const [loading, setLoading]               = useState(true);
   const [deleting, setDeleting]             = useState<string | null>(null);
+  const [toggling, setToggling]             = useState<string | null>(null);
+  const [courseToDelete, setCourseToDelete] = useState<ICourse | null>(null);
 
   // ── Dark mode sync ──────────────────────────────────────────────────────────
   useEffect(() => {
@@ -102,14 +117,11 @@ const InstructorCoursesPage = () => {
     return () => clearInterval(iv);
   }, [theme]);
 
-  // ── Fetch from MongoDB ──────────────────────────────────────────────────────
+  // ── Fetch from API ──────────────────────────────────────────────────────────
   const fetchCourses = useCallback(async (silent = false) => {
     if (!silent) setLoading(true);
     try {
-      // TODO: add ?instructorId=SESSION_USER_ID when auth is ready
-      const res  = await fetch('/api/courses');
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Failed to load');
+      const data = await safeFetch('/api/courses');
       setCourses(data.courses || []);
     } catch (err: any) {
       toast.error(`❌ ${err.message}`, tErr);
@@ -120,25 +132,64 @@ const InstructorCoursesPage = () => {
 
   useEffect(() => { fetchCourses(); }, [fetchCourses]);
 
-  // ── Delete ──────────────────────────────────────────────────────────────────
-  const handleDelete = async (id: string, title: string) => {
-    if (!confirm(`Delete "${title}"?\nThis cannot be undone.`)) return;
-    setDeleting(id);
-    const tid = toast.loading('Deleting...', { position: 'bottom-left', style: { borderRadius: '10px', background: '#1e1e2e', color: '#fff' } });
+  // ── Toggle Status ───────────────────────────────────────────────────────────
+  const handleToggleStatus = async (id: string, currentStatus: string) => {
+    const newStatus = currentStatus === 'published' ? 'draft' : 'published';
+    setToggling(id);
+    const tid = toast.loading(
+      newStatus === 'published' ? '🚀 Publishing...' : '📝 Unpublishing...',
+      { position: 'top-right', style: { borderRadius: '10px', background: '#1e1e2e', color: '#fff' } }
+    );
     try {
-      const res  = await fetch(`/api/courses/${id}`, { method: 'DELETE' });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Delete failed');
+      await safeFetch(`/api/courses/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: newStatus }),
+      });
+      setCourses(prev => prev.map(c => c._id === id ? { ...c, status: newStatus as any } : c));
+      toast.success(
+        newStatus === 'published' ? '✅ Course published!' : '📝 Moved to draft',
+        { id: tid, ...tOk }
+      );
+    } catch (err: any) {
+      toast.error(`❌ ${err.message}`, { id: tid, ...tErr });
+    } finally {
+      setToggling(null);
+    }
+  };
+
+  // ── Delete ──────────────────────────────────────────────────────────────────
+  const openDeleteDialog = (course: ICourse) => {
+    setCourseToDelete(course);
+    (document.getElementById('delete_course_modal') as HTMLDialogElement)?.showModal();
+  };
+
+  const handleDelete = async () => {
+    if (!courseToDelete) return;
+    
+    const { _id: id, title } = courseToDelete;
+    setDeleting(id);
+    
+    // Close the dialog
+    (document.getElementById('delete_course_modal') as HTMLDialogElement)?.close();
+    
+    const tid = toast.loading('Deleting...', {
+      position: 'top-right',
+      style: { borderRadius: '10px', background: '#1e1e2e', color: '#fff' },
+    });
+    try {
+      await safeFetch(`/api/courses/${id}`, { method: 'DELETE' });
       setCourses(prev => prev.filter(c => c._id !== id));
       toast.success('Course deleted! 🗑️', { id: tid, ...tOk });
     } catch (err: any) {
       toast.error(`❌ ${err.message}`, { id: tid, ...tErr });
     } finally {
       setDeleting(null);
+      setCourseToDelete(null);
     }
   };
 
-  // ── Stats from real data ────────────────────────────────────────────────────
+  // ── Stats ───────────────────────────────────────────────────────────────────
   const published     = courses.filter(c => c.status === 'published').length;
   const drafts        = courses.filter(c => c.status === 'draft').length;
   const totalStudents = courses.reduce((a, c) => a + (c.enrolledCount || 0), 0);
@@ -147,29 +198,33 @@ const InstructorCoursesPage = () => {
     .reduce((a, c) => a + (c.pricing?.price || 0) * (c.enrolledCount || 0), 0);
 
   const stats = [
-    { label: 'Published',      count: published,                        color: '#832388', bgL: '#f3e8ff', bgD: '#2a1f35' },
-    { label: 'Drafts',         count: drafts,                           color: '#FF0F7B', bgL: '#fce7f3', bgD: '#2a1520' },
-    { label: 'Total Courses',  count: courses.length,                   color: '#F89B29', bgL: '#fef3c7', bgD: '#2a1f15' },
-    { label: 'Total Students', count: totalStudents,                    color: '#00C48C', bgL: '#d1fae5', bgD: '#0f2520' },
-    { label: 'Est. Revenue',   count: `৳${totalRevenue.toLocaleString()}`, color: '#E3436B', bgL: '#fce7f3', bgD: '#2a1520' },
+    { label: 'Published',      count: published,                            color: '#832388', bgL: '#f3e8ff', bgD: '#2a1f35' },
+    { label: 'Drafts',         count: drafts,                               color: '#FF0F7B', bgL: '#fce7f3', bgD: '#2a1520' },
+    { label: 'Total Courses',  count: courses.length,                       color: '#F89B29', bgL: '#fef3c7', bgD: '#2a1f15' },
+    { label: 'Total Students', count: totalStudents,                        color: '#00C48C', bgL: '#d1fae5', bgD: '#0f2520' },
+    { label: 'Est. Revenue',   count: `৳${totalRevenue.toLocaleString()}`,  color: '#E3436B', bgL: '#fce7f3', bgD: '#2a1520' },
   ];
 
   // ── Filter ──────────────────────────────────────────────────────────────────
   const filtered = courses.filter(c => {
-    const s = c.title?.toLowerCase().includes(searchQuery.toLowerCase());
+    const s   = c.title?.toLowerCase().includes(searchQuery.toLowerCase());
     const cat = filterCategory === 'All Categories' || c.category === filterCategory;
     const st  = filterStatus   === 'All Status'     || c.status   === filterStatus.toLowerCase();
     return s && cat && st;
   });
 
-  // ── Unique categories from real data ────────────────────────────────────────
   const categories = ['All Categories', ...Array.from(new Set(courses.map(c => c.category).filter(Boolean)))];
 
   // ─── Render ─────────────────────────────────────────────────────────────────
   return (
     <div className="min-h-screen" data-theme={theme}>
 
-      <Toaster containerStyle={{ bottom: 24, left: 24 }} toastOptions={{ style: { maxWidth: 380 } }} />
+      {/* Toast */}
+      <Toaster
+        position="top-right"
+        containerStyle={{ top: 80, right: 24 }}
+        toastOptions={{ style: { maxWidth: 380 } }}
+      />
 
       {/* ── Stats ── */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 mb-8">
@@ -194,17 +249,13 @@ const InstructorCoursesPage = () => {
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
             <div className="flex items-center gap-3">
               <h1 className="text-2xl font-bold">Course Management</h1>
-              {!loading && (
-                <div className="badge badge-ghost text-xs">{courses.length} courses</div>
-              )}
+              {!loading && <div className="badge badge-ghost text-xs">{courses.length} courses</div>}
               <button onClick={() => fetchCourses(true)} disabled={loading}
                 className="btn btn-xs btn-ghost btn-circle opacity-40 hover:opacity-100 cursor-pointer" title="Refresh">
                 <RefreshCw size={13} className={loading ? 'animate-spin' : ''} />
               </button>
             </div>
-
             <div className="flex items-center gap-3">
-              {/* View toggle */}
               <div className="flex bg-base-200 p-1 rounded-xl border border-base-300">
                 {(['list', 'grid'] as const).map(v => (
                   <button key={v} onClick={() => setViewMode(v)}
@@ -214,7 +265,6 @@ const InstructorCoursesPage = () => {
                   </button>
                 ))}
               </div>
-
               <button onClick={() => router.push('/sampleDashboard/instructor/courses/create')}
                 className="btn gap-2 text-white border-0 cursor-pointer"
                 style={{ background: 'linear-gradient(135deg, #832388, #FF0F7B)' }}>
@@ -246,7 +296,7 @@ const InstructorCoursesPage = () => {
             </select>
           </div>
 
-          {/* ════════════════════ LIST VIEW ════════════════════ */}
+          {/* ════ LIST VIEW ════ */}
           {viewMode === 'list' ? (
             <div className="overflow-x-auto rounded-xl border border-base-300">
               <table className="table table-zebra w-full">
@@ -269,14 +319,11 @@ const InstructorCoursesPage = () => {
                         const cover   = course.coverImage?.url;
                         return (
                           <tr key={course._id} className="hover">
-
-                            {/* Course info */}
                             <td className="min-w-[260px]">
                               <div className="flex items-center gap-3">
                                 <div className="w-12 h-12 rounded-xl overflow-hidden flex-shrink-0 bg-base-300">
                                   {cover
-                                    ? <img src={cover} alt={course.title}
-                                        className="w-full h-full object-cover"
+                                    ? <img src={cover} alt={course.title} className="w-full h-full object-cover"
                                         onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }} />
                                     : <div className="w-full h-full flex items-center justify-center"
                                         style={{ backgroundColor: theme === 'dark' ? '#2a1f35' : '#f3e8ff' }}>
@@ -286,51 +333,42 @@ const InstructorCoursesPage = () => {
                                 <div className="min-w-0">
                                   <p className="text-sm font-bold line-clamp-1 leading-snug">{course.title}</p>
                                   <div className="flex flex-wrap gap-2 mt-1 text-xs opacity-50">
-                                    <span className="flex items-center gap-1"><FileText size={10} /> {lessons} Lessons</span>
-                                    <span className="flex items-center gap-1"><BookOpen size={10} /> {course.modules?.length || 0} Modules</span>
+                                    <span className="flex items-center gap-1"><FileText size={10} />{lessons} Lessons</span>
+                                    <span className="flex items-center gap-1"><BookOpen size={10} />{course.modules?.length || 0} Modules</span>
                                     <span className="capitalize">{course.category}</span>
                                   </div>
                                 </div>
                               </div>
                             </td>
-
-                            {/* Students */}
                             <td className="text-center">
                               <div className="flex items-center justify-center gap-1">
                                 <Users size={13} className="opacity-40" />
                                 <span className="text-sm font-bold">{course.enrolledCount || 0}</span>
                               </div>
                             </td>
-
-                            {/* Price */}
                             <td className="text-center">
-                              <span className="text-sm font-bold" style={{ color: '#832388' }}>
-                                {formatPrice(course)}
-                              </span>
+                              <span className="text-sm font-bold" style={{ color: '#832388' }}>{formatPrice(course)}</span>
                             </td>
-
-                            {/* Rating */}
                             <td className="text-center">
                               <div className="flex items-center justify-center gap-1">
                                 <Star size={12} className="fill-[#FDE047] text-[#FDE047]" />
-                                <span className="text-sm font-semibold">
-                                  {course.rating ? course.rating.toFixed(1) : '—'}
-                                </span>
-                                {course.reviewCount ? (
-                                  <span className="text-xs opacity-40">({course.reviewCount})</span>
-                                ) : null}
+                                <span className="text-sm font-semibold">{course.rating ? course.rating.toFixed(1) : '—'}</span>
+                                {course.reviewCount ? <span className="text-xs opacity-40">({course.reviewCount})</span> : null}
                               </div>
                             </td>
-
-                            {/* Status */}
                             <td className="text-center">
-                              <span className="px-3 py-1 rounded-full text-xs font-bold whitespace-nowrap"
+                              <button
+                                onClick={() => handleToggleStatus(course._id, course.status)}
+                                disabled={toggling === course._id}
+                                className="px-3 py-1 rounded-full text-xs font-bold whitespace-nowrap cursor-pointer hover:opacity-80 transition-all disabled:opacity-50"
                                 style={{ backgroundColor: st.bg, color: st.text }}>
-                                {st.label}
-                              </span>
+                                {toggling === course._id ? (
+                                  <span className="loading loading-spinner loading-xs" />
+                                ) : (
+                                  st.label
+                                )}
+                              </button>
                             </td>
-
-                            {/* Actions */}
                             <td>
                               <div className="flex items-center justify-end gap-1">
                                 <button className="btn btn-ghost btn-xs btn-circle cursor-pointer" title="View">
@@ -342,7 +380,7 @@ const InstructorCoursesPage = () => {
                                 </button>
                                 <button className="btn btn-ghost btn-xs btn-circle cursor-pointer text-error" title="Delete"
                                   disabled={deleting === course._id}
-                                  onClick={() => handleDelete(course._id, course.title)}>
+                                  onClick={() => openDeleteDialog(course)}>
                                   {deleting === course._id
                                     ? <span className="loading loading-spinner loading-xs" />
                                     : <Trash2 size={14} />}
@@ -355,9 +393,8 @@ const InstructorCoursesPage = () => {
                 </tbody>
               </table>
             </div>
-
           ) : (
-            /* ════════════════════ GRID VIEW ════════════════════ */
+            /* ════ GRID VIEW ════ */
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
               {loading
                 ? Array.from({ length: 6 }).map((_, i) => <SkeletonCard key={i} />)
@@ -368,8 +405,6 @@ const InstructorCoursesPage = () => {
                     return (
                       <div key={course._id}
                         className="card bg-base-100 border border-base-300 shadow-sm hover:shadow-lg transition-all duration-300 overflow-hidden">
-
-                        {/* Cover */}
                         {cover
                           ? <img src={cover} alt={course.title} className="w-full h-32 object-cover"
                               onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }} />
@@ -377,33 +412,30 @@ const InstructorCoursesPage = () => {
                               style={{ backgroundColor: theme === 'dark' ? '#2a1f35' : '#f3e8ff' }}>
                               <PlayCircle className="w-10 h-10 opacity-30" style={{ color: '#832388' }} />
                             </div>}
-
                         <div className="card-body p-4 space-y-3">
-                          {/* Badge row */}
                           <div className="flex items-center justify-between">
-                            <span className="text-xs font-bold px-2 py-1 rounded-full"
+                            <button
+                              onClick={() => handleToggleStatus(course._id, course.status)}
+                              disabled={toggling === course._id}
+                              className="text-xs font-bold px-2 py-1 rounded-full cursor-pointer hover:opacity-80 transition-all disabled:opacity-50"
                               style={{ backgroundColor: st.bg, color: st.text }}>
-                              {st.label}
-                            </span>
+                              {toggling === course._id ? (
+                                <span className="loading loading-spinner loading-xs" />
+                              ) : (
+                                st.label
+                              )}
+                            </button>
                             <span className="text-xs opacity-40 capitalize">{course.category}</span>
                           </div>
-
-                          {/* Title */}
                           <h3 className="text-sm font-bold leading-snug line-clamp-2">{course.title}</h3>
-
-                          {/* Stats */}
                           <div className="grid grid-cols-2 gap-x-3 gap-y-1 text-xs opacity-60">
                             <span className="flex items-center gap-1"><Users size={11} />{course.enrolledCount || 0} Students</span>
                             <span className="flex items-center gap-1"><FileText size={11} />{lessons} Lessons</span>
                             <span className="flex items-center gap-1"><Star size={11} className="fill-[#FDE047] text-[#FDE047]" />{course.rating?.toFixed(1) || '—'}</span>
                             <span className="flex items-center gap-1 capitalize"><Clock size={11} />{course.level}</span>
                           </div>
-
-                          {/* Footer */}
                           <div className="flex items-center justify-between pt-3 border-t border-base-300">
-                            <span className="text-base font-bold" style={{ color: '#832388' }}>
-                              {formatPrice(course)}
-                            </span>
+                            <span className="text-base font-bold" style={{ color: '#832388' }}>{formatPrice(course)}</span>
                             <div className="flex gap-1">
                               <button className="btn btn-ghost btn-sm btn-circle cursor-pointer" title="Analytics">
                                 <BarChart3 size={14} />
@@ -414,7 +446,7 @@ const InstructorCoursesPage = () => {
                               </button>
                               <button className="btn btn-ghost btn-sm btn-circle cursor-pointer text-error" title="Delete"
                                 disabled={deleting === course._id}
-                                onClick={() => handleDelete(course._id, course.title)}>
+                                onClick={() => openDeleteDialog(course)}>
                                 {deleting === course._id
                                   ? <span className="loading loading-spinner loading-xs" />
                                   : <Trash2 size={14} />}
@@ -465,6 +497,40 @@ const InstructorCoursesPage = () => {
 
         </div>
       </div>
+
+      {/* ── Simple Delete Dialog ── */}
+      <dialog id="delete_course_modal" className="modal">
+        <div className="modal-box">
+          <h3 className="font-bold text-lg">Are you sure?</h3>
+          <p className="py-4">
+            Do you want to delete "<strong>{courseToDelete?.title}</strong>"? 
+            This action cannot be undone.
+          </p>
+          <div className="modal-action">
+            <form method="dialog">
+              <button className="btn btn-ghost mr-3">Cancel</button>
+              <button 
+                type="button"
+                className="btn btn-error text-white" 
+                onClick={handleDelete}
+                disabled={deleting === courseToDelete?._id}
+              >
+                {deleting === courseToDelete?._id ? (
+                  <>
+                    <span className="loading loading-spinner loading-sm"></span>
+                    Deleting...
+                  </>
+                ) : (
+                  <>
+                    <Trash2 size={16} />
+                    Delete
+                  </>
+                )}
+              </button>
+            </form>
+          </div>
+        </div>
+      </dialog>
     </div>
   );
 };
