@@ -17,7 +17,7 @@
     "isolatedModules": true,
     "jsx": "preserve",
     "incremental": true,
-    "baseUrl": ".", // 👈 এটা add করো
+    "baseUrl": ".",
     "paths": {
       "@/*": [
         "./src/*"

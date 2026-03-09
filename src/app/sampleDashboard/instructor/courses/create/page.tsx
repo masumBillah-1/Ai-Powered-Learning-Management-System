@@ -482,7 +482,7 @@ export default function CreateCoursePage() {
                   </label>
                 </div>
 
-                {/* FAQs */}
+                {/* FAQs - UPDATED SECTION */}
                 <div>
                   <div className="flex items-center justify-between mb-3">
                     <span className="label-text font-semibold">FAQs <span className="text-xs opacity-50 font-normal">(optional)</span></span>
@@ -493,21 +493,86 @@ export default function CreateCoursePage() {
                   </div>
                   <div className="space-y-3">
                     {faqFields.map((field, i) => (
-                      <div key={field.id} className="card card-compact bg-base-200 border border-base-300 relative">
-                        <div className="card-body p-3">
-                          <button type="button" onClick={() => removeFaq(i)}
-                            className="btn btn-xs btn-ghost btn-circle absolute top-2 right-2 opacity-40 hover:opacity-100 hover:text-error cursor-pointer">✕</button>
-                          <input {...register(`faqs.${i}.question`)} type="text" placeholder="Question..."
-                            className="input input-sm input-ghost w-full bg-transparent border-b border-base-300 rounded-none pr-8 focus:outline-none" />
-                          <textarea {...register(`faqs.${i}.answer`)} rows={2} placeholder="Answer..."
-                            className="textarea textarea-ghost bg-transparent w-full resize-none text-sm focus:outline-none" />
+                      <div key={field.id} className="card card-compact bg-base-200 border border-base-300 relative group hover:border-purple-400/50 transition-all">
+                        <div className="card-body p-4">
+                          {/* Improved X button with better visibility and hover effect */}
+                          <button 
+                            type="button" 
+                            onClick={() => removeFaq(i)}
+                            className="btn btn-xs btn-circle absolute top-3 right-3 bg-base-300/50 border-0 opacity-0 group-hover:opacity-100 hover:bg-error hover:text-white hover:scale-110 transition-all duration-200 cursor-pointer"
+                          >
+                            <svg 
+                              className="w-3 h-3" 
+                              fill="none" 
+                              stroke="currentColor" 
+                              viewBox="0 0 24 24"
+                            >
+                              <path 
+                                strokeLinecap="round" 
+                                strokeLinejoin="round" 
+                                strokeWidth={2.5} 
+                                d="M6 18L18 6M6 6l12 12" 
+                              />
+                            </svg>
+                          </button>
+
+                          {/* Question input */}
+                          <div className="mb-2">
+                            <label className="text-xs font-semibold opacity-50 mb-1 block">
+                              Question {i + 1}
+                            </label>
+                            <input 
+                              {...register(`faqs.${i}.question`)} 
+                              type="text" 
+                              placeholder="Enter your question here..."
+                              className="input input-sm input-bordered w-full bg-base-100 border-base-300 focus:border-purple-500 focus:outline-none pr-10 transition-colors" 
+                            />
+                          </div>
+
+                          {/* Answer textarea */}
+                          <div>
+                            <label className="text-xs font-semibold opacity-50 mb-1 block">
+                              Answer
+                            </label>
+                            <textarea 
+                              {...register(`faqs.${i}.answer`)} 
+                              rows={3} 
+                              placeholder="Provide a clear and concise answer..."
+                              className="textarea textarea-bordered bg-base-100 border-base-300 w-full resize-none text-sm focus:border-purple-500 focus:outline-none transition-colors" 
+                            />
+                          </div>
                         </div>
                       </div>
                     ))}
+
+                    {/* Empty state */}
                     {faqFields.length === 0 && (
-                      <div onClick={() => addFaq({ question: "", answer: "" })}
-                        className="border-2 border-dashed border-base-300 rounded-xl p-4 text-center text-sm opacity-50 cursor-pointer hover:border-purple-400 hover:opacity-80 transition-all">
-                        Click "+ Add FAQ" to add questions
+                      <div 
+                        onClick={() => addFaq({ question: "", answer: "" })}
+                        className="border-2 border-dashed border-base-300 rounded-xl p-8 text-center cursor-pointer hover:border-purple-400 hover:bg-base-200/50 transition-all group"
+                      >
+                        <div className="w-12 h-12 rounded-full bg-base-300 flex items-center justify-center mx-auto mb-3 group-hover:bg-purple-500/20 transition-all">
+                          <svg 
+                            className="w-6 h-6 opacity-40 group-hover:opacity-100 transition-all" 
+                            style={{ color: "#832388" }}
+                            fill="none" 
+                            stroke="currentColor" 
+                            viewBox="0 0 24 24"
+                          >
+                            <path 
+                              strokeLinecap="round" 
+                              strokeLinejoin="round" 
+                              strokeWidth={2} 
+                              d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" 
+                            />
+                          </svg>
+                        </div>
+                        <p className="font-medium opacity-60 group-hover:opacity-100 transition-all">
+                          No FAQs added yet
+                        </p>
+                        <p className="text-sm opacity-40 mt-1 group-hover:opacity-60 transition-all">
+                          Click here or use "+ Add FAQ" button above
+                        </p>
                       </div>
                     )}
                   </div>
@@ -887,62 +952,60 @@ export default function CreateCoursePage() {
         </div>
       </div>
 
+      {/* ── Bottom Navigation ── */}
       <div className="sticky bottom-0 left-0 right-0 bg-base-100 border-t border-base-300 px-6 py-4 flex items-center justify-between z-[999] shadow-lg">
+        <button
+          type="button"
+          onClick={handleBack}
+          disabled={step === 1 || loading}
+          className="btn btn-sm btn-outline gap-2 disabled:opacity-30 cursor-pointer"
+        >
+          ← Back
+        </button>
 
-  <button
-    type="button"
-    onClick={handleBack}
-    disabled={step === 1 || loading}
-    className="btn btn-sm btn-outline gap-2 disabled:opacity-30 cursor-pointer"
-  >
-    ← Back
-  </button>
+        <div className="flex gap-3">
+          <button
+            type="button"
+            onClick={() => submitCourse("draft")}
+            disabled={loading}
+            className="btn btn-sm btn-ghost border border-base-300 disabled:opacity-50 cursor-pointer"
+          >
+            {loading && (
+              <span className="loading loading-spinner loading-xs mr-1 pointer-events-none"></span>
+            )}
+            Save as draft
+          </button>
 
-  <div className="flex gap-3">
-
-    <button
-      type="button"
-      onClick={() => submitCourse("draft")}
-      disabled={loading}
-      className="btn btn-sm btn-ghost border border-base-300 disabled:opacity-50 cursor-pointer"
-    >
-      {loading && (
-        <span className="loading loading-spinner loading-xs mr-1 pointer-events-none"></span>
-      )}
-      Save as draft
-    </button>
-
-    {step < 4 ? (
-      <button
-        type="button"
-        onClick={handleNext}
-        disabled={loading}
-        className="btn btn-sm text-white border-0 cursor-pointer"
-        style={{ background: "linear-gradient(135deg, #832388, #FF0F7B)" }}
-      >
-        Save & Continue →
-      </button>
-    ) : (
-      <button
-        type="button"
-        onClick={() => submitCourse("published")}
-        disabled={loading}
-        className="btn btn-sm text-white border-0 cursor-pointer"
-        style={{ background: "linear-gradient(135deg, #00C48C, #0EA5E9)" }}
-      >
-        {loading ? (
-          <>
-            <span className="loading loading-spinner loading-xs mr-1 pointer-events-none"></span>
-            Publishing...
-          </>
-        ) : (
-          "🚀 Publish Course"
-        )}
-      </button>
-    )}
-
-  </div>
-</div>
+          {step < 4 ? (
+            <button
+              type="button"
+              onClick={handleNext}
+              disabled={loading}
+              className="btn btn-sm text-white border-0 cursor-pointer"
+              style={{ background: "linear-gradient(135deg, #832388, #FF0F7B)" }}
+            >
+              Save & Continue →
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={() => submitCourse("published")}
+              disabled={loading}
+              className="btn btn-sm text-white border-0 cursor-pointer"
+              style={{ background: "linear-gradient(135deg, #00C48C, #0EA5E9)" }}
+            >
+              {loading ? (
+                <>
+                  <span className="loading loading-spinner loading-xs mr-1 pointer-events-none"></span>
+                  Publishing...
+                </>
+              ) : (
+                "🚀 Publish Course"
+              )}
+            </button>
+          )}
+        </div>
+      </div>
     </div>
   );
 }
