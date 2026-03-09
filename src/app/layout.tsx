@@ -93,11 +93,19 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         suppressHydrationWarning
       >
           <Toaster
-            position="top-center"
+            position="top-left"
             reverseOrder={false}
             toastOptions={{
               duration: 3000,
-              style: { background: "#1f2937", color: "#fff", borderRadius: "8px", padding: "12px 20px", fontSize: "14px" },
+              style: { 
+                background: "#1f2937", 
+                color: "#fff", 
+                borderRadius: "8px", 
+                padding: "12px 20px", 
+                fontSize: "14px",
+                marginTop: "80px", // navbar এর নিচে দেখানোর জন্য
+                marginLeft: "20px" // একটু left থেকে margin
+              },
               success: { iconTheme: { primary: "#10b981", secondary: "#fff" } },
               error: { iconTheme: { primary: "#ef4444", secondary: "#fff" } },
             }}

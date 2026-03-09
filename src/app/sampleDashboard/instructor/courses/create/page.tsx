@@ -33,7 +33,7 @@ interface FormValues {
   visibility:      "public" | "private";
 }
 
-// ─── Toast styles ─────────────────────────────────────────────────────────────
+// ─── Toast styles — সব top-right ──────────────────────────────────────────
 const tErr = {
   position: "top-right" as const,
   duration: 3500,
@@ -69,7 +69,7 @@ function fileToBase64(file: File): Promise<string> {
   });
 }
 
-// ─── Shared error message component ──────────────────────────────────────────
+// ─── Error message component ──────────────────────────────────────────────────
 const ErrMsg = ({ msg }: { msg?: string }) =>
   msg ? (
     <p className="text-error text-xs mt-1 flex items-center gap-1 animate-pulse">
@@ -93,20 +93,34 @@ export default function CreateCoursePage() {
   const [loading, setLoading] = useState(false);
   const [theme, setTheme]     = useState("light");
 
-  // File state (outside RHF — File objects aren't serialisable)
+  // ── instructorId — localStorage থেকে নেওয়া ────────────────────────────────
+  const [instructorId, setInstructorId] = useState<string>("");
+
+  // File state
   const [coverFile, setCoverFile] = useState<File | null>(null);
   const [videoFile, setVideoFile] = useState<File | null>(null);
   const coverRef = useRef<HTMLInputElement>(null);
   const videoRef = useRef<HTMLInputElement>(null);
 
-  // Modules state (complex nested, managed manually)
-  const [modules, setModules] = useState<ModuleItem[]>([]);
+  // Modules state
+  const [modules, setModules]     = useState<ModuleItem[]>([]);
   const [moduleErr, setModuleErr] = useState("");
 
-  // ── Dark mode sync ──────────────────────────────────────────────────────────
+  // ── Dark mode + user sync ───────────────────────────────────────────────────
   useEffect(() => {
     const saved = localStorage.getItem("theme") || "light";
     setTheme(saved);
+
+    // user._id থেকে instructorId নাও
+    try {
+      const userStr = localStorage.getItem("user");
+      if (userStr) {
+        const user = JSON.parse(userStr);
+        if (user?._id) setInstructorId(user._id);
+        else if (user?.id) setInstructorId(user.id);
+      }
+    } catch (_) {}
+
     const iv = setInterval(() => {
       const cur = localStorage.getItem("theme") || "light";
       if (cur !== theme) setTheme(cur);
@@ -124,7 +138,7 @@ export default function CreateCoursePage() {
     setValue,
     formState: { errors },
   } = useForm<FormValues>({
-    mode: "onChange", // ← validate & clear errors as user types
+    mode: "onChange",
     defaultValues: {
       title: "", category: "", level: "", description: "",
       coverMode: "upload", coverUrl: "",
@@ -155,28 +169,31 @@ export default function CreateCoursePage() {
   const level      = watch("level");
   const desc       = watch("description");
 
-  // ── Step 1 validation fields ────────────────────────────────────────────────
-  const step1Fields: (keyof FormValues)[] = [
-    "title", "category", "level", "description",
-    "coverUrl", "videoUrl",
-  ];
-
   // ── Step validation ─────────────────────────────────────────────────────────
   const validateCurrentStep = async (): Promise<boolean> => {
     if (step === 1) {
-      const ok = await trigger(step1Fields);
-      // Extra: file checks
-      if (coverMode === "upload" && !coverFile) {
-        toast.error("⚠️ Please upload a Cover Image", tErr);
-        return false;
-      }
-      if (videoMode === "upload" && !videoFile) {
-        toast.error("⚠️ Please upload a Sales Video", tErr);
-        return false;
-      }
+      const ok = await trigger(["title", "category", "level", "description"]);
       if (!ok) {
         const first = Object.values(errors).find(Boolean);
         if (first?.message) toast.error(`⚠️ ${first.message}`, tErr);
+        return false;
+      }
+      // cover check — mode অনুযায়ী
+      if (coverMode === "upload" && !coverFile) {
+        toast.error("⚠️ Please upload a Cover Image (or switch to URL mode)", tErr);
+        return false;
+      }
+      if (coverMode === "url" && !getValues("coverUrl")?.trim()) {
+        toast.error("⚠️ Please enter a Cover Image URL", tErr);
+        return false;
+      }
+      // video check — mode অনুযায়ী
+      if (videoMode === "upload" && !videoFile) {
+        toast.error("⚠️ Please upload a Sales Video (or switch to URL mode)", tErr);
+        return false;
+      }
+      if (videoMode === "url" && !getValues("videoUrl")?.trim()) {
+        toast.error("⚠️ Please enter a Sales Video URL", tErr);
         return false;
       }
       return true;
@@ -215,10 +232,7 @@ export default function CreateCoursePage() {
   const handleBack = () => setStep(s => Math.max(s - 1, 1));
 
   // ── Module helpers ──────────────────────────────────────────────────────────
-  const addModule = () => {
-    setModules(prev => [...prev, { id: Date.now(), title: `Module ${prev.length + 1}`, lessons: [] }]);
-    setModuleErr("");
-  };
+  const addModule      = () => { setModules(prev => [...prev, { id: Date.now(), title: `Module ${prev.length + 1}`, lessons: [] }]); setModuleErr(""); };
   const removeModule   = (id: number) => setModules(prev => prev.filter(m => m.id !== id));
   const updateModTitle = (id: number, t: string) => setModules(prev => prev.map(m => m.id === id ? { ...m, title: t } : m));
   const addLesson      = (mid: number) => setModules(prev => prev.map(m => m.id === mid ? { ...m, lessons: [...m.lessons, { id: Date.now(), title: "", type: "video", duration: "" }] } : m));
@@ -230,27 +244,40 @@ export default function CreateCoursePage() {
   const submitCourse = async (status: "draft" | "published") => {
     const vals = getValues();
 
+    // instructorId check
+    if (!instructorId) {
+      toast.error("⚠️ User not found. Please login again.", tErr);
+      return;
+    }
+
     if (status === "draft" && !vals.title.trim()) {
       toast.error("⚠️ Add a course title before saving draft!", tErr);
       return;
     }
     if (status === "published") {
-      for (let s = 1; s <= 3; s++) {
-        const orig = step;
-        setStep(s);
-        // quick re-validate
-        if (s === 1) {
-          const ok = await trigger(step1Fields);
-          if (!ok || (coverMode === "upload" && !coverFile) || (videoMode === "upload" && !videoFile)) {
-            setStep(s); return;
-          }
-        }
-        if (s === 2) {
-          if (modules.length === 0 || !modules.some(m => m.lessons.length > 0)) {
-            setStep(s); return;
-          }
-        }
-        setStep(orig);
+      // Step 1 validation
+      const step1ok = await trigger(["title", "category", "level", "description"]);
+      if (!step1ok) { setStep(1); return; }
+      if (coverMode === "upload" && !coverFile) {
+        toast.error("⚠️ Please upload a Cover Image", tErr);
+        setStep(1); return;
+      }
+      if (coverMode === "url" && !vals.coverUrl?.trim()) {
+        toast.error("⚠️ Please enter a Cover Image URL", tErr);
+        setStep(1); return;
+      }
+      if (videoMode === "upload" && !videoFile) {
+        toast.error("⚠️ Please upload a Sales Video", tErr);
+        setStep(1); return;
+      }
+      if (videoMode === "url" && !vals.videoUrl?.trim()) {
+        toast.error("⚠️ Please enter a Sales Video URL", tErr);
+        setStep(1); return;
+      }
+      // Step 2 validation
+      if (modules.length === 0 || !modules.some(m => m.lessons.length > 0)) {
+        toast.error("⚠️ Add at least 1 module with a lesson", tErr);
+        setStep(2); return;
       }
     }
 
@@ -273,7 +300,7 @@ export default function CreateCoursePage() {
       }
 
       const payload = {
-        instructorId: "REPLACE_WITH_SESSION_USER_ID",
+        instructorId, // ← localStorage user._id থেকে
         title:        vals.title,
         category:     vals.category,
         level:        vals.level,
@@ -293,7 +320,18 @@ export default function CreateCoursePage() {
         status,
       };
 
-      const res     = await fetch("/api/courses", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
+      const res     = await fetch("/api/courses", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      // HTML response = route error
+      const contentType = res.headers.get("content-type") || "";
+      if (!contentType.includes("application/json")) {
+        throw new Error(`Server error (${res.status}). Check terminal for details.`);
+      }
+
       const resData = await res.json();
       if (!res.ok) throw new Error(resData.error || "Something went wrong");
 
@@ -328,16 +366,13 @@ export default function CreateCoursePage() {
   ];
   const allDone = checks.every(c => c.done);
 
-  // ═══════════════════════════════════════════════════════════════════════════
-  // RENDER
-  // ═══════════════════════════════════════════════════════════════════════════
   return (
     <div className="flex flex-col bg-base-100 min-h-screen" data-theme={theme}>
 
       {/* Toast — top right */}
       <Toaster
         position="top-right"
-        containerStyle={{ top: 24, right: 24 }}
+        containerStyle={{ top: 80, right: 24 }}
         toastOptions={{ style: { maxWidth: 360 } }}
       />
 
@@ -375,10 +410,8 @@ export default function CreateCoursePage() {
           {/* ════ STEP 1 ════ */}
           {step === 1 && (
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-
               {/* LEFT */}
               <div className="space-y-5">
-
                 {/* Title */}
                 <div className="form-control">
                   <label className="label pb-1">
@@ -411,7 +444,6 @@ export default function CreateCoursePage() {
                     </select>
                     <ErrMsg msg={errors.category?.message} />
                   </div>
-
                   <div className="form-control">
                     <label className="label pb-1">
                       <span className="label-text font-semibold">Level <span className="text-error">*</span></span>
@@ -465,18 +497,10 @@ export default function CreateCoursePage() {
                         <div className="card-body p-3">
                           <button type="button" onClick={() => removeFaq(i)}
                             className="btn btn-xs btn-ghost btn-circle absolute top-2 right-2 opacity-40 hover:opacity-100 hover:text-error cursor-pointer">✕</button>
-                          <input
-                            {...register(`faqs.${i}.question`)}
-                            type="text"
-                            placeholder="Question..."
-                            className="input input-sm input-ghost w-full bg-transparent border-b border-base-300 rounded-none pr-8 focus:outline-none"
-                          />
-                          <textarea
-                            {...register(`faqs.${i}.answer`)}
-                            rows={2}
-                            placeholder="Answer..."
-                            className="textarea textarea-ghost bg-transparent w-full resize-none text-sm focus:outline-none"
-                          />
+                          <input {...register(`faqs.${i}.question`)} type="text" placeholder="Question..."
+                            className="input input-sm input-ghost w-full bg-transparent border-b border-base-300 rounded-none pr-8 focus:outline-none" />
+                          <textarea {...register(`faqs.${i}.answer`)} rows={2} placeholder="Answer..."
+                            className="textarea textarea-ghost bg-transparent w-full resize-none text-sm focus:outline-none" />
                         </div>
                       </div>
                     ))}
@@ -492,13 +516,10 @@ export default function CreateCoursePage() {
 
               {/* RIGHT */}
               <div className="space-y-5">
-
-                {/* ── Cover Image ── */}
+                {/* Cover Image */}
                 <div className="form-control">
                   <div className="flex items-center justify-between mb-2">
-                    <label className="label-text font-semibold">
-                      Cover Image <span className="text-error">*</span>
-                    </label>
+                    <label className="label-text font-semibold">Cover Image <span className="text-error">*</span></label>
                     <div className="tabs tabs-boxed tabs-xs bg-base-200">
                       {(["upload", "url"] as const).map(m => (
                         <button key={m} type="button"
@@ -510,29 +531,21 @@ export default function CreateCoursePage() {
                       ))}
                     </div>
                   </div>
-
                   {coverMode === "url" ? (
                     <div className="space-y-2">
-                      {/* Preview above input */}
                       <div className="border-2 border-dashed rounded-xl h-40 overflow-hidden flex items-center justify-center bg-base-200 border-base-300">
                         {coverUrl
                           ? <img src={coverUrl} alt="preview" className="h-full w-full object-cover"
                               onError={e => { (e.target as HTMLImageElement).style.display = "none"; }} />
                           : <p className="text-sm opacity-40">Image preview will appear here</p>}
                       </div>
-                      <input
-                        {...register("coverUrl", {
-                          validate: v => coverMode !== "url" || v.trim() !== "" || "Please enter a cover image URL",
-                        })}
-                        type="url"
-                        placeholder="https://example.com/image.jpg"
-                        className={`input input-bordered bg-base-200 w-full focus:outline-none transition-colors ${errors.coverUrl ? "border-error" : "focus:border-purple-500"}`}
-                      />
+                      <input {...register("coverUrl")}
+                        type="url" placeholder="https://example.com/image.jpg"
+                        className={`input input-bordered bg-base-200 w-full focus:outline-none transition-colors ${errors.coverUrl ? "border-error" : "focus:border-purple-500"}`} />
                       <ErrMsg msg={errors.coverUrl?.message} />
                     </div>
                   ) : (
                     <div className="space-y-2">
-                      {/* Preview above dropzone */}
                       {coverFile && (
                         <div className="rounded-xl overflow-hidden h-40 border border-base-300">
                           <img src={URL.createObjectURL(coverFile)} alt="cover" className="w-full h-full object-cover" />
@@ -564,12 +577,10 @@ export default function CreateCoursePage() {
                   )}
                 </div>
 
-                {/* ── Sales Video ── */}
+                {/* Sales Video */}
                 <div className="form-control">
                   <div className="flex items-center justify-between mb-2">
-                    <label className="label-text font-semibold">
-                      Sales Video <span className="text-error">*</span>
-                    </label>
+                    <label className="label-text font-semibold">Sales Video <span className="text-error">*</span></label>
                     <div className="tabs tabs-boxed tabs-xs bg-base-200">
                       {(["upload", "url"] as const).map(m => (
                         <button key={m} type="button"
@@ -581,10 +592,8 @@ export default function CreateCoursePage() {
                       ))}
                     </div>
                   </div>
-
                   {videoMode === "url" ? (
                     <div className="space-y-2">
-                      {/* Preview above input */}
                       <div className="border-2 border-dashed rounded-xl h-40 overflow-hidden flex items-center justify-center bg-base-200 border-base-300">
                         {videoUrl ? (
                           (() => {
@@ -599,14 +608,9 @@ export default function CreateCoursePage() {
                           })()
                         ) : <p className="text-sm opacity-40">Video preview will appear here</p>}
                       </div>
-                      <input
-                        {...register("videoUrl", {
-                          validate: v => videoMode !== "url" || v.trim() !== "" || "Please enter a video link",
-                        })}
-                        type="url"
-                        placeholder="YouTube, Vimeo or direct video link..."
-                        className={`input input-bordered bg-base-200 w-full focus:outline-none transition-colors ${errors.videoUrl ? "border-error" : "focus:border-purple-500"}`}
-                      />
+                      <input {...register("videoUrl")}
+                        type="url" placeholder="YouTube, Vimeo or direct video link..."
+                        className={`input input-bordered bg-base-200 w-full focus:outline-none transition-colors ${errors.videoUrl ? "border-error" : "focus:border-purple-500"}`} />
                       <ErrMsg msg={errors.videoUrl?.message} />
                     </div>
                   ) : (
@@ -647,7 +651,6 @@ export default function CreateCoursePage() {
                     </div>
                   )}
                 </div>
-
               </div>
             </div>
           )}
@@ -666,7 +669,6 @@ export default function CreateCoursePage() {
                   + Add Module
                 </button>
               </div>
-
               {modules.length === 0 && (
                 <div onClick={addModule}
                   className={`border-2 border-dashed rounded-2xl p-12 text-center cursor-pointer hover:border-purple-400 hover:bg-base-200 transition-all ${moduleErr ? "border-error" : "border-base-300"}`}>
@@ -679,7 +681,6 @@ export default function CreateCoursePage() {
                   <p className="text-sm opacity-40 mt-1">Click to add your first module</p>
                 </div>
               )}
-
               {modules.map((mod, mi) => (
                 <div key={mod.id} className="card bg-base-100 border border-base-300 shadow-sm overflow-hidden">
                   <div className="flex items-center gap-3 bg-base-200 px-4 py-3 border-b border-base-300">
@@ -733,18 +734,13 @@ export default function CreateCoursePage() {
           {/* ════ STEP 3 ════ */}
           {step === 3 && (
             <div className="max-w-lg mx-auto space-y-5">
-
-              {/* Paid / Free toggle */}
               <div>
                 <p className="label-text font-semibold mb-2">Course Type <span className="text-error">*</span></p>
-                <Controller
-                  control={control}
-                  name="priceType"
+                <Controller control={control} name="priceType"
                   render={({ field }) => (
                     <div className="grid grid-cols-2 gap-3">
                       {(["paid", "free"] as const).map(t => (
-                        <button key={t} type="button"
-                          onClick={() => field.onChange(t)}
+                        <button key={t} type="button" onClick={() => field.onChange(t)}
                           className={`btn gap-2 cursor-pointer ${field.value === t ? "text-white border-0" : "btn-outline"}`}
                           style={field.value === t ? { backgroundColor: "#832388" } : {}}>
                           {t === "paid" ? "💰 Paid Course" : "🎁 Free Course"}
@@ -754,7 +750,6 @@ export default function CreateCoursePage() {
                   )}
                 />
               </div>
-
               {priceType === "paid" && (
                 <>
                   <div className="form-control">
@@ -763,18 +758,11 @@ export default function CreateCoursePage() {
                     </label>
                     <label className={`input input-bordered bg-base-200 flex items-center gap-2 focus-within:border-purple-500 ${errors.price ? "border-error" : ""}`}>
                       <span className="opacity-40 font-medium">৳</span>
-                      <input
-                        {...register("price", {
-                          validate: v => priceType !== "paid" || Number(v) > 0 || "Enter a valid price greater than 0",
-                        })}
-                        type="number"
-                        placeholder="0"
-                        className="grow bg-transparent focus:outline-none"
-                      />
+                      <input {...register("price", { validate: v => priceType !== "paid" || Number(v) > 0 || "Enter a valid price greater than 0" })}
+                        type="number" placeholder="0" className="grow bg-transparent focus:outline-none" />
                     </label>
                     <ErrMsg msg={errors.price?.message} />
                   </div>
-
                   <div className="form-control">
                     <label className="label pb-1">
                       <span className="label-text font-semibold">Discount Price (৳)</span>
@@ -782,26 +770,17 @@ export default function CreateCoursePage() {
                     </label>
                     <label className={`input input-bordered bg-base-200 flex items-center gap-2 focus-within:border-purple-500 ${errors.discountPrice ? "border-error" : ""}`}>
                       <span className="opacity-40 font-medium">৳</span>
-                      <input
-                        {...register("discountPrice", {
-                          validate: v => !v || Number(v) < Number(price) || "Discount must be less than regular price",
-                        })}
-                        type="number"
-                        placeholder="0"
-                        className="grow bg-transparent focus:outline-none"
-                      />
+                      <input {...register("discountPrice", { validate: v => !v || Number(v) < Number(price) || "Discount must be less than regular price" })}
+                        type="number" placeholder="0" className="grow bg-transparent focus:outline-none" />
                     </label>
                     {errors.discountPrice
                       ? <ErrMsg msg={errors.discountPrice.message} />
                       : price && discountP && Number(discountP) < Number(price)
-                        ? <p className="text-success text-xs mt-1 font-semibold">
-                            🎉 {Math.round((1 - Number(discountP) / Number(price)) * 100)}% discount applied
-                          </p>
+                        ? <p className="text-success text-xs mt-1 font-semibold">🎉 {Math.round((1 - Number(discountP) / Number(price)) * 100)}% discount applied</p>
                         : null}
                   </div>
                 </>
               )}
-
               <div className="form-control">
                 <label className="label pb-1">
                   <span className="label-text font-semibold">Enrollment Limit</span>
@@ -810,7 +789,6 @@ export default function CreateCoursePage() {
                 <input {...register("enrollmentLimit")} type="number" placeholder="Unlimited"
                   className="input input-bordered bg-base-200 w-full focus:outline-none" />
               </div>
-
               <div className="form-control">
                 <label className="label pb-1">
                   <span className="label-text font-semibold">Access Duration</span>
@@ -823,8 +801,6 @@ export default function CreateCoursePage() {
                   <option value="3months">3 Months</option>
                 </select>
               </div>
-
-              {/* Summary */}
               {(price || priceType === "free") && (
                 <div className="card bg-base-200 border border-base-300">
                   <div className="card-body p-4 space-y-2">
@@ -851,8 +827,6 @@ export default function CreateCoursePage() {
           {/* ════ STEP 4 ════ */}
           {step === 4 && (
             <div className="max-w-lg mx-auto space-y-5">
-
-              {/* Preview card */}
               <div className="card bg-base-100 border border-base-300 shadow-sm overflow-hidden">
                 {coverSrc && <img src={coverSrc} alt="cover" className="w-full h-40 object-cover" />}
                 <div className="card-body p-4 space-y-3">
@@ -874,8 +848,6 @@ export default function CreateCoursePage() {
                   </div>
                 </div>
               </div>
-
-              {/* Visibility */}
               <div>
                 <p className="label-text font-semibold mb-2">Visibility</p>
                 <Controller control={control} name="visibility"
@@ -892,8 +864,6 @@ export default function CreateCoursePage() {
                   )}
                 />
               </div>
-
-              {/* Checklist */}
               <div className={`card border ${allDone ? "bg-success/5 border-success/30" : "bg-base-200 border-base-300"}`}>
                 <div className="card-body p-4">
                   <div className="flex items-center justify-between mb-3">
@@ -914,40 +884,65 @@ export default function CreateCoursePage() {
               </div>
             </div>
           )}
-
         </div>
       </div>
 
-      {/* ── Bottom Bar ── */}
-      <div className=" bottom-0 left-54 right-0 bg-base-100 border-t border-base-300 px-6 py-4 flex items-center justify-between z-20 shadow-lg">
-        <button type="button" onClick={handleBack} disabled={step === 1 || loading}
-          className="btn btn-sm btn-outline gap-2 disabled:opacity-30 cursor-pointer">
-          ← Back
-        </button>
-        <div className="flex gap-3">
-          <button type="button" onClick={() => submitCourse("draft")} disabled={loading}
-            className="btn btn-sm btn-ghost border border-base-300 disabled:opacity-50 cursor-pointer">
-            {loading && <span className="loading loading-spinner loading-xs mr-1" />}
-            Save as draft
-          </button>
-          {step < 4 ? (
-            <button type="button" onClick={handleNext} disabled={loading}
-              className="btn btn-sm text-white border-0 cursor-pointer"
-              style={{ background: "linear-gradient(135deg, #832388, #FF0F7B)" }}>
-              Save & Continue →
-            </button>
-          ) : (
-            <button type="button" onClick={() => submitCourse("published")} disabled={loading}
-              className="btn btn-sm text-white border-0 cursor-pointer"
-              style={{ background: "linear-gradient(135deg, #00C48C, #0EA5E9)" }}>
-              {loading
-                ? <><span className="loading loading-spinner loading-xs mr-1" />Publishing...</>
-                : "🚀 Publish Course"}
-            </button>
-          )}
-        </div>
-      </div>
+      <div className="sticky bottom-0 left-0 right-0 bg-base-100 border-t border-base-300 px-6 py-4 flex items-center justify-between z-[999] shadow-lg">
 
+  <button
+    type="button"
+    onClick={handleBack}
+    disabled={step === 1 || loading}
+    className="btn btn-sm btn-outline gap-2 disabled:opacity-30 cursor-pointer"
+  >
+    ← Back
+  </button>
+
+  <div className="flex gap-3">
+
+    <button
+      type="button"
+      onClick={() => submitCourse("draft")}
+      disabled={loading}
+      className="btn btn-sm btn-ghost border border-base-300 disabled:opacity-50 cursor-pointer"
+    >
+      {loading && (
+        <span className="loading loading-spinner loading-xs mr-1 pointer-events-none"></span>
+      )}
+      Save as draft
+    </button>
+
+    {step < 4 ? (
+      <button
+        type="button"
+        onClick={handleNext}
+        disabled={loading}
+        className="btn btn-sm text-white border-0 cursor-pointer"
+        style={{ background: "linear-gradient(135deg, #832388, #FF0F7B)" }}
+      >
+        Save & Continue →
+      </button>
+    ) : (
+      <button
+        type="button"
+        onClick={() => submitCourse("published")}
+        disabled={loading}
+        className="btn btn-sm text-white border-0 cursor-pointer"
+        style={{ background: "linear-gradient(135deg, #00C48C, #0EA5E9)" }}
+      >
+        {loading ? (
+          <>
+            <span className="loading loading-spinner loading-xs mr-1 pointer-events-none"></span>
+            Publishing...
+          </>
+        ) : (
+          "🚀 Publish Course"
+        )}
+      </button>
+    )}
+
+  </div>
+</div>
     </div>
   );
 }

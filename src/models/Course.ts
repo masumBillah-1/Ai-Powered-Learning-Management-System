@@ -113,5 +113,6 @@ const CourseSchema = new Schema<ICourseDocument>(
 CourseSchema.index({ instructorId: 1 });
 CourseSchema.index({ status: 1, visibility: 1 });
 
-export default mongoose.models.Course ||
-  mongoose.model<ICourseDocument>("Course", CourseSchema);
+// ✅ Better model export pattern
+const Course = mongoose.models.Course || mongoose.model<ICourseDocument>("Course", CourseSchema);
+export default Course;
