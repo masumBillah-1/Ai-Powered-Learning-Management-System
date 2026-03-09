@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import {
   useForm,
   Controller,
@@ -11,29 +11,29 @@ import {
 import toast, { Toaster } from "react-hot-toast";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
-interface FAQItem    { question: string; answer: string }
+interface FAQItem { question: string; answer: string }
 interface LessonItem { id: number; title: string; type: string; duration: string }
 interface ModuleItem { id: number; title: string; lessons: LessonItem[] }
 
 interface FormValues {
-  title:           string;
-  category:        string;
-  level:           string;
-  description:     string;
-  coverMode:       "upload" | "url";
-  coverUrl:        string;
-  videoMode:       "upload" | "url";
-  videoUrl:        string;
-  faqs:            FAQItem[];
-  priceType:       "paid" | "free";
-  price:           string;
-  discountPrice:   string;
+  title: string;
+  category: string;
+  level: string;
+  description: string;
+  coverMode: "upload" | "url";
+  coverUrl: string;
+  videoMode: "upload" | "url";
+  videoUrl: string;
+  faqs: FAQItem[];
+  priceType: "paid" | "free";
+  price: string;
+  discountPrice: string;
   enrollmentLimit: string;
-  accessDuration:  string;
-  visibility:      "public" | "private";
+  accessDuration: string;
+  visibility: "public" | "private";
 }
 
-// ─── Toast styles — সব top-right ──────────────────────────────────────────
+// ─── Toast styles ─────────────────────────────────────────────────────────────
 const tErr = {
   position: "top-right" as const,
   duration: 3500,
@@ -63,7 +63,7 @@ const tOk = {
 function fileToBase64(file: File): Promise<string> {
   return new Promise((res, rej) => {
     const r = new FileReader();
-    r.onload  = () => res(r.result as string);
+    r.onload = () => res(r.result as string);
     r.onerror = rej;
     r.readAsDataURL(file);
   });
@@ -89,11 +89,13 @@ const STEPS = [
 // ═══════════════════════════════════════════════════════════════════════════════
 export default function CreateCoursePage() {
   const router = useRouter();
-  const [step, setStep]       = useState(1);
-  const [loading, setLoading] = useState(false);
-  const [theme, setTheme]     = useState("light");
+  const searchParams = useSearchParams();
+  const editId = searchParams.get("id"); // ← edit mode detection
 
-  // ── instructorId — localStorage থেকে নেওয়া ────────────────────────────────
+  const [step, setStep] = useState(1);
+  const [loading, setLoading] = useState(false);
+  const [loadingEdit, setLoadingEdit] = useState(false); // ← edit fetch loading
+  const [theme, setTheme] = useState("light");
   const [instructorId, setInstructorId] = useState<string>("");
 
   // File state
@@ -103,7 +105,7 @@ export default function CreateCoursePage() {
   const videoRef = useRef<HTMLInputElement>(null);
 
   // Modules state
-  const [modules, setModules]     = useState<ModuleItem[]>([]);
+  const [modules, setModules] = useState<ModuleItem[]>([]);
   const [moduleErr, setModuleErr] = useState("");
 
   // ── Dark mode + user sync ───────────────────────────────────────────────────
@@ -111,7 +113,6 @@ export default function CreateCoursePage() {
     const saved = localStorage.getItem("theme") || "light";
     setTheme(saved);
 
-    // user._id থেকে instructorId নাও
     try {
       const userStr = localStorage.getItem("user");
       if (userStr) {
@@ -119,7 +120,7 @@ export default function CreateCoursePage() {
         if (user?._id) setInstructorId(user._id);
         else if (user?.id) setInstructorId(user.id);
       }
-    } catch (_) {}
+    } catch (_) { }
 
     const iv = setInterval(() => {
       const cur = localStorage.getItem("theme") || "light";
@@ -136,6 +137,7 @@ export default function CreateCoursePage() {
     trigger,
     getValues,
     setValue,
+    reset,
     formState: { errors },
   } = useForm<FormValues>({
     mode: "onChange",
@@ -150,35 +152,113 @@ export default function CreateCoursePage() {
     },
   });
 
-  const { fields: faqFields, append: addFaq, remove: removeFaq } = useFieldArray({
+  const { fields: faqFields, append: addFaq, remove: removeFaq, replace: replaceFaqs } = useFieldArray({
     control,
     name: "faqs",
   });
 
-  const coverMode  = watch("coverMode");
-  const videoMode  = watch("videoMode");
-  const coverUrl   = watch("coverUrl");
-  const videoUrl   = watch("videoUrl");
-  const priceType  = watch("priceType");
-  const price      = watch("price");
-  const discountP  = watch("discountPrice");
-  const accessDur  = watch("accessDuration");
+  // ── Edit mode: fetch existing course data and populate form ─────────────────
+  useEffect(() => {
+    if (!editId) return;
+
+    const loadCourse = async () => {
+      setLoadingEdit(true);
+      try {
+        const res = await fetch(`/api/courses/${editId}`);
+        const contentType = res.headers.get("content-type") || "";
+        if (!contentType.includes("application/json")) {
+          throw new Error(`Server error (${res.status})`);
+        }
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || "Failed to load course");
+
+        const c = data.course || data;
+
+        // ── Populate all form fields ──────────────────────────────────────────
+        setValue("title", c.title || "");
+        setValue("category", c.category || "");
+        setValue("level", c.level || "");
+        setValue("description", c.description || "");
+        setValue("priceType", c.pricing?.type || "paid");
+        setValue("price", String(c.pricing?.price || ""));
+        setValue("discountPrice", String(c.pricing?.discountPrice || ""));
+        setValue("enrollmentLimit", String(c.pricing?.enrollmentLimit || ""));
+        setValue("accessDuration", c.pricing?.accessDuration || "lifetime");
+        setValue("visibility", c.visibility || "public");
+
+        // FAQs
+        if (c.faqs?.length > 0) {
+          replaceFaqs(c.faqs);
+        }
+
+        // Cover Image
+        if (c.coverImage?.url) {
+          setValue("coverMode", "url");
+          setValue("coverUrl", c.coverImage.url);
+        }
+
+        // Sales Video
+        if (c.salesVideo?.url) {
+          setValue("videoMode", "url");
+          setValue("videoUrl", c.salesVideo.url);
+        }
+
+        // Modules & Lessons
+        if (c.modules?.length > 0) {
+          setModules(
+            c.modules.map((m: any, i: number) => ({
+              id: Date.now() + i,
+              title: m.title || `Module ${i + 1}`,
+              lessons: (m.lessons || []).map((l: any, j: number) => ({
+                id: Date.now() + i * 1000 + j,
+                title: l.title || "",
+                type: l.type || "video",
+                duration: l.duration || "",
+              })),
+            }))
+          );
+        }
+
+        toast.success("✅ Course data loaded!", { ...tOk, duration: 2000 });
+      } catch (err: any) {
+        toast.error(`❌ ${err.message}`, tErr);
+      } finally {
+        setLoadingEdit(false);
+      }
+    };
+
+    loadCourse();
+  }, [editId]);
+
+  const coverMode = watch("coverMode");
+  const videoMode = watch("videoMode");
+  const coverUrl = watch("coverUrl");
+  const videoUrl = watch("videoUrl");
+  const priceType = watch("priceType");
+  const price = watch("price");
+  const discountP = watch("discountPrice");
+  const accessDur = watch("accessDuration");
   const visibility = watch("visibility");
-  const title      = watch("title");
-  const category   = watch("category");
-  const level      = watch("level");
-  const desc       = watch("description");
+  const title = watch("title");
+  const category = watch("category");
+  const level = watch("level");
+  const desc = watch("description");
 
   // ── Step validation ─────────────────────────────────────────────────────────
   const validateCurrentStep = async (): Promise<boolean> => {
     if (step === 1) {
-      const ok = await trigger(["title", "category", "level", "description"]);
-      if (!ok) {
-        const first = Object.values(errors).find(Boolean);
-        if (first?.message) toast.error(`⚠️ ${first.message}`, tErr);
+      // trigger() returns true only if ALL fields are valid
+      const fieldsOk = await trigger(["title", "category", "level", "description"]);
+      if (!fieldsOk) {
+        // Read fresh errors via getValues + re-trigger to get accurate messages
+        const vals = getValues();
+        if (!vals.title?.trim()) { toast.error("⚠️ Course title is required", tErr); return false; }
+        if (!vals.category) { toast.error("⚠️ Please select a category", tErr); return false; }
+        if (!vals.level) { toast.error("⚠️ Please select a level", tErr); return false; }
+        if (!vals.description?.trim()) { toast.error("⚠️ Description is required", tErr); return false; }
+        if (vals.description.length < 20) { toast.error("⚠️ Description must be at least 20 characters", tErr); return false; }
         return false;
       }
-      // cover check — mode অনুযায়ী
       if (coverMode === "upload" && !coverFile) {
         toast.error("⚠️ Please upload a Cover Image (or switch to URL mode)", tErr);
         return false;
@@ -187,7 +267,6 @@ export default function CreateCoursePage() {
         toast.error("⚠️ Please enter a Cover Image URL", tErr);
         return false;
       }
-      // video check — mode অনুযায়ী
       if (videoMode === "upload" && !videoFile) {
         toast.error("⚠️ Please upload a Sales Video (or switch to URL mode)", tErr);
         return false;
@@ -214,11 +293,16 @@ export default function CreateCoursePage() {
       return true;
     }
     if (step === 3) {
-      const ok = await trigger(["price", "discountPrice"]);
-      if (!ok) {
-        const msg = errors.price?.message || errors.discountPrice?.message;
-        if (msg) toast.error(`⚠️ ${msg}`, tErr);
-        return false;
+      const vals = getValues();
+      if (vals.priceType === "paid") {
+        if (!vals.price || Number(vals.price) <= 0) {
+          toast.error("⚠️ Enter a valid price greater than 0", tErr);
+          return false;
+        }
+        if (vals.discountPrice && Number(vals.discountPrice) >= Number(vals.price)) {
+          toast.error("⚠️ Discount must be less than regular price", tErr);
+          return false;
+        }
       }
       return true;
     }
@@ -232,19 +316,18 @@ export default function CreateCoursePage() {
   const handleBack = () => setStep(s => Math.max(s - 1, 1));
 
   // ── Module helpers ──────────────────────────────────────────────────────────
-  const addModule      = () => { setModules(prev => [...prev, { id: Date.now(), title: `Module ${prev.length + 1}`, lessons: [] }]); setModuleErr(""); };
-  const removeModule   = (id: number) => setModules(prev => prev.filter(m => m.id !== id));
+  const addModule = () => { setModules(prev => [...prev, { id: Date.now(), title: `Module ${prev.length + 1}`, lessons: [] }]); setModuleErr(""); };
+  const removeModule = (id: number) => setModules(prev => prev.filter(m => m.id !== id));
   const updateModTitle = (id: number, t: string) => setModules(prev => prev.map(m => m.id === id ? { ...m, title: t } : m));
-  const addLesson      = (mid: number) => setModules(prev => prev.map(m => m.id === mid ? { ...m, lessons: [...m.lessons, { id: Date.now(), title: "", type: "video", duration: "" }] } : m));
-  const removeLesson   = (mid: number, lid: number) => setModules(prev => prev.map(m => m.id === mid ? { ...m, lessons: m.lessons.filter(l => l.id !== lid) } : m));
-  const updateLesson   = (mid: number, lid: number, field: string, value: string) =>
+  const addLesson = (mid: number) => setModules(prev => prev.map(m => m.id === mid ? { ...m, lessons: [...m.lessons, { id: Date.now(), title: "", type: "video", duration: "" }] } : m));
+  const removeLesson = (mid: number, lid: number) => setModules(prev => prev.map(m => m.id === mid ? { ...m, lessons: m.lessons.filter(l => l.id !== lid) } : m));
+  const updateLesson = (mid: number, lid: number, field: string, value: string) =>
     setModules(prev => prev.map(m => m.id === mid ? { ...m, lessons: m.lessons.map(l => l.id === lid ? { ...l, [field]: value } : l) } : m));
 
-  // ── Submit ──────────────────────────────────────────────────────────────────
+  // ── Submit (CREATE or UPDATE) ───────────────────────────────────────────────
   const submitCourse = async (status: "draft" | "published") => {
     const vals = getValues();
 
-    // instructorId check
     if (!instructorId) {
       toast.error("⚠️ User not found. Please login again.", tErr);
       return;
@@ -254,27 +337,31 @@ export default function CreateCoursePage() {
       toast.error("⚠️ Add a course title before saving draft!", tErr);
       return;
     }
+
     if (status === "published") {
-      // Step 1 validation
       const step1ok = await trigger(["title", "category", "level", "description"]);
       if (!step1ok) { setStep(1); return; }
       if (coverMode === "upload" && !coverFile) {
-        toast.error("⚠️ Please upload a Cover Image", tErr);
-        setStep(1); return;
+        // In edit mode with existing URL, skip this check
+        if (!vals.coverUrl?.trim()) {
+          toast.error("⚠️ Please upload a Cover Image", tErr);
+          setStep(1); return;
+        }
       }
       if (coverMode === "url" && !vals.coverUrl?.trim()) {
         toast.error("⚠️ Please enter a Cover Image URL", tErr);
         setStep(1); return;
       }
       if (videoMode === "upload" && !videoFile) {
-        toast.error("⚠️ Please upload a Sales Video", tErr);
-        setStep(1); return;
+        if (!vals.videoUrl?.trim()) {
+          toast.error("⚠️ Please upload a Sales Video", tErr);
+          setStep(1); return;
+        }
       }
       if (videoMode === "url" && !vals.videoUrl?.trim()) {
         toast.error("⚠️ Please enter a Sales Video URL", tErr);
         setStep(1); return;
       }
-      // Step 2 validation
       if (modules.length === 0 || !modules.some(m => m.lessons.length > 0)) {
         toast.error("⚠️ Add at least 1 module with a lesson", tErr);
         setStep(2); return;
@@ -282,51 +369,58 @@ export default function CreateCoursePage() {
     }
 
     setLoading(true);
+    const isEdit = !!editId;
     const tid = toast.loading(
-      status === "draft" ? "💾 Saving draft..." : "🚀 Publishing course...",
+      status === "draft"
+        ? isEdit ? "💾 Updating draft..." : "💾 Saving draft..."
+        : isEdit ? "🚀 Updating course..." : "🚀 Publishing course...",
       { position: "top-right", style: { borderRadius: "12px", background: "#1e1e2e", color: "#fff", fontWeight: "600" } }
     );
 
     try {
+      // ── Build media payloads ──────────────────────────────────────────────
       let coverPayload: any = { type: "url", url: vals.coverUrl };
       if (vals.coverMode === "upload" && coverFile) {
         const base64 = await fileToBase64(coverFile);
-        coverPayload  = { type: "upload", base64 };
+        coverPayload = { type: "upload", base64 };
       }
       let videoPayload: any = { type: "url", url: vals.videoUrl };
       if (vals.videoMode === "upload" && videoFile) {
         const base64 = await fileToBase64(videoFile);
-        videoPayload  = { type: "upload", base64 };
+        videoPayload = { type: "upload", base64 };
       }
 
       const payload = {
-        instructorId, // ← localStorage user._id থেকে
-        title:        vals.title,
-        category:     vals.category,
-        level:        vals.level,
-        description:  vals.description,
-        coverImage:   coverPayload,
-        salesVideo:   videoPayload,
-        faqs:         vals.faqs,
+        instructorId,
+        title: vals.title,
+        category: vals.category,
+        level: vals.level,
+        description: vals.description,
+        coverImage: coverPayload,
+        salesVideo: videoPayload,
+        faqs: vals.faqs,
         modules,
         pricing: {
-          type:            vals.priceType,
-          price:           Number(vals.price) || 0,
-          discountPrice:   vals.discountPrice ? Number(vals.discountPrice) : null,
+          type: vals.priceType,
+          price: Number(vals.price) || 0,
+          discountPrice: vals.discountPrice ? Number(vals.discountPrice) : null,
           enrollmentLimit: vals.enrollmentLimit ? Number(vals.enrollmentLimit) : null,
-          accessDuration:  vals.accessDuration,
+          accessDuration: vals.accessDuration,
         },
         visibility: vals.visibility,
         status,
       };
 
-      const res     = await fetch("/api/courses", {
-        method: "POST",
+      // ── API call: PATCH for edit, POST for create ─────────────────────────
+      const apiUrl = isEdit ? `/api/courses/${editId}` : "/api/courses";
+      const apiMethod = isEdit ? "PATCH" : "POST";
+
+      const res = await fetch(apiUrl, {
+        method: apiMethod,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
 
-      // HTML response = route error
       const contentType = res.headers.get("content-type") || "";
       if (!contentType.includes("application/json")) {
         throw new Error(`Server error (${res.status}). Check terminal for details.`);
@@ -335,16 +429,21 @@ export default function CreateCoursePage() {
       const resData = await res.json();
       if (!res.ok) throw new Error(resData.error || "Something went wrong");
 
-      toast.success(
-        status === "draft" ? "Draft saved! 📝" : "Course published! 🎉",
-        {
-          id: tid, ...tOk,
-          style: {
-            ...tOk.style,
-            background: status === "published" ? "linear-gradient(135deg,#832388,#FF0F7B)" : "#1e1e2e",
-          },
-        }
-      );
+      const successMsg =
+        isEdit
+          ? status === "draft" ? "Draft updated! 📝" : "Course updated! ✅"
+          : status === "draft" ? "Draft saved! 📝" : "Course published! 🎉";
+
+      toast.success(successMsg, {
+        id: tid, ...tOk,
+        style: {
+          ...tOk.style,
+          background:
+            status === "published"
+              ? "linear-gradient(135deg,#832388,#FF0F7B)"
+              : "#1e1e2e",
+        },
+      });
       setTimeout(() => router.push("/sampleDashboard/instructor/courses"), 1500);
     } catch (err: any) {
       toast.error(`❌ ${err.message || "Failed. Try again!"}`, { id: tid, ...tErr, duration: 4000 });
@@ -355,21 +454,31 @@ export default function CreateCoursePage() {
 
   // ── Preview data for step 4 ─────────────────────────────────────────────────
   const totalLessons = modules.reduce((a, m) => a + m.lessons.length, 0);
-  const coverSrc     = coverFile ? URL.createObjectURL(coverFile) : coverUrl || null;
+  const coverSrc = coverFile ? URL.createObjectURL(coverFile) : coverUrl || null;
   const checks = [
-    { label: "Course title added",      done: !!title },
-    { label: "Description written",     done: desc.length >= 20 },
-    { label: "Cover image provided",    done: !!(coverFile || coverUrl) },
-    { label: "Sales video provided",    done: !!(videoFile || videoUrl) },
+    { label: "Course title added", done: !!title },
+    { label: "Description written", done: desc.length >= 20 },
+    { label: "Cover image provided", done: !!(coverFile || coverUrl) },
+    { label: "Sales video provided", done: !!(videoFile || videoUrl) },
     { label: "At least 1 module added", done: modules.length > 0 },
-    { label: "Pricing configured",      done: priceType === "free" || (priceType === "paid" && Number(price) > 0) },
+    { label: "Pricing configured", done: priceType === "free" || (priceType === "paid" && Number(price) > 0) },
   ];
   const allDone = checks.every(c => c.done);
+
+  // ── Edit loading spinner ────────────────────────────────────────────────────
+  if (loadingEdit) {
+    return (
+      <div className="flex flex-col bg-base-100 min-h-screen items-center justify-center gap-4" data-theme={theme}>
+        <span className="loading loading-spinner loading-lg" style={{ color: "#832388" }} />
+        <p className="text-sm opacity-50 font-medium">Loading course data...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col bg-base-100 min-h-screen" data-theme={theme}>
 
-      {/* Toast — top right */}
+      {/* Toast */}
       <Toaster
         position="top-right"
         containerStyle={{ top: 80, right: 24 }}
@@ -384,7 +493,14 @@ export default function CreateCoursePage() {
             My Courses
           </span>
           <span className="opacity-30">/</span>
-          <span className="font-medium opacity-60">Create new course</span>
+          <span className="font-medium opacity-60">
+            {editId ? "Edit course" : "Create new course"}
+          </span>
+          {editId && (
+            <span className="badge badge-sm ml-1" style={{ backgroundColor: "#832388", color: "#fff" }}>
+              Edit Mode
+            </span>
+          )}
         </div>
         <button className="btn btn-sm btn-outline cursor-pointer">Preview</button>
       </div>
@@ -482,7 +598,7 @@ export default function CreateCoursePage() {
                   </label>
                 </div>
 
-                {/* FAQs - UPDATED SECTION */}
+                {/* FAQs */}
                 <div>
                   <div className="flex items-center justify-between mb-3">
                     <span className="label-text font-semibold">FAQs <span className="text-xs opacity-50 font-normal">(optional)</span></span>
@@ -495,84 +611,48 @@ export default function CreateCoursePage() {
                     {faqFields.map((field, i) => (
                       <div key={field.id} className="card card-compact bg-base-200 border border-base-300 relative group hover:border-purple-400/50 transition-all">
                         <div className="card-body p-4">
-                          {/* Improved X button with better visibility and hover effect */}
-                          <button 
-                            type="button" 
+                          <button
+                            type="button"
                             onClick={() => removeFaq(i)}
                             className="btn btn-xs btn-circle absolute top-3 right-3 bg-base-300/50 border-0 opacity-0 group-hover:opacity-100 hover:bg-error hover:text-white hover:scale-110 transition-all duration-200 cursor-pointer"
                           >
-                            <svg 
-                              className="w-3 h-3" 
-                              fill="none" 
-                              stroke="currentColor" 
-                              viewBox="0 0 24 24"
-                            >
-                              <path 
-                                strokeLinecap="round" 
-                                strokeLinejoin="round" 
-                                strokeWidth={2.5} 
-                                d="M6 18L18 6M6 6l12 12" 
-                              />
+                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
                             </svg>
                           </button>
-
-                          {/* Question input */}
                           <div className="mb-2">
-                            <label className="text-xs font-semibold opacity-50 mb-1 block">
-                              Question {i + 1}
-                            </label>
-                            <input 
-                              {...register(`faqs.${i}.question`)} 
-                              type="text" 
+                            <label className="text-xs font-semibold opacity-50 mb-1 block">Question {i + 1}</label>
+                            <input
+                              {...register(`faqs.${i}.question`)}
+                              type="text"
                               placeholder="Enter your question here..."
-                              className="input input-sm input-bordered w-full bg-base-100 border-base-300 focus:border-purple-500 focus:outline-none pr-10 transition-colors" 
+                              className="input input-sm input-bordered w-full bg-base-100 border-base-300 focus:border-purple-500 focus:outline-none pr-10 transition-colors"
                             />
                           </div>
-
-                          {/* Answer textarea */}
                           <div>
-                            <label className="text-xs font-semibold opacity-50 mb-1 block">
-                              Answer
-                            </label>
-                            <textarea 
-                              {...register(`faqs.${i}.answer`)} 
-                              rows={3} 
+                            <label className="text-xs font-semibold opacity-50 mb-1 block">Answer</label>
+                            <textarea
+                              {...register(`faqs.${i}.answer`)}
+                              rows={3}
                               placeholder="Provide a clear and concise answer..."
-                              className="textarea textarea-bordered bg-base-100 border-base-300 w-full resize-none text-sm focus:border-purple-500 focus:outline-none transition-colors" 
+                              className="textarea textarea-bordered bg-base-100 border-base-300 w-full resize-none text-sm focus:border-purple-500 focus:outline-none transition-colors"
                             />
                           </div>
                         </div>
                       </div>
                     ))}
-
-                    {/* Empty state */}
                     {faqFields.length === 0 && (
-                      <div 
+                      <div
                         onClick={() => addFaq({ question: "", answer: "" })}
                         className="border-2 border-dashed border-base-300 rounded-xl p-8 text-center cursor-pointer hover:border-purple-400 hover:bg-base-200/50 transition-all group"
                       >
                         <div className="w-12 h-12 rounded-full bg-base-300 flex items-center justify-center mx-auto mb-3 group-hover:bg-purple-500/20 transition-all">
-                          <svg 
-                            className="w-6 h-6 opacity-40 group-hover:opacity-100 transition-all" 
-                            style={{ color: "#832388" }}
-                            fill="none" 
-                            stroke="currentColor" 
-                            viewBox="0 0 24 24"
-                          >
-                            <path 
-                              strokeLinecap="round" 
-                              strokeLinejoin="round" 
-                              strokeWidth={2} 
-                              d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" 
-                            />
+                          <svg className="w-6 h-6 opacity-40 group-hover:opacity-100 transition-all" style={{ color: "#832388" }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                           </svg>
                         </div>
-                        <p className="font-medium opacity-60 group-hover:opacity-100 transition-all">
-                          No FAQs added yet
-                        </p>
-                        <p className="text-sm opacity-40 mt-1 group-hover:opacity-60 transition-all">
-                          Click here or use "+ Add FAQ" button above
-                        </p>
+                        <p className="font-medium opacity-60 group-hover:opacity-100 transition-all">No FAQs added yet</p>
+                        <p className="text-sm opacity-40 mt-1 group-hover:opacity-60 transition-all">Click here or use "+ Add FAQ" button above</p>
                       </div>
                     )}
                   </div>
@@ -601,7 +681,7 @@ export default function CreateCoursePage() {
                       <div className="border-2 border-dashed rounded-xl h-40 overflow-hidden flex items-center justify-center bg-base-200 border-base-300">
                         {coverUrl
                           ? <img src={coverUrl} alt="preview" className="h-full w-full object-cover"
-                              onError={e => { (e.target as HTMLImageElement).style.display = "none"; }} />
+                            onError={e => { (e.target as HTMLImageElement).style.display = "none"; }} />
                           : <p className="text-sm opacity-40">Image preview will appear here</p>}
                       </div>
                       <input {...register("coverUrl")}
@@ -933,7 +1013,7 @@ export default function CreateCoursePage() {
                 <div className="card-body p-4">
                   <div className="flex items-center justify-between mb-3">
                     <p className="text-xs font-bold uppercase tracking-widest opacity-40">Pre-publish Checklist</p>
-                    {allDone && <div className="badge badge-success badge-sm gap-1">✓ Ready to publish</div>}
+                    {allDone && <div className="badge badge-success badge-sm gap-1">✓ Ready to {editId ? "update" : "publish"}</div>}
                   </div>
                   <div className="space-y-2">
                     {checks.map(item => (
@@ -953,27 +1033,27 @@ export default function CreateCoursePage() {
       </div>
 
       {/* ── Bottom Navigation ── */}
-      <div className="sticky bottom-0 left-0 right-0 bg-base-100 border-t border-base-300 px-6 py-4 flex items-center justify-between z-[999] shadow-lg">
+      <div className="sticky bottom-0 left-0 right-0 bg-base-100 border-t border-base-300 px-6 py-4 flex items-center justify-between  shadow-lg pr-30">
         <button
           type="button"
           onClick={handleBack}
           disabled={step === 1 || loading}
-          className="btn btn-sm btn-outline gap-2 disabled:opacity-30 cursor-pointer"
+          className="btn btn-sm btn-outline gap-2 disabled:opacity-30"
+          style={{ cursor: (step === 1 || loading) ? "not-allowed" : "pointer" }}
         >
           ← Back
         </button>
 
-        <div className="flex gap-3">
+        <div className="flex gap-3 items-center">
           <button
             type="button"
             onClick={() => submitCourse("draft")}
             disabled={loading}
-            className="btn btn-sm btn-ghost border border-base-300 disabled:opacity-50 cursor-pointer"
+            className="btn btn-sm btn-ghost border border-base-300 disabled:opacity-50"
+            style={{ cursor: loading ? "not-allowed" : "pointer" }}
           >
-            {loading && (
-              <span className="loading loading-spinner loading-xs mr-1 pointer-events-none"></span>
-            )}
-            Save as draft
+            {loading && <span className="loading loading-spinner loading-xs mr-1" />}
+            {editId ? "Save changes" : "Save as draft"}
           </button>
 
           {step < 4 ? (
@@ -981,26 +1061,33 @@ export default function CreateCoursePage() {
               type="button"
               onClick={handleNext}
               disabled={loading}
-              className="btn btn-sm text-white border-0 cursor-pointer"
-              style={{ background: "linear-gradient(135deg, #832388, #FF0F7B)" }}
+              className="btn btn-sm text-white border-0 select-none"
+              style={{
+                background: "linear-gradient(135deg, #832388, #FF0F7B)",
+                cursor: loading ? "not-allowed" : "pointer",
+                pointerEvents: "auto",
+              }}
             >
-              Save & Continue →
+              Save &amp; Continue →
             </button>
           ) : (
             <button
               type="button"
               onClick={() => submitCourse("published")}
               disabled={loading}
-              className="btn btn-sm text-white border-0 cursor-pointer"
-              style={{ background: "linear-gradient(135deg, #00C48C, #0EA5E9)" }}
+              className="btn btn-sm text-white border-0"
+              style={{
+                background: "linear-gradient(135deg, #00C48C, #0EA5E9)",
+                cursor: loading ? "not-allowed" : "pointer",
+              }}
             >
               {loading ? (
                 <>
-                  <span className="loading loading-spinner loading-xs mr-1 pointer-events-none"></span>
-                  Publishing...
+                  <span className="loading loading-spinner loading-xs mr-1" />
+                  {editId ? "Updating..." : "Publishing..."}
                 </>
               ) : (
-                "🚀 Publish Course"
+                editId ? "✅ Update Course" : "🚀 Publish Course"
               )}
             </button>
           )}

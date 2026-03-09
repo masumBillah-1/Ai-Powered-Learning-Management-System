@@ -20,38 +20,68 @@ interface UserData {
   role: string;
 }
 
+// ✅ SSR-safe helper functions
+function getStoredUser(): UserData | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = localStorage.getItem("user");
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+}
+
+function getStoredTheme(): string {
+  if (typeof window === "undefined") return "light";
+  return localStorage.getItem("theme") || "light";
+}
+
 const Navbar = () => {
+  // ✅ KEY FIX: lazy initializer দিয়ে useState
+  // এতে React প্রথম render এর আগেই localStorage পড়বে
+  // কোনো useEffect এর জন্য অপেক্ষা করতে হবে না → avatar instant দেখাবে
+  const [user, setUser] = useState<UserData | null>(getStoredUser);
+  const [theme, setTheme] = useState<string>(getStoredTheme);
+
   const [mounted, setMounted] = useState(false);
-  const [theme, setTheme] = useState("light");
   const [isOpen, setIsOpen] = useState(false);
-  const [user, setUser] = useState<UserData | null>(null);
   const [showMenu, setShowMenu] = useState(false);
   const [isEnrollModalOpen, setIsEnrollModalOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
+  // ✅ DOM side effects only — user read এখানে নেই
   useEffect(() => {
     setMounted(true);
-    const savedTheme = localStorage.getItem("theme") || "light";
-    setTheme(savedTheme);
-    document.documentElement.setAttribute("data-theme", savedTheme);
-    if (savedTheme === "dark") {
+    document.documentElement.setAttribute("data-theme", theme);
+    if (theme === "dark") {
       document.documentElement.classList.add("dark");
     } else {
       document.documentElement.classList.remove("dark");
     }
-    const savedUser = localStorage.getItem("user");
-    if (savedUser) setUser(JSON.parse(savedUser));
   }, []);
 
-  // ✅ Scroll effect — navbar shadow/blur on scroll
+  // ✅ অন্য tab এ login/logout হলেও এই tab update হবে
+  useEffect(() => {
+    const onStorage = (e: StorageEvent) => {
+      if (e.key === "user") {
+        try {
+          setUser(e.newValue ? JSON.parse(e.newValue) : null);
+        } catch {
+          setUser(null);
+        }
+      }
+    };
+    window.addEventListener("storage", onStorage);
+    return () => window.removeEventListener("storage", onStorage);
+  }, []);
+
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 10);
     window.addEventListener("scroll", onScroll);
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
-  // ✅ Outside click — dropdown বন্ধ
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
@@ -111,114 +141,54 @@ const Navbar = () => {
 
   return (
     <>
-      {/* ✅ Animation styles — একবারই inject হবে */}
       <style>{`
         @keyframes navSlideDown {
-          from {
-            opacity: 0;
-            transform: translateY(-100%);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
+          from { opacity: 0; transform: translateY(-100%); }
+          to   { opacity: 1; transform: translateY(0); }
         }
-
         @keyframes navLinkFadeIn {
-          from {
-            opacity: 0;
-            transform: translateY(-8px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
+          from { opacity: 0; transform: translateY(-8px); }
+          to   { opacity: 1; transform: translateY(0); }
         }
-
         @keyframes logoPopIn {
           0%   { opacity: 0; transform: scale(0.8) rotate(-4deg); }
           70%  { transform: scale(1.05) rotate(1deg); }
           100% { opacity: 1; transform: scale(1) rotate(0deg); }
         }
-
         @keyframes dropdownSlide {
-          from {
-            opacity: 0;
-            transform: translateY(-8px) scale(0.97);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0) scale(1);
-          }
+          from { opacity: 0; transform: translateY(-8px) scale(0.97); }
+          to   { opacity: 1; transform: translateY(0) scale(1); }
         }
-
         @keyframes drawerSlideIn {
           from { transform: translateX(100%); }
           to   { transform: translateX(0); }
         }
-
         @keyframes overlayFadeIn {
           from { opacity: 0; }
           to   { opacity: 1; }
         }
-
         @keyframes modalZoomIn {
-          from {
-            opacity: 0;
-            transform: scale(0.92) translateY(16px);
-          }
-          to {
-            opacity: 1;
-            transform: scale(1) translateY(0);
-          }
+          from { opacity: 0; transform: scale(0.92) translateY(16px); }
+          to   { opacity: 1; transform: scale(1) translateY(0); }
         }
-
-        .nav-animate {
-          animation: navSlideDown 0.55s cubic-bezier(0.22, 1, 0.36, 1) both;
-        }
-
-        .logo-animate {
-          animation: logoPopIn 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) 0.1s both;
-        }
-
-        .nav-link-animate {
-          animation: navLinkFadeIn 0.4s ease both;
-        }
-
-        .dropdown-animate {
-          animation: dropdownSlide 0.22s cubic-bezier(0.22, 1, 0.36, 1) both;
-        }
-
-        .drawer-animate {
-          animation: drawerSlideIn 0.35s cubic-bezier(0.22, 1, 0.36, 1) both;
-        }
-
-        .overlay-animate {
-          animation: overlayFadeIn 0.3s ease both;
-        }
-
-        .modal-animate {
-          animation: modalZoomIn 0.3s cubic-bezier(0.34, 1.2, 0.64, 1) both;
-        }
-
-        /* Nav link underline hover effect */
-        .nav-link-hover {
-          position: relative;
-        }
+        .nav-animate      { animation: navSlideDown 0.55s cubic-bezier(0.22,1,0.36,1) both; }
+        .logo-animate     { animation: logoPopIn 0.6s cubic-bezier(0.34,1.56,0.64,1) 0.1s both; }
+        .nav-link-animate { animation: navLinkFadeIn 0.4s ease both; }
+        .dropdown-animate { animation: dropdownSlide 0.22s cubic-bezier(0.22,1,0.36,1) both; }
+        .drawer-animate   { animation: drawerSlideIn 0.35s cubic-bezier(0.22,1,0.36,1) both; }
+        .overlay-animate  { animation: overlayFadeIn 0.3s ease both; }
+        .modal-animate    { animation: modalZoomIn 0.3s cubic-bezier(0.34,1.2,0.64,1) both; }
+        .nav-link-hover { position: relative; }
         .nav-link-hover::after {
           content: '';
           position: absolute;
-          bottom: -2px;
-          left: 0;
-          width: 0;
-          height: 2px;
+          bottom: -2px; left: 0;
+          width: 0; height: 2px;
           background: linear-gradient(90deg, #FF0F7B, #F89B29);
           border-radius: 99px;
-          transition: width 0.28s cubic-bezier(0.22, 1, 0.36, 1);
+          transition: width 0.28s cubic-bezier(0.22,1,0.36,1);
         }
-        .nav-link-hover:hover::after {
-          width: 100%;
-        }
+        .nav-link-hover:hover::after { width: 100%; }
       `}</style>
 
       <nav
@@ -235,12 +205,11 @@ const Navbar = () => {
         <div className="container mx-auto px-4 sm:px-6 lg:px-10">
           <div className="flex justify-between items-center h-20">
 
-            {/* Logo */}
             <div className="logo-animate">
               <Logo />
             </div>
 
-            {/* ── DESKTOP ─────────────────────────────── */}
+            {/* ── DESKTOP ── */}
             <div className="hidden lg:flex items-center space-x-8">
               <div className="flex items-center space-x-7 font-bold text-[15px] text-gray-700 dark:text-gray-300">
                 {navLinks.map((link, i) => (
@@ -254,39 +223,25 @@ const Navbar = () => {
                   </Link>
                 ))}
                 {user && (
-                  <Link
-                    href="/myclasses"
-                    className="nav-link-hover hover:text-[#C81D77] transition-colors nav-link-animate"
-                    style={{ animationDelay: "0.43s" }}
-                  >
+                  <Link href="/myclasses" className="nav-link-hover hover:text-[#C81D77] transition-colors nav-link-animate" style={{ animationDelay: "0.43s" }}>
                     My Classes
                   </Link>
                 )}
                 {user && (
-                  <Link
-                    href="/help"
-                    className="nav-link-hover hover:text-[#C81D77] transition-colors nav-link-animate"
-                    style={{ animationDelay: "0.50s" }}
-                  >
+                  <Link href="/help" className="nav-link-hover hover:text-[#C81D77] transition-colors nav-link-animate" style={{ animationDelay: "0.50s" }}>
                     Helpdesk
                   </Link>
                 )}
               </div>
 
-              <div
-                className="flex items-center gap-5 border-l border-gray-200 dark:border-gray-700 pl-6 nav-link-animate"
-                style={{ animationDelay: "0.55s" }}
-              >
-                {/* Theme toggle */}
+              <div className="flex items-center gap-5 border-l border-gray-200 dark:border-gray-700 pl-6 nav-link-animate" style={{ animationDelay: "0.55s" }}>
                 <button
                   onClick={toggleTheme}
                   className="p-3 rounded-xl bg-gray-100 dark:bg-gray-800 text-purple-500 dark:text-sky-400 hover:scale-110 hover:rotate-12 transition-all duration-200"
                   aria-label="Toggle theme"
                 >
                   {mounted
-                    ? theme === "dark"
-                      ? <FaSun size={18} />
-                      : <FaMoon size={18} />
+                    ? theme === "dark" ? <FaSun size={18} /> : <FaMoon size={18} />
                     : <FaMoon size={18} />
                   }
                 </button>
@@ -327,8 +282,6 @@ const Navbar = () => {
 
                       {showMenu && (
                         <div className="dropdown-animate absolute right-0 mt-3 w-64 bg-white dark:bg-[#161d2f] rounded-2xl shadow-2xl border border-gray-100 dark:border-gray-800 overflow-hidden z-50">
-
-                          {/* User info */}
                           <div className="flex items-center gap-3 px-4 py-3.5 border-b border-gray-100 dark:border-gray-700">
                             <AvatarImage />
                             <div className="min-w-0">
@@ -336,16 +289,12 @@ const Navbar = () => {
                               <p className="m-0 text-[11px] text-gray-400 truncate">{user.email}</p>
                             </div>
                           </div>
-
-                          {/* Role badge */}
                           <div className="px-4 py-2.5 border-b border-gray-100 dark:border-gray-700">
                             <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-bold uppercase tracking-wide bg-[#FF0F7B22] border border-[#FF0F7B33] text-[#FF0F7B]">
                               <span className="w-1.5 h-1.5 rounded-full bg-[#FF0F7B] animate-pulse" />
                               {user.role}
                             </span>
                           </div>
-
-                          {/* Links */}
                           <Link
                             href="/sampleDashboard/profile"
                             className="flex items-center gap-2.5 px-4 py-2.5 text-[13.5px] text-gray-700 dark:text-gray-200 border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors no-underline"
@@ -366,7 +315,6 @@ const Navbar = () => {
                           >
                             <FaSignOutAlt size={13} /> Logout
                           </button>
-
                         </div>
                       )}
                     </div>
@@ -375,7 +323,7 @@ const Navbar = () => {
               </div>
             </div>
 
-            {/* ── MOBILE ──────────────────────────────── */}
+            {/* ── MOBILE ── */}
             <div className="lg:hidden flex items-center gap-3">
               <button
                 onClick={toggleTheme}
@@ -407,7 +355,7 @@ const Navbar = () => {
           </div>
         </div>
 
-        {/* ── MOBILE DRAWER ─────────────────────────────── */}
+        {/* ── MOBILE DRAWER ── */}
         {isOpen && (
           <>
             <div
@@ -504,10 +452,9 @@ const Navbar = () => {
             </div>
           </>
         )}
-
       </nav>
 
-      {/* ── ENROLL MODAL — nav এর বাইরে, সবসময় screen center এ ── */}
+      {/* ── ENROLL MODAL ── */}
       {isEnrollModalOpen && (
         <div
           className="overlay-animate fixed inset-0 z-[500] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
@@ -523,21 +470,18 @@ const Navbar = () => {
             >
               <FaTimes size={22} />
             </button>
-
             <div className="p-8 md:p-10 text-center">
               <div className="flex justify-center mb-6">
                 <div className="w-20 h-20 bg-pink-50 dark:bg-pink-900/20 rounded-full flex items-center justify-center">
                   <span className="text-4xl animate-bounce">🚀</span>
                 </div>
               </div>
-
               <h2 className="text-xl md:text-2xl font-bold text-gray-800 dark:text-white leading-tight mb-4">
                 ৬ মাসে একজন প্রফেশনাল হওয়ার চ্যালেঞ্জ নিতে চাও?
               </h2>
               <p className="text-gray-600 dark:text-gray-400 mb-8 font-medium">
                 সঠিক গাইডলাইনে তোমার শেখার যাত্রা শুরু হোক আজই।
               </p>
-
               <div className="bg-gray-50 dark:bg-gray-800/50 rounded-2xl p-5 mb-8 border border-gray-100 dark:border-gray-700">
                 <div className="flex flex-col gap-2 font-bold">
                   <div className="flex justify-between items-center text-sm md:text-base">
@@ -551,7 +495,6 @@ const Navbar = () => {
                   </div>
                 </div>
               </div>
-
               <Link href="/login" onClick={() => setIsEnrollModalOpen(false)}>
                 <button
                   style={{ background: "linear-gradient(90deg, #FF0F7B, #F89B29)" }}
