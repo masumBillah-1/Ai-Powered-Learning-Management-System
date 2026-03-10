@@ -121,7 +121,7 @@ export default function VerifyOtpPage() {
         <div className="bg-white/90 dark:bg-[#120B1E] border border-gray-200 dark:border-[#2D2438] rounded-2xl p-10 max-w-md w-full text-center shadow-2xl space-y-4">
           <div className="w-16 h-16 rounded-full bg-gradient-to-br from-[#832388] to-[#F0772F] flex items-center justify-center mx-auto">
             <svg width="30" height="30" viewBox="0 0 24 24" fill="none">
-              <path d="M5 13l4 4L19 7" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+              <path d="M5 13l4 4L19 7" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
           </div>
           <h2 className="text-xl font-bold text-gray-900 dark:text-white">OTP Verified!</h2>

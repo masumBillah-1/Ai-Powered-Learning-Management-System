@@ -5,14 +5,32 @@ import { FaPaperPlane, FaCheckCircle } from "react-icons/fa";
 const NewsletterSection = () => {
   const [email, setEmail] = useState("");
   const [isSubscribed, setIsSubscribed] = useState(false);
+  const [selectedTopics, setSelectedTopics] = useState<string[]>([]);
+  const [frequency, setFrequency] = useState("weekly");
+
+  const topics = ["Web Development", "Digital Marketing", "Graphics Design", "Career Tips", "Tech Updates"];
+  const frequencies = [
+    { value: "daily", label: "Daily" },
+    { value: "weekly", label: "Weekly" },
+    { value: "monthly", label: "Monthly" }
+  ];
+
+  const toggleTopic = (topic: string) => {
+    setSelectedTopics(prev => 
+      prev.includes(topic) 
+        ? prev.filter(t => t !== topic)
+        : [...prev, topic]
+    );
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (email) {
+    if (email && selectedTopics.length > 0) {
       setIsSubscribed(true);
       setTimeout(() => {
         setIsSubscribed(false);
         setEmail("");
+        setSelectedTopics([]);
       }, 3000);
     }
   };
@@ -43,26 +61,71 @@ const NewsletterSection = () => {
                 <span className="font-bold"> Digital Marketing, Graphics Design, and Web Development</span>.
               </p>
 
-              {/* Newsletter Form */}
               {!isSubscribed ? (
-                <form onSubmit={handleSubmit} className="flex flex-col sm:flex-row gap-4">
-                  <input
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="Enter your email address"
-                    required
-                    className="flex-1 px-6 py-4 rounded-2xl text-gray-800 font-medium text-base outline-none focus:ring-4 focus:ring-white/30 transition-all"
-                  />
-                  <button
-                    type="submit"
-                    className="px-8 py-4 rounded-2xl font-black text-lg flex items-center justify-center gap-2 transition-all hover:scale-105 active:scale-95 shadow-lg"
-                    style={{ background: "linear-gradient(90deg, #FF0F7B, #F89B29)" }}
-                  >
-                    Join Our Newsletter
-                    <FaPaperPlane className="text-sm" />
-                  </button>
-                </form>
+                <>
+                  {/* Topic Selection */}
+                  <div className="mb-6">
+                    <p className="text-sm font-bold mb-3">Select Topics You're Interested In:</p>
+                    <div className="flex flex-wrap gap-2">
+                      {topics.map(topic => (
+                        <button
+                          key={topic}
+                          type="button"
+                          onClick={() => toggleTopic(topic)}
+                          className={`px-4 py-2 rounded-xl text-sm font-bold transition-all ${
+                            selectedTopics.includes(topic)
+                              ? 'bg-white text-[#C81D77]'
+                              : 'bg-white/20 text-white hover:bg-white/30'
+                          }`}
+                        >
+                          {topic}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Frequency Selection */}
+                  <div className="mb-6">
+                    <p className="text-sm font-bold mb-3">How Often?</p>
+                    <div className="flex gap-2">
+                      {frequencies.map(freq => (
+                        <button
+                          key={freq.value}
+                          type="button"
+                          onClick={() => setFrequency(freq.value)}
+                          className={`px-4 py-2 rounded-xl text-sm font-bold transition-all ${
+                            frequency === freq.value
+                              ? 'bg-white text-[#C81D77]'
+                              : 'bg-white/20 text-white hover:bg-white/30'
+                          }`}
+                        >
+                          {freq.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Newsletter Form */}
+                  <form onSubmit={handleSubmit} className="flex flex-col sm:flex-row gap-4">
+                    <input
+                      type="email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      placeholder="Enter your email address"
+                      required
+                      className="flex-1 px-6 py-4 rounded-2xl text-gray-800 font-medium text-base outline-none focus:ring-4 focus:ring-white/30 transition-all"
+                    />
+                    <button
+                      type="submit"
+                      disabled={selectedTopics.length === 0}
+                      className="px-8 py-4 rounded-2xl font-black text-lg flex items-center justify-center gap-2 transition-all hover:scale-105 active:scale-95 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                      style={{ background: "linear-gradient(90deg, #FF0F7B, #F89B29)" }}
+                    >
+                      Join Our Newsletter
+                      <FaPaperPlane className="text-sm" />
+                    </button>
+                  </form>
+                </>
               ) : (
                 <div className="flex items-center gap-3 bg-white/20 backdrop-blur-sm px-6 py-4 rounded-2xl border-2 border-white/40">
                   <FaCheckCircle className="text-3xl text-green-300" />
@@ -74,7 +137,7 @@ const NewsletterSection = () => {
               <div className="mt-8 flex flex-wrap items-center gap-6 text-sm text-white/80">
                 <div className="flex items-center gap-2">
                   <span className="text-2xl">✉️</span>
-                  <span className="font-bold">Weekly Updates</span>
+                  <span className="font-bold">{frequency.charAt(0).toUpperCase() + frequency.slice(1)} Updates</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="text-2xl">🔒</span>
