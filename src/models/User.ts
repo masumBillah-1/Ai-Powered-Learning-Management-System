@@ -46,5 +46,6 @@ const UserSchema = new Schema<IUserDocument>(
 // ✅ শুধু email unique index — phone index সম্পূর্ণ remove
 UserSchema.index({ email: 1 }, { unique: true });
 
-export default mongoose.models.User ||
-  mongoose.model<IUserDocument>("User", UserSchema);
+// ✅ Better model export pattern
+const User = mongoose.models.User || mongoose.model<IUserDocument>("User", UserSchema);
+export default User;
