@@ -12,13 +12,8 @@ export async function POST(req: NextRequest) {
 
     const { name, email, phone, password, photoURL, provider } = await req.json();
 
-<<<<<<< HEAD
-    // ✅ Google login
-    if (provider === "google") {
-=======
     // ✅ Google/GitHub login
     if (provider === "google" || provider === "github") {
->>>>>>> e5ced0ed5788abe0c2211e1dc67a7c791796484f
       let user = await User.findOne({ email });
 
       if (!user) {
@@ -26,14 +21,9 @@ export async function POST(req: NextRequest) {
           name,
           email,
           photoURL: photoURL || "",
-<<<<<<< HEAD
-          provider: "google",
-          role: "student",
-=======
           provider,
           role: "student",
           // ✅ phone field intentionally omitted for social logins
->>>>>>> e5ced0ed5788abe0c2211e1dc67a7c791796484f
         });
       } else {
         user.photoURL = photoURL || user.photoURL;
@@ -48,11 +38,7 @@ export async function POST(req: NextRequest) {
 
       const response = NextResponse.json({
         success: true,
-<<<<<<< HEAD
-        message: "Google login successful!",
-=======
         message: `${provider} login successful!`,
->>>>>>> e5ced0ed5788abe0c2211e1dc67a7c791796484f
         token,
         user: {
           _id: user._id,
@@ -63,10 +49,6 @@ export async function POST(req: NextRequest) {
         },
       });
 
-<<<<<<< HEAD
-      // ✅ Cookie set
-=======
->>>>>>> e5ced0ed5788abe0c2211e1dc67a7c791796484f
       response.cookies.set("token", token, {
         httpOnly: true,
         secure: process.env.NODE_ENV === "production",
@@ -79,25 +61,6 @@ export async function POST(req: NextRequest) {
     }
 
     // ✅ Email/Password register
-<<<<<<< HEAD
-    if (!name || !email || !password)
-      return NextResponse.json({ error: "Name, email and password required" }, { status: 400 });
-
-    const existing = await User.findOne({ email });
-    if (existing)
-      return NextResponse.json({ error: "Email already exists" }, { status: 400 });
-
-    const hashed = await bcrypt.hash(password, 10);
-
-    const user = await User.create({
-      name,
-      email,
-      phone: phone || undefined,
-      password: hashed,
-      photoURL: "",
-      provider: "credentials",
-    });
-=======
     if (!name || !email || !password) {
       return NextResponse.json(
         { error: "Name, email and password required" },
@@ -141,7 +104,6 @@ export async function POST(req: NextRequest) {
     }
 
     const user = await User.create(userData);
->>>>>>> e5ced0ed5788abe0c2211e1dc67a7c791796484f
 
     const token = jwt.sign(
       { userId: user._id, email: user.email, role: user.role },
@@ -149,25 +111,6 @@ export async function POST(req: NextRequest) {
       { expiresIn: "7d" }
     );
 
-<<<<<<< HEAD
-    return NextResponse.json({
-      success: true,
-      message: "Registration successful!",
-      token,
-      user: {
-        _id: user._id,
-        name: user.name,
-        email: user.email,
-        photoURL: user.photoURL || "",
-        role: user.role,
-      },
-    }, { status: 201 });
-
-  } catch (err: any) {
-    return NextResponse.json({ error: err.message }, { status: 500 });
-  }
-}
-=======
     return NextResponse.json(
       {
         success: true,
@@ -209,4 +152,3 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: err.message }, { status: 500 });
   }
 }
->>>>>>> e5ced0ed5788abe0c2211e1dc67a7c791796484f

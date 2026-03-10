@@ -1,11 +1,3 @@
-<<<<<<< HEAD
-"use client";
-
-import MyClasses from "@/components/app/MyClasses";
-
-export default function MyClassesPage() {
-  return <MyClasses />;
-=======
 // "use client";
 // import CourseCard from "@/app/dashboard/main/CourseCard";
 
@@ -34,5 +26,4 @@ export default function MyClassesPage() {
       </div>
     </div>
   );
->>>>>>> e5ced0ed5788abe0c2211e1dc67a7c791796484f
 }
