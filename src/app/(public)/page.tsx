@@ -1,4 +1,4 @@
-import FAQ from "@/components/ui/FAQ";
+﻿import FAQ from "@/components/ui/FAQ";
 import HeroSection from "../../components/Home/HeroSection";
 import ImpactSection from "../../components/Home/ImpactSection";
 import ProblemSolution from "../../components/Home/ProblemSolution";
@@ -11,13 +11,9 @@ import HeroSections from "@/components/mainhome/HeroSections";
 import HeroSectionNew from "@/components/Herosection/HeroSection";
 import Timeline from "@/components/Timeline/Timeline";
 
-
-
-
 export default function Home() {
   return (
-    <div >
-      
+    <div>
       <HeroSectionNew />
       <HeroSections /> 
       <HeroSection />
@@ -25,7 +21,7 @@ export default function Home() {
       <ProblemSolution />
       <BootcampFeatures />
       <SuccessSection />
-      <Timeline/>
+      <Timeline />
       <StepSection />
       <LearnSection />
       <FAQ />

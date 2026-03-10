@@ -31,7 +31,7 @@ const GitHubIcon = () => (
 const LoginPage = () => {
   const { register, handleSubmit, formState: { errors } } = useForm<LoginFormData>();
   const searchParams = useSearchParams();
-  const redirectUrl = searchParams.get("redirect") || "/dashboard/student";
+  const redirectUrl = searchParams.get("redirect") || "/sampleDashboard/admin";
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);

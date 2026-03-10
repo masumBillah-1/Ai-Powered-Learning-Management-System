@@ -1,156 +1,157 @@
 "use client";
-import React from 'react';
-import { motion } from 'framer-motion';
+
+import React, { useState, useEffect } from 'react';
 import { 
   AreaChart, Area, XAxis, YAxis, 
   CartesianGrid, Tooltip, ResponsiveContainer 
 } from 'recharts';
 import { 
   DollarSign, Star, Users, 
-  Calendar, ChevronLeft, ChevronRight 
+  Calendar, TrendingUp, Download
 } from 'lucide-react';
 
-const Earnings = () => {
-  // Chart Data
+export default function EarningsPage() {
+  const [theme, setTheme] = useState("light");
+
+  useEffect(() => {
+    const savedTheme = localStorage.getItem("theme") || "light";
+    setTheme(savedTheme);
+    document.documentElement.setAttribute('data-theme', savedTheme);
+
+    const interval = setInterval(() => {
+      const currentTheme = localStorage.getItem("theme") || "light";
+      if (currentTheme !== theme) {
+        setTheme(currentTheme);
+        document.documentElement.setAttribute('data-theme', currentTheme);
+      }
+    }, 100);
+
+    return () => clearInterval(interval);
+  }, [theme]);
+
   const chartData = [
-    { name: 'Jan', earnings: 25000 },
-    { name: 'Feb', earnings: 40000 },
-    { name: 'Mar', earnings: 30000 },
-    { name: 'Apr', earnings: 55000 },
-    { name: 'May', earnings: 25000 },
-    { name: 'Jun', earnings: 35000 },
-    { name: 'Jul', earnings: 28000 },
-    { name: 'Aug', earnings: 50000 },
-    { name: 'Sep', earnings: 20000 },
-    { name: 'Oct', earnings: 40000 },
-    { name: 'Nov', earnings: 20000 },
-    { name: 'Dec', earnings: 50000 },
+    { name: 'Jan', earnings: 2500 }, { name: 'Feb', earnings: 4000 },
+    { name: 'Mar', earnings: 3000 }, { name: 'Apr', earnings: 5500 },
+    { name: 'May', earnings: 2500 }, { name: 'Jun', earnings: 3500 },
+    { name: 'Jul', earnings: 2800 }, { name: 'Aug', earnings: 5000 },
+    { name: 'Sep', earnings: 2000 }, { name: 'Oct', earnings: 4000 },
+    { name: 'Nov', earnings: 2000 }, { name: 'Dec', earnings: 5000 },
   ];
 
   const recentEarnings = [
-    { id: "ORD010", date: "28 Jan 2025", course: "Information about UI/UX Design Degree", amount: 160 },
-    { id: "ORD009", date: "22 Jan 2025", course: "Wordpress for Beginners - Master Wordpress Quickly", amount: 140 },
-    { id: "ORD008", date: "17 Jan 2025", course: "Sketch from A to Z (2022): Become an app designer", amount: 200 },
-    { id: "ORD007", date: "08 Jan 2025", course: "Learn Angular Fundamental From beginning to advance", amount: 170 },
-    { id: "ORD006", date: "03 Jan 2025", course: "C# Developers Double Your Coding Speed", amount: 120 },
+    { id: "ORD010", date: "28 Jan 2025", course: "UI/UX Design Degree", amount: 160 },
+    { id: "ORD009", date: "22 Jan 2025", course: "Wordpress for Beginners", amount: 140 },
+    { id: "ORD008", date: "17 Jan 2025", course: "Sketch from A to Z", amount: 200 },
+    { id: "ORD007", date: "08 Jan 2025", course: "Learn Angular Fundamentals", amount: 170 },
+    { id: "ORD006", date: "03 Jan 2025", course: "C# Developers Course", amount: 120 },
   ];
 
   const stats = [
-    { label: "Revenue", value: "$8420", subtitle: "Earning this month", icon: <DollarSign />, color: "bg-green-500" },
-    { label: "Courses Ratings", value: "4.8", subtitle: "Rating this month", icon: <Star />, color: "bg-pink-500" },
-    { label: "Students Enrolled", value: "12000", subtitle: "New this month", icon: <Users />, color: "bg-indigo-600" },
+    { label: "Revenue", value: "$8,420", subtitle: "This month", icon: DollarSign, color: '#832388', bg: '#f3e8ff', bgDark: '#2a1f35' },
+    { label: "Course Rating", value: "4.8", subtitle: "Average rating", icon: Star, color: '#F89B29', bg: '#fef3c7', bgDark: '#2a1f15' },
+    { label: "Students", value: "1,200", subtitle: "New this month", icon: Users, color: '#FF0F7B', bg: '#fce7f3', bgDark: '#2a1520' },
   ];
 
   return (
-    <div className="p-6 bg-gray-50 dark:bg-slate-950 min-h-screen space-y-8">
-      <h1 className="text-2xl font-black text-gray-800 dark:text-white tracking-tight">Earnings</h1>
-
-      {/* --- Top Stats Cards --- */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+    <div className="min-h-screen space-y-6">
+      
+      {/* Stats */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
         {stats.map((stat, idx) => (
-          <motion.div 
-            key={idx}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: idx * 0.1 }}
-            className="bg-white dark:bg-slate-900 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-800 flex items-center gap-5"
-          >
-            <div className={`${stat.color} p-4 rounded-xl text-white shadow-lg shadow-gray-200 dark:shadow-none`}>
-              {stat.icon}
+          <div key={idx} className="card bg-base-100 shadow-lg border border-base-300">
+            <div className="card-body p-5 flex-row items-center gap-4">
+              <div className="w-14 h-14 rounded-xl flex items-center justify-center" 
+                style={{ backgroundColor: theme === 'dark' ? stat.bgDark : stat.bg }}>
+                <stat.icon className="w-7 h-7" style={{ color: stat.color }} />
+              </div>
+              <div className="flex-1">
+                <p className="text-xs opacity-60 font-semibold uppercase">{stat.label}</p>
+                <h3 className="text-2xl font-bold" style={{ color: stat.color }}>{stat.value}</h3>
+                <p className="text-xs opacity-60">{stat.subtitle}</p>
+              </div>
             </div>
-            <div>
-              <p className="text-sm font-bold text-gray-400">{stat.label}</p>
-              <h3 className="text-2xl font-black text-gray-800 dark:text-white">{stat.value}</h3>
-              <p className="text-xs font-bold text-gray-400 mt-0.5">{stat.subtitle}</p>
-            </div>
-          </motion.div>
+          </div>
         ))}
       </div>
 
-      {/* --- Area Chart Section --- */}
-      <motion.div 
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        className="bg-white dark:bg-slate-900 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-800"
-      >
-        <div className="flex items-center justify-between mb-8">
-          <h2 className="text-lg font-black text-gray-800 dark:text-white">Earnings by Year</h2>
-          <div className="flex items-center gap-2 border rounded-lg px-3 py-1.5 text-sm font-bold text-gray-500 cursor-pointer hover:bg-gray-50 transition-colors">
-            <Calendar size={16} /> 2025
+      {/* Chart */}
+      <div className="card bg-base-100 shadow-xl border border-base-300">
+        <div className="card-body p-6">
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-lg font-bold">Earnings Overview</h2>
+            <div className="badge badge-lg gap-2 font-semibold">
+              <Calendar size={14} /> 2025
+            </div>
           </div>
-        </div>
-        
-        <div className="h-[350px] w-full">
-          <ResponsiveContainer width="100%" height="100%">
+          
+          <ResponsiveContainer width="100%" height={300}>
             <AreaChart data={chartData}>
               <defs>
                 <linearGradient id="colorEarnings" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#FF0F7B" stopOpacity={0.3}/>
-                  <stop offset="95%" stopColor="#FF0F7B" stopOpacity={0}/>
+                  <stop offset="5%" stopColor="#832388" stopOpacity={0.3}/>
+                  <stop offset="95%" stopColor="#832388" stopOpacity={0}/>
                 </linearGradient>
               </defs>
-              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
-              <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fontSize: 12, fontWeight: 700, fill: '#94a3b8'}} />
-              <YAxis axisLine={false} tickLine={false} tick={{fontSize: 12, fontWeight: 700, fill: '#94a3b8'}} tickFormatter={(value) => `${value/1000}K`} />
+              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={theme === 'dark' ? '#2a2a2a' : '#f0f0f0'} />
+              <XAxis dataKey="name" axisLine={false} tickLine={false} 
+                tick={{fontSize: 12, fontWeight: 600, fill: theme === 'dark' ? '#aaa' : '#94a3b8'}} />
+              <YAxis axisLine={false} tickLine={false} 
+                tick={{fontSize: 12, fontWeight: 600, fill: theme === 'dark' ? '#aaa' : '#94a3b8'}} 
+                tickFormatter={(value) => `$${value/1000}k`} />
               <Tooltip 
-                contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }}
-                itemStyle={{ color: '#FF0F7B', fontWeight: 800 }}
+                contentStyle={{ 
+                  borderRadius: '8px', border: 'none', 
+                  boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
+                  backgroundColor: theme === 'dark' ? '#1A1A1A' : '#ffffff'
+                }}
+                itemStyle={{ color: '#832388', fontWeight: 700 }}
               />
-              <Area 
-                type="monotone" 
-                dataKey="earnings" 
-                stroke="#FF0F7B" 
-                strokeWidth={3} 
-                fillOpacity={1} 
-                fill="url(#colorEarnings)" 
-              />
+              <Area type="monotone" dataKey="earnings" stroke="#832388" 
+                strokeWidth={3} fillOpacity={1} fill="url(#colorEarnings)" />
             </AreaChart>
           </ResponsiveContainer>
         </div>
-      </motion.div>
+      </div>
 
-      {/* --- Recent Earnings Table --- */}
-      <motion.div 
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-800 overflow-hidden"
-      >
-        <div className="p-6 border-b dark:border-slate-800 flex justify-between items-center">
-          <h2 className="text-lg font-black text-gray-800 dark:text-white">Earnings</h2>
-          <div className="text-xs font-bold text-gray-400 flex items-center gap-2 border rounded-lg px-3 py-1.5">
-             <Calendar size={14} /> 02/25/2026 - 03/03/2026
+      {/* Recent Earnings Table */}
+      <div className="card bg-base-100 shadow-xl border border-base-300">
+        <div className="card-body p-6">
+          <div className="flex justify-between items-center mb-6">
+            <h2 className="text-lg font-bold">Recent Transactions</h2>
+            <button className="btn btn-sm gap-2 cursor-pointer" 
+              style={{ backgroundColor: '#832388', color: 'white', border: 'none' }}>
+              <Download size={14} /> Export
+            </button>
+          </div>
+          
+          <div className="overflow-x-auto">
+            <table className="table">
+              <thead>
+                <tr>
+                  <th className="text-xs font-bold uppercase opacity-60">Order ID</th>
+                  <th className="text-xs font-bold uppercase opacity-60">Date</th>
+                  <th className="text-xs font-bold uppercase opacity-60">Course</th>
+                  <th className="text-right text-xs font-bold uppercase opacity-60">Amount</th>
+                </tr>
+              </thead>
+              <tbody>
+                {recentEarnings.map((order) => (
+                  <tr key={order.id} className="hover">
+                    <td className="font-semibold opacity-70">{order.id}</td>
+                    <td className="text-sm opacity-60">{order.date}</td>
+                    <td className="font-bold hover:text-[#832388] transition-colors cursor-pointer">
+                      {order.course}
+                    </td>
+                    <td className="text-right font-bold" style={{ color: '#00C48C' }}>
+                      ${order.amount}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         </div>
-        
-        <div className="overflow-x-auto">
-          <table className="w-full text-left">
-            <thead>
-              <tr className="bg-gray-50/50 dark:bg-slate-800/50 text-gray-500 dark:text-gray-400 text-[11px] font-black uppercase tracking-widest">
-                <th className="px-6 py-4">Order ID</th>
-                <th className="px-6 py-4">Date</th>
-                <th className="px-6 py-4">Course</th>
-                <th className="px-6 py-4 text-right">Amount</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y dark:divide-slate-800">
-              {recentEarnings.map((order) => (
-                <tr key={order.id} className="hover:bg-gray-50/50 dark:hover:bg-slate-800/50 transition-colors group">
-                  <td className="px-6 py-4 text-sm font-bold text-gray-600 dark:text-gray-400">{order.id}</td>
-                  <td className="px-6 py-4 text-sm font-bold text-gray-500 dark:text-gray-500">{order.date}</td>
-                  <td className="px-6 py-4 text-sm font-black text-gray-700 dark:text-gray-200 group-hover:text-pink-600 transition-colors">
-                    {order.course}
-                  </td>
-                  <td className="px-6 py-4 text-sm font-black text-gray-800 dark:text-white text-right">
-                    ${order.amount}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </motion.div>
+      </div>
     </div>
   );
-};
-
-export default Earnings;
+}
