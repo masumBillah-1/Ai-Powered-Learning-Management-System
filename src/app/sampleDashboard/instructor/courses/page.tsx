@@ -379,7 +379,7 @@ const InstructorCoursesPage = () => {
                             <button
                               onClick={() => handleToggleStatus(course._id, course.status)}
                               disabled={toggling === course._id}
-                              className="px-3 py-1 rounded-full text-xs font-bold whitespace-nowrap cursor-pointer hover:opacity-80 transition-all disabled:opacity-50"
+                              className="btn rounded-sm text-xs hover:opacity-80 transition-all disabled:opacity-50"
                               style={{ backgroundColor: st.bg, color: st.text }}>
                               {toggling === course._id ? (
                                 <span className="loading loading-spinner loading-xs" />
@@ -390,7 +390,11 @@ const InstructorCoursesPage = () => {
                           </td>
                           <td>
                             <div className="flex items-center justify-end gap-1">
-                              <button className="btn btn-ghost btn-xs btn-circle cursor-pointer" title="View">
+                              <button
+                                onClick={() => router.push(`/courses/${course._id}`)}
+                                className="btn btn-ghost btn-xs btn-circle cursor-pointer"
+                                title="View"
+                              >
                                 <Eye size={14} />
                               </button>
                               <button className="btn btn-ghost btn-xs btn-circle cursor-pointer" title="Edit"
