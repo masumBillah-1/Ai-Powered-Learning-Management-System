@@ -45,8 +45,8 @@ const getLessons = (modules: { lessons: any[] }[]) =>
 const getStatusStyle = (status: string, theme: string) => {
   switch (status) {
     case 'published': return { bg: theme === 'dark' ? '#0f2520' : '#d1fae5', text: '#00C48C', label: 'Published' };
-    case 'draft':     return { bg: theme === 'dark' ? '#2a1520' : '#fce7f3', text: '#FF0F7B', label: 'Draft' };
-    default:          return { bg: '#f3f4f6', text: '#6b7280', label: status };
+    case 'draft': return { bg: theme === 'dark' ? '#2a1520' : '#fce7f3', text: '#FF0F7B', label: 'Draft' };
+    default: return { bg: '#f3f4f6', text: '#6b7280', label: status };
   }
 };
 
@@ -95,15 +95,15 @@ const SkeletonCard = () => (
 // ═══════════════════════════════════════════════════════════════════════════════
 const InstructorCoursesPage = () => {
   const router = useRouter();
-  const [viewMode, setViewMode]             = useState<'list' | 'grid'>('list');
-  const [searchQuery, setSearchQuery]       = useState('');
+  const [viewMode, setViewMode] = useState<'list' | 'grid'>('list');
+  const [searchQuery, setSearchQuery] = useState('');
   const [filterCategory, setFilterCategory] = useState('All Categories');
-  const [filterStatus, setFilterStatus]     = useState('All Status');
-  const [theme, setTheme]                   = useState('light');
-  const [courses, setCourses]               = useState<ICourse[]>([]);
-  const [loading, setLoading]               = useState(true);
-  const [deleting, setDeleting]             = useState<string | null>(null);
-  const [toggling, setToggling]             = useState<string | null>(null);
+  const [filterStatus, setFilterStatus] = useState('All Status');
+  const [theme, setTheme] = useState('light');
+  const [courses, setCourses] = useState<ICourse[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [deleting, setDeleting] = useState<string | null>(null);
+  const [toggling, setToggling] = useState<string | null>(null);
   const [courseToDelete, setCourseToDelete] = useState<ICourse | null>(null);
 
   // ── Dark mode sync ──────────────────────────────────────────────────────────
@@ -117,11 +117,30 @@ const InstructorCoursesPage = () => {
     return () => clearInterval(iv);
   }, [theme]);
 
-  // ── Fetch from API ──────────────────────────────────────────────────────────
+  // ── Fetch from API (FILTERED BY INSTRUCTOR ID) ─────────────────────────────
   const fetchCourses = useCallback(async (silent = false) => {
     if (!silent) setLoading(true);
     try {
-      const data = await safeFetch('/api/courses');
+      // Get instructorId from localStorage
+      let instructorId = '';
+      try {
+        const userStr = localStorage.getItem('user');
+        if (userStr) {
+          const user = JSON.parse(userStr);
+          instructorId = user?._id || user?.id || '';
+        }
+      } catch (err) {
+        console.error('Failed to get user from localStorage:', err);
+      }
+
+      if (!instructorId) {
+        toast.error('❌ Please login to view your courses', tErr);
+        setLoading(false);
+        return;
+      }
+
+      // Fetch courses filtered by instructorId
+      const data = await safeFetch(`/api/courses?instructorId=${instructorId}`);
       setCourses(data.courses || []);
     } catch (err: any) {
       toast.error(`❌ ${err.message}`, tErr);
@@ -166,13 +185,13 @@ const InstructorCoursesPage = () => {
 
   const handleDelete = async () => {
     if (!courseToDelete) return;
-    
+
     const { _id: id, title } = courseToDelete;
     setDeleting(id);
-    
+
     // Close the dialog
     (document.getElementById('delete_course_modal') as HTMLDialogElement)?.close();
-    
+
     const tid = toast.loading('Deleting...', {
       position: 'top-right',
       style: { borderRadius: '10px', background: '#1e1e2e', color: '#fff' },
@@ -190,26 +209,26 @@ const InstructorCoursesPage = () => {
   };
 
   // ── Stats ───────────────────────────────────────────────────────────────────
-  const published     = courses.filter(c => c.status === 'published').length;
-  const drafts        = courses.filter(c => c.status === 'draft').length;
+  const published = courses.filter(c => c.status === 'published').length;
+  const drafts = courses.filter(c => c.status === 'draft').length;
   const totalStudents = courses.reduce((a, c) => a + (c.enrolledCount || 0), 0);
-  const totalRevenue  = courses
+  const totalRevenue = courses
     .filter(c => c.pricing?.type === 'paid')
     .reduce((a, c) => a + (c.pricing?.price || 0) * (c.enrolledCount || 0), 0);
 
   const stats = [
-    { label: 'Published',      count: published,                            color: '#832388', bgL: '#f3e8ff', bgD: '#2a1f35' },
-    { label: 'Drafts',         count: drafts,                               color: '#FF0F7B', bgL: '#fce7f3', bgD: '#2a1520' },
-    { label: 'Total Courses',  count: courses.length,                       color: '#F89B29', bgL: '#fef3c7', bgD: '#2a1f15' },
-    { label: 'Total Students', count: totalStudents,                        color: '#00C48C', bgL: '#d1fae5', bgD: '#0f2520' },
-    { label: 'Est. Revenue',   count: `৳${totalRevenue.toLocaleString()}`,  color: '#E3436B', bgL: '#fce7f3', bgD: '#2a1520' },
+    { label: 'Published', count: published, color: '#832388', bgL: '#f3e8ff', bgD: '#2a1f35' },
+    { label: 'Drafts', count: drafts, color: '#FF0F7B', bgL: '#fce7f3', bgD: '#2a1520' },
+    { label: 'Total Courses', count: courses.length, color: '#F89B29', bgL: '#fef3c7', bgD: '#2a1f15' },
+    { label: 'Total Students', count: totalStudents, color: '#00C48C', bgL: '#d1fae5', bgD: '#0f2520' },
+    { label: 'Est. Revenue', count: `৳${totalRevenue.toLocaleString()}`, color: '#E3436B', bgL: '#fce7f3', bgD: '#2a1520' },
   ];
 
   // ── Filter ──────────────────────────────────────────────────────────────────
   const filtered = courses.filter(c => {
-    const s   = c.title?.toLowerCase().includes(searchQuery.toLowerCase());
+    const s = c.title?.toLowerCase().includes(searchQuery.toLowerCase());
     const cat = filterCategory === 'All Categories' || c.category === filterCategory;
-    const st  = filterStatus   === 'All Status'     || c.status   === filterStatus.toLowerCase();
+    const st = filterStatus === 'All Status' || c.status === filterStatus.toLowerCase();
     return s && cat && st;
   });
 
@@ -248,7 +267,7 @@ const InstructorCoursesPage = () => {
           {/* ── Header ── */}
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
             <div className="flex items-center gap-3">
-              <h1 className="text-2xl font-bold">Course Management</h1>
+              <h1 className="text-2xl font-bold">My Courses</h1>
               {!loading && <div className="badge badge-ghost text-xs">{courses.length} courses</div>}
               <button onClick={() => fetchCourses(true)} disabled={loading}
                 className="btn btn-xs btn-ghost btn-circle opacity-40 hover:opacity-100 cursor-pointer" title="Refresh">
@@ -314,82 +333,86 @@ const InstructorCoursesPage = () => {
                   {loading
                     ? Array.from({ length: 5 }).map((_, i) => <SkeletonRow key={i} />)
                     : filtered.map(course => {
-                        const st      = getStatusStyle(course.status, theme);
-                        const lessons = getLessons(course.modules);
-                        const cover   = course.coverImage?.url;
-                        return (
-                          <tr key={course._id} className="hover">
-                            <td className="min-w-[260px]">
-                              <div className="flex items-center gap-3">
-                                <div className="w-12 h-12 rounded-xl overflow-hidden flex-shrink-0 bg-base-300">
-                                  {cover
-                                    ? <img src={cover} alt={course.title} className="w-full h-full object-cover"
-                                        onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }} />
-                                    : <div className="w-full h-full flex items-center justify-center"
-                                        style={{ backgroundColor: theme === 'dark' ? '#2a1f35' : '#f3e8ff' }}>
-                                        <PlayCircle className="w-5 h-5" style={{ color: '#832388' }} />
-                                      </div>}
+                      const st = getStatusStyle(course.status, theme);
+                      const lessons = getLessons(course.modules);
+                      const cover = course.coverImage?.url;
+                      return (
+                        <tr key={course._id} className="hover">
+                          <td className="min-w-[260px]">
+                            <div className="flex items-center gap-3">
+                              <div className="w-12 h-12 rounded-xl overflow-hidden flex-shrink-0 bg-base-300">
+                                {cover
+                                  ? <img src={cover} alt={course.title} className="w-full h-full object-cover"
+                                    onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+                                  : <div className="w-full h-full flex items-center justify-center"
+                                    style={{ backgroundColor: theme === 'dark' ? '#2a1f35' : '#f3e8ff' }}>
+                                    <PlayCircle className="w-5 h-5" style={{ color: '#832388' }} />
+                                  </div>}
+                              </div>
+                              <div className="min-w-0">
+                                <p className="text-sm font-bold line-clamp-1 leading-snug">{course.title}</p>
+                                <div className="flex flex-wrap gap-2 mt-1 text-xs opacity-50">
+                                  <span className="flex items-center gap-1"><FileText size={10} />{lessons} Lessons</span>
+                                  <span className="flex items-center gap-1"><BookOpen size={10} />{course.modules?.length || 0} Modules</span>
+                                  <span className="capitalize">{course.category}</span>
                                 </div>
-                                <div className="min-w-0">
-                                  <p className="text-sm font-bold line-clamp-1 leading-snug">{course.title}</p>
-                                  <div className="flex flex-wrap gap-2 mt-1 text-xs opacity-50">
-                                    <span className="flex items-center gap-1"><FileText size={10} />{lessons} Lessons</span>
-                                    <span className="flex items-center gap-1"><BookOpen size={10} />{course.modules?.length || 0} Modules</span>
-                                    <span className="capitalize">{course.category}</span>
-                                  </div>
-                                </div>
                               </div>
-                            </td>
-                            <td className="text-center">
-                              <div className="flex items-center justify-center gap-1">
-                                <Users size={13} className="opacity-40" />
-                                <span className="text-sm font-bold">{course.enrolledCount || 0}</span>
-                              </div>
-                            </td>
-                            <td className="text-center">
-                              <span className="text-sm font-bold" style={{ color: '#832388' }}>{formatPrice(course)}</span>
-                            </td>
-                            <td className="text-center">
-                              <div className="flex items-center justify-center gap-1">
-                                <Star size={12} className="fill-[#FDE047] text-[#FDE047]" />
-                                <span className="text-sm font-semibold">{course.rating ? course.rating.toFixed(1) : '—'}</span>
-                                {course.reviewCount ? <span className="text-xs opacity-40">({course.reviewCount})</span> : null}
-                              </div>
-                            </td>
-                            <td className="text-center">
+                            </div>
+                          </td>
+                          <td className="text-center">
+                            <div className="flex items-center justify-center gap-1">
+                              <Users size={13} className="opacity-40" />
+                              <span className="text-sm font-bold">{course.enrolledCount || 0}</span>
+                            </div>
+                          </td>
+                          <td className="text-center">
+                            <span className="text-sm font-bold" style={{ color: '#832388' }}>{formatPrice(course)}</span>
+                          </td>
+                          <td className="text-center">
+                            <div className="flex items-center justify-center gap-1">
+                              <Star size={12} className="fill-[#FDE047] text-[#FDE047]" />
+                              <span className="text-sm font-semibold">{course.rating ? course.rating.toFixed(1) : '—'}</span>
+                              {course.reviewCount ? <span className="text-xs opacity-40">({course.reviewCount})</span> : null}
+                            </div>
+                          </td>
+                          <td className="text-center">
+                            <button
+                              onClick={() => handleToggleStatus(course._id, course.status)}
+                              disabled={toggling === course._id}
+                              className="btn rounded-sm text-xs hover:opacity-80 transition-all disabled:opacity-50"
+                              style={{ backgroundColor: st.bg, color: st.text }}>
+                              {toggling === course._id ? (
+                                <span className="loading loading-spinner loading-xs" />
+                              ) : (
+                                st.label
+                              )}
+                            </button>
+                          </td>
+                          <td>
+                            <div className="flex items-center justify-end gap-1">
                               <button
-                                onClick={() => handleToggleStatus(course._id, course.status)}
-                                disabled={toggling === course._id}
-                                className="px-3 py-1 rounded-full text-xs font-bold whitespace-nowrap cursor-pointer hover:opacity-80 transition-all disabled:opacity-50"
-                                style={{ backgroundColor: st.bg, color: st.text }}>
-                                {toggling === course._id ? (
-                                  <span className="loading loading-spinner loading-xs" />
-                                ) : (
-                                  st.label
-                                )}
+                                onClick={() => router.push(`/courses/${course._id}`)}
+                                className="btn btn-ghost btn-xs btn-circle cursor-pointer"
+                                title="View"
+                              >
+                                <Eye size={14} />
                               </button>
-                            </td>
-                            <td>
-                              <div className="flex items-center justify-end gap-1">
-                                <button className="btn btn-ghost btn-xs btn-circle cursor-pointer" title="View">
-                                  <Eye size={14} />
-                                </button>
-                                <button className="btn btn-ghost btn-xs btn-circle cursor-pointer" title="Edit"
-                                  onClick={() => router.push(`/sampleDashboard/instructor/courses/create?id=${course._id}`)}>
-                                  <Edit2 size={14} />
-                                </button>
-                                <button className="btn btn-ghost btn-xs btn-circle cursor-pointer text-error" title="Delete"
-                                  disabled={deleting === course._id}
-                                  onClick={() => openDeleteDialog(course)}>
-                                  {deleting === course._id
-                                    ? <span className="loading loading-spinner loading-xs" />
-                                    : <Trash2 size={14} />}
-                                </button>
-                              </div>
-                            </td>
-                          </tr>
-                        );
-                      })}
+                              <button className="btn btn-ghost btn-xs btn-circle cursor-pointer" title="Edit"
+                                onClick={() => router.push(`/sampleDashboard/instructor/courses/create?id=${course._id}`)}>
+                                <Edit2 size={14} />
+                              </button>
+                              <button className="btn btn-ghost btn-xs btn-circle cursor-pointer text-error" title="Delete"
+                                disabled={deleting === course._id}
+                                onClick={() => openDeleteDialog(course)}>
+                                {deleting === course._id
+                                  ? <span className="loading loading-spinner loading-xs" />
+                                  : <Trash2 size={14} />}
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
                 </tbody>
               </table>
             </div>
@@ -399,64 +422,64 @@ const InstructorCoursesPage = () => {
               {loading
                 ? Array.from({ length: 6 }).map((_, i) => <SkeletonCard key={i} />)
                 : filtered.map(course => {
-                    const st      = getStatusStyle(course.status, theme);
-                    const lessons = getLessons(course.modules);
-                    const cover   = course.coverImage?.url;
-                    return (
-                      <div key={course._id}
-                        className="card bg-base-100 border border-base-300 shadow-sm hover:shadow-lg transition-all duration-300 overflow-hidden">
-                        {cover
-                          ? <img src={cover} alt={course.title} className="w-full h-32 object-cover"
-                              onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }} />
-                          : <div className="w-full h-28 flex items-center justify-center"
-                              style={{ backgroundColor: theme === 'dark' ? '#2a1f35' : '#f3e8ff' }}>
-                              <PlayCircle className="w-10 h-10 opacity-30" style={{ color: '#832388' }} />
-                            </div>}
-                        <div className="card-body p-4 space-y-3">
-                          <div className="flex items-center justify-between">
-                            <button
-                              onClick={() => handleToggleStatus(course._id, course.status)}
-                              disabled={toggling === course._id}
-                              className="text-xs font-bold px-2 py-1 rounded-full cursor-pointer hover:opacity-80 transition-all disabled:opacity-50"
-                              style={{ backgroundColor: st.bg, color: st.text }}>
-                              {toggling === course._id ? (
-                                <span className="loading loading-spinner loading-xs" />
-                              ) : (
-                                st.label
-                              )}
+                  const st = getStatusStyle(course.status, theme);
+                  const lessons = getLessons(course.modules);
+                  const cover = course.coverImage?.url;
+                  return (
+                    <div key={course._id}
+                      className="card bg-base-100 border border-base-300 shadow-sm hover:shadow-lg transition-all duration-300 overflow-hidden">
+                      {cover
+                        ? <img src={cover} alt={course.title} className="w-full h-32 object-cover"
+                          onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+                        : <div className="w-full h-28 flex items-center justify-center"
+                          style={{ backgroundColor: theme === 'dark' ? '#2a1f35' : '#f3e8ff' }}>
+                          <PlayCircle className="w-10 h-10 opacity-30" style={{ color: '#832388' }} />
+                        </div>}
+                      <div className="card-body p-4 space-y-3">
+                        <div className="flex items-center justify-between">
+                          <button
+                            onClick={() => handleToggleStatus(course._id, course.status)}
+                            disabled={toggling === course._id}
+                            className="text-xs font-bold px-2 py-1 rounded-full cursor-pointer hover:opacity-80 transition-all disabled:opacity-50"
+                            style={{ backgroundColor: st.bg, color: st.text }}>
+                            {toggling === course._id ? (
+                              <span className="loading loading-spinner loading-xs" />
+                            ) : (
+                              st.label
+                            )}
+                          </button>
+                          <span className="text-xs opacity-40 capitalize">{course.category}</span>
+                        </div>
+                        <h3 className="text-sm font-bold leading-snug line-clamp-2">{course.title}</h3>
+                        <div className="grid grid-cols-2 gap-x-3 gap-y-1 text-xs opacity-60">
+                          <span className="flex items-center gap-1"><Users size={11} />{course.enrolledCount || 0} Students</span>
+                          <span className="flex items-center gap-1"><FileText size={11} />{lessons} Lessons</span>
+                          <span className="flex items-center gap-1"><Star size={11} className="fill-[#FDE047] text-[#FDE047]" />{course.rating?.toFixed(1) || '—'}</span>
+                          <span className="flex items-center gap-1 capitalize"><Clock size={11} />{course.level}</span>
+                        </div>
+                        <div className="flex items-center justify-between pt-3 border-t border-base-300">
+                          <span className="text-base font-bold" style={{ color: '#832388' }}>{formatPrice(course)}</span>
+                          <div className="flex gap-1">
+                            <button className="btn btn-ghost btn-sm btn-circle cursor-pointer" title="Analytics">
+                              <BarChart3 size={14} />
                             </button>
-                            <span className="text-xs opacity-40 capitalize">{course.category}</span>
-                          </div>
-                          <h3 className="text-sm font-bold leading-snug line-clamp-2">{course.title}</h3>
-                          <div className="grid grid-cols-2 gap-x-3 gap-y-1 text-xs opacity-60">
-                            <span className="flex items-center gap-1"><Users size={11} />{course.enrolledCount || 0} Students</span>
-                            <span className="flex items-center gap-1"><FileText size={11} />{lessons} Lessons</span>
-                            <span className="flex items-center gap-1"><Star size={11} className="fill-[#FDE047] text-[#FDE047]" />{course.rating?.toFixed(1) || '—'}</span>
-                            <span className="flex items-center gap-1 capitalize"><Clock size={11} />{course.level}</span>
-                          </div>
-                          <div className="flex items-center justify-between pt-3 border-t border-base-300">
-                            <span className="text-base font-bold" style={{ color: '#832388' }}>{formatPrice(course)}</span>
-                            <div className="flex gap-1">
-                              <button className="btn btn-ghost btn-sm btn-circle cursor-pointer" title="Analytics">
-                                <BarChart3 size={14} />
-                              </button>
-                              <button className="btn btn-ghost btn-sm btn-circle cursor-pointer" title="Edit"
-                                onClick={() => router.push(`/sampleDashboard/instructor/courses/create?id=${course._id}`)}>
-                                <Edit2 size={14} />
-                              </button>
-                              <button className="btn btn-ghost btn-sm btn-circle cursor-pointer text-error" title="Delete"
-                                disabled={deleting === course._id}
-                                onClick={() => openDeleteDialog(course)}>
-                                {deleting === course._id
-                                  ? <span className="loading loading-spinner loading-xs" />
-                                  : <Trash2 size={14} />}
-                              </button>
-                            </div>
+                            <button className="btn btn-ghost btn-sm btn-circle cursor-pointer" title="Edit"
+                              onClick={() => router.push(`/sampleDashboard/instructor/courses/create?id=${course._id}`)}>
+                              <Edit2 size={14} />
+                            </button>
+                            <button className="btn btn-ghost btn-sm btn-circle cursor-pointer text-error" title="Delete"
+                              disabled={deleting === course._id}
+                              onClick={() => openDeleteDialog(course)}>
+                              {deleting === course._id
+                                ? <span className="loading loading-spinner loading-xs" />
+                                : <Trash2 size={14} />}
+                            </button>
                           </div>
                         </div>
                       </div>
-                    );
-                  })}
+                    </div>
+                  );
+                })}
             </div>
           )}
 
@@ -503,15 +526,15 @@ const InstructorCoursesPage = () => {
         <div className="modal-box">
           <h3 className="font-bold text-lg">Are you sure?</h3>
           <p className="py-4">
-            Do you want to delete "<strong>{courseToDelete?.title}</strong>"? 
+            Do you want to delete "<strong>{courseToDelete?.title}</strong>"?
             This action cannot be undone.
           </p>
           <div className="modal-action">
             <form method="dialog">
               <button className="btn btn-ghost mr-3">Cancel</button>
-              <button 
+              <button
                 type="button"
-                className="btn btn-error text-white" 
+                className="btn btn-error text-white"
                 onClick={handleDelete}
                 disabled={deleting === courseToDelete?._id}
               >

@@ -46,5 +46,7 @@ next-env.d.ts
 # dashboard-2 folder (hidden from git)
 src/app/dashboard-2/
 src/app/dashboard/
+.kiro
+.vscode
 src/app/viewprofile
 

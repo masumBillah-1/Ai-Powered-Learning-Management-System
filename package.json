@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
+    "dev": "next dev -p 3000",
     "build": "next build",
     "start": "next start -p $PORT",
     "lint": "eslint",
@@ -19,6 +19,7 @@
     "express": "^5.2.1",
     "firebase": "^12.9.0",
     "framer-motion": "^12.34.3",
+    "jose": "^6.2.1",
     "jsonwebtoken": "^9.0.3",
     "lucide": "^0.564.0",
     "lucide-react": "^0.575.0",

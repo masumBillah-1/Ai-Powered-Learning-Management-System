@@ -15,45 +15,44 @@ interface UserData { name: string; email: string; photoURL?: string; role: Role;
 
 const menus: Record<Role, { label: string; href: string; icon: React.ReactNode }[]> = {
   student: [
-    { label: "Dashboard",    href: "/sampleDashboard/student",              icon: <LayoutDashboard size={18} /> },
-    { label: "Profile",      href: "/sampleDashboard/profile",              icon: <User size={18} />            },
-    { label: "Courses",      href: "/sampleDashboard/student/courses",      icon: <BookOpen size={18} />        },
-    { label: "Assignments",  href: "/sampleDashboard/student/assignments",  icon: <FileText size={18} />        },
-    { label: "Quiz",         href: "/sampleDashboard/student/quiz",         icon: <HelpCircle size={18} />      },
-    { label: "Certificates", href: "/sampleDashboard/student/certificates", icon: <Award size={18} />           },
-    { label: "Messages",     href: "/sampleDashboard/messages",             icon: <MessageSquare size={18} />   },
-    { label: "Settings",     href: "/sampleDashboard/settings",             icon: <Settings size={18} />        },
+    { label: "Dashboard", href: "/sampleDashboard/student", icon: <LayoutDashboard size={18} /> },
+    { label: "Profile", href: "/sampleDashboard/profile", icon: <User size={18} /> },
+    { label: "Courses", href: "/sampleDashboard/student/courses", icon: <BookOpen size={18} /> },
+    { label: "Assignments", href: "/sampleDashboard/student/assignments", icon: <FileText size={18} /> },
+    { label: "Quiz", href: "/sampleDashboard/student/quiz", icon: <HelpCircle size={18} /> },
+    { label: "Certificates", href: "/sampleDashboard/student/certificates", icon: <Award size={18} /> },
+    { label: "Messages", href: "/sampleDashboard/messages", icon: <MessageSquare size={18} /> },
+    { label: "Settings", href: "/sampleDashboard/settings", icon: <Settings size={18} /> },
   ],
   instructor: [
-    { label: "Dashboard",     href: "/sampleDashboard/instructor",              icon: <LayoutDashboard size={18} /> },
-    { label: "Profile",       href: "/sampleDashboard/profile",                 icon: <User size={18} />            },
-    { label: "Courses",       href: "/sampleDashboard/instructor/courses",      icon: <BookOpen size={18} />        },
-    { label: "Announcements", href: "/sampleDashboard/instructor/announcements",icon: <Megaphone size={18} />       },
-    { label: "Assignments",   href: "/sampleDashboard/instructor/assignments",  icon: <FileText size={18} />        },
-    { label: "Students",      href: "/sampleDashboard/instructor/students",     icon: <Users size={18} />           },
-    { label: "Quiz",          href: "/sampleDashboard/instructor/quiz",         icon: <HelpCircle size={18} />      },
-    { label: "Quiz Results",  href: "/sampleDashboard/instructor/quiz-results", icon: <BarChart2 size={18} />       },
-    { label: "Earnings",      href: "/sampleDashboard/instructor/earnings",     icon: <DollarSign size={18} />      },
-    { label: "Messages",      href: "/sampleDashboard/messages",                icon: <MessageSquare size={18} />   },
-    { label: "Settings",      href: "/sampleDashboard/settings",                icon: <Settings size={18} />        },
+    { label: "Dashboard", href: "/sampleDashboard/instructor", icon: <LayoutDashboard size={18} /> },
+    { label: "Profile", href: "/sampleDashboard/profile", icon: <User size={18} /> },
+    { label: "Courses", href: "/sampleDashboard/instructor/courses", icon: <BookOpen size={18} /> },
+    { label: "Announcements", href: "/sampleDashboard/instructor/announcements", icon: <Megaphone size={18} /> },
+    { label: "Assignments", href: "/sampleDashboard/instructor/assignments", icon: <FileText size={18} /> },
+    { label: "Students", href: "/sampleDashboard/instructor/students", icon: <Users size={18} /> },
+    { label: "Quiz", href: "/sampleDashboard/instructor/quiz", icon: <HelpCircle size={18} /> },
+    { label: "Quiz Results", href: "/sampleDashboard/instructor/quiz-results", icon: <BarChart2 size={18} /> },
+    { label: "Earnings", href: "/sampleDashboard/instructor/earnings", icon: <DollarSign size={18} /> },
+    { label: "Messages", href: "/sampleDashboard/messages", icon: <MessageSquare size={18} /> },
+    { label: "Settings", href: "/sampleDashboard/settings", icon: <Settings size={18} /> },
   ],
   admin: [
-    { label: "Dashboard",     href: "/sampleDashboard/admin",               icon: <LayoutDashboard size={18} /> },
-    { label: "Profile",       href: "/sampleDashboard/profile",             icon: <User size={18} />            },
-    { label: "Courses",       href: "/sampleDashboard/admin/courses",       icon: <BookOpen size={18} />        },
-    { label: "Users",         href: "/sampleDashboard/admin/users",         icon: <Users size={18} />           },
-    { label: "Announcements", href: "/sampleDashboard/admin/announcements", icon: <Megaphone size={18} />       },
-    { label: "Earnings",      href: "/sampleDashboard/admin/earnings",      icon: <DollarSign size={18} />      },
-    { label: "Messages",      href: "/sampleDashboard/messages",            icon: <MessageSquare size={18} />   },
-    { label: "Settings",      href: "/sampleDashboard/settings",            icon: <Settings size={18} />        },
+    { label: "Dashboard", href: "/sampleDashboard/admin", icon: <LayoutDashboard size={18} /> },
+    { label: "Profile", href: "/sampleDashboard/profile", icon: <User size={18} /> },
+    { label: "Courses", href: "/sampleDashboard/admin/courses", icon: <BookOpen size={18} /> },
+    { label: "Users", href: "/sampleDashboard/admin/users", icon: <Users size={18} /> },
+    { label: "Announcements", href: "/sampleDashboard/admin/announcements", icon: <Megaphone size={18} /> },
+    { label: "Earnings", href: "/sampleDashboard/admin/earnings", icon: <DollarSign size={18} /> },
+    { label: "Messages", href: "/sampleDashboard/messages", icon: <MessageSquare size={18} /> },
+    { label: "Settings", href: "/sampleDashboard/settings", icon: <Settings size={18} /> },
   ],
 };
 
-// dynamic color বলে inline রাখতে হবে শুধু এটুকু
 const roleMeta: Record<Role, { color: string; label: string }> = {
-  student:    { color: "#00C48C", label: "Student"    },
+  student: { color: "#00C48C", label: "Student" },
   instructor: { color: "#F89B29", label: "Instructor" },
-  admin:      { color: "#FF0F7B", label: "Admin"      },
+  admin: { color: "#FF0F7B", label: "Admin" },
 };
 
 const rootHrefs = ["/sampleDashboard/instructor", "/sampleDashboard/student", "/sampleDashboard/admin"];
@@ -79,8 +78,6 @@ function Sidebar({ items, collapsed, onToggle, mobileOpen, onMobileClose }: {
     const w = forceWide || wide;
     return (
       <div className={`flex flex-col h-full overflow-hidden bg-gradient-to-b from-[#1a1a2e] via-[#16213e] to-[#0f3460] transition-all duration-300 ${w ? "w-60" : "w-[68px]"}`}>
-
-        {/* Header */}
         <div className={`h-16 flex items-center flex-shrink-0 border-b border-white/[0.07] ${w ? "px-3.5 justify-between" : "justify-center"}`}>
           <Link href="/" className="flex items-center gap-2.5 no-underline">
             <div className="w-8 h-8 rounded-lg flex-shrink-0 flex items-center justify-center text-[15px] font-black text-white bg-gradient-to-br from-[#832388] to-[#FF0F7B]">S</div>
@@ -98,7 +95,6 @@ function Sidebar({ items, collapsed, onToggle, mobileOpen, onMobileClose }: {
           )}
         </div>
 
-        {/* Links */}
         <nav className="flex-1 overflow-y-auto py-1.5 [scrollbar-width:none]">
           {items.map(item => {
             const active = pathname === item.href || (!rootHrefs.includes(item.href) && pathname.startsWith(item.href));
@@ -126,12 +122,9 @@ function Sidebar({ items, collapsed, onToggle, mobileOpen, onMobileClose }: {
 
   return (
     <>
-      {/* Desktop sidebar */}
       <aside className={`fixed top-0 left-0 bottom-0 z-60 overflow-hidden transition-all duration-300 hidden md:block ${collapsed ? "w-[68px]" : "w-60"}`}>
         <NavContent />
       </aside>
-
-      {/* Mobile */}
       {mobileOpen && (
         <>
           <div onClick={onMobileClose} className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[100] md:hidden" />
@@ -145,17 +138,19 @@ function Sidebar({ items, collapsed, onToggle, mobileOpen, onMobileClose }: {
 }
 
 // ── TOP NAVBAR ────────────────────────────────────────────
-function TopNavbar({ role, items, theme, toggleTheme, user, onLogout, onMobileMenu, collapsed }: {
+function TopNavbar({ role, items, theme, toggleTheme, user, onLogout, onMobileMenu, collapsed, unreadCount }: {
   role: Role;
   items: { label: string; href: string; icon: React.ReactNode }[];
   theme: "dark" | "light"; toggleTheme: () => void;
   user: UserData | null; onLogout: () => void;
   onMobileMenu: () => void; collapsed: boolean;
+  unreadCount: number;
 }) {
   const pathname = usePathname();
-  const [showUser,  setShowUser]  = useState(false);
+  const [showUser, setShowUser] = useState(false);
   const [showNotif, setShowNotif] = useState(false);
-  const userRef  = useRef<HTMLDivElement>(null);
+  const [notifications, setNotifications] = useState<any[]>([]);
+  const userRef = useRef<HTMLDivElement>(null);
   const notifRef = useRef<HTMLDivElement>(null);
   const rm = roleMeta[role];
 
@@ -163,16 +158,24 @@ function TopNavbar({ role, items, theme, toggleTheme, user, onLogout, onMobileMe
     i.href === pathname || (!rootHrefs.includes(i.href) && pathname.startsWith(i.href))
   )?.label || "Dashboard";
 
-  const notifications = [
-    { id: 1, text: "New assignment submitted by Rahim", time: "2 min ago",   read: false },
-    { id: 2, text: "Quiz Results are ready",            time: "1 hour ago",  read: false },
-    { id: 3, text: "New student enrolled in Web Dev",   time: "3 hours ago", read: true  },
-  ];
-  const unread = notifications.filter(n => !n.read).length;
+  const handleNotifOpen = async () => {
+    setShowNotif(v => !v);
+    setShowUser(false);
+    if (notifications.length === 0) {
+      try {
+        const token = localStorage.getItem("token");
+        const res = await fetch("/api/notifications", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        const data = await res.json();
+        if (data.notifications) setNotifications(data.notifications);
+      } catch { }
+    }
+  };
 
   useEffect(() => {
     const h = (e: MouseEvent) => {
-      if (userRef.current  && !userRef.current.contains(e.target as Node))  setShowUser(false);
+      if (userRef.current && !userRef.current.contains(e.target as Node)) setShowUser(false);
       if (notifRef.current && !notifRef.current.contains(e.target as Node)) setShowNotif(false);
     };
     document.addEventListener("mousedown", h);
@@ -181,8 +184,6 @@ function TopNavbar({ role, items, theme, toggleTheme, user, onLogout, onMobileMe
 
   return (
     <header className={`fixed top-0 right-0 h-16 z-50 flex items-center justify-between px-4 bg-base-100 border-b border-base-300 shadow-sm transition-all duration-300 max-md:left-0 ${collapsed ? "md:left-[68px]" : "md:left-60"}`}>
-
-      {/* Left */}
       <div className="flex items-center gap-2">
         <button onClick={onMobileMenu} className="btn btn-ghost btn-sm btn-square cursor-pointer md:hidden">
           <Menu size={20} />
@@ -193,18 +194,20 @@ function TopNavbar({ role, items, theme, toggleTheme, user, onLogout, onMobileMe
         </div>
       </div>
 
-      {/* Right */}
       <div className="flex items-center gap-1 flex-shrink-0">
-
         <button onClick={toggleTheme} className="btn btn-ghost btn-sm btn-square cursor-pointer" style={{ color: theme === "dark" ? "#facc15" : "#6b7280" }}>
           {theme === "dark" ? <FaSun size={16} /> : <FaMoon size={16} />}
         </button>
 
         {/* Bell */}
         <div ref={notifRef} className="relative">
-          <button onClick={() => { setShowNotif(v => !v); setShowUser(false); }} className="btn btn-ghost btn-sm btn-square cursor-pointer relative">
+          <button onClick={handleNotifOpen} className="btn btn-ghost btn-sm btn-square cursor-pointer relative">
             <Bell size={18} />
-            {unread > 0 && <span className="absolute top-1 right-1 w-3.5 h-3.5 rounded-full text-white font-bold flex items-center justify-center text-[9px] bg-[#FF0F7B]">{unread}</span>}
+            {unreadCount > 0 && (
+              <span className="absolute top-1 right-1 w-3.5 h-3.5 rounded-full text-white font-bold flex items-center justify-center text-[9px] bg-[#FF0F7B]">
+                {unreadCount > 9 ? "9+" : unreadCount}
+              </span>
+            )}
           </button>
           {showNotif && (
             <div className="absolute right-0 top-[calc(100%+6px)] w-72 bg-base-100 border border-base-300 rounded-xl shadow-2xl z-[200] overflow-hidden">
@@ -212,17 +215,21 @@ function TopNavbar({ role, items, theme, toggleTheme, user, onLogout, onMobileMe
                 <span className="text-sm font-bold text-base-content">Notifications</span>
                 <span className="text-xs font-semibold cursor-pointer text-[#832388]">Mark all read</span>
               </div>
-              {notifications.map(n => (
-                <div key={n.id} className={`flex gap-3 px-4 py-3 border-b border-base-300 cursor-pointer items-start hover:bg-base-200 transition-colors ${!n.read ? "bg-base-200/50" : ""}`}>
-                  <div className={`w-2 h-2 rounded-full flex-shrink-0 mt-1.5 ${n.read ? "bg-base-content/20" : "bg-[#FF0F7B]"}`} />
-                  <div>
-                    <p className={`text-[13px] leading-snug m-0 ${n.read ? "text-base-content/60" : "text-base-content font-semibold"}`}>{n.text}</p>
-                    <p className="text-[11px] text-base-content/40 mt-0.5 m-0">{n.time}</p>
+              {notifications.length === 0 ? (
+                <div className="px-4 py-6 text-center text-sm text-base-content/40">কোনো notification নেই</div>
+              ) : (
+                notifications.slice(0, 5).map((n, i) => (
+                  <div key={i} className={`flex gap-3 px-4 py-3 border-b border-base-300 cursor-pointer items-start hover:bg-base-200 transition-colors ${!n.isRead ? "bg-base-200/50" : ""}`}>
+                    <div className={`w-2 h-2 rounded-full flex-shrink-0 mt-1.5 ${n.isRead ? "bg-base-content/20" : "bg-[#FF0F7B]"}`} />
+                    <div>
+                      <p className={`text-[13px] leading-snug m-0 ${n.isRead ? "text-base-content/60" : "text-base-content font-semibold"}`}>{n.title}</p>
+                      <p className="text-[11px] text-base-content/40 mt-0.5 m-0">{n.message}</p>
+                    </div>
                   </div>
-                </div>
-              ))}
+                ))
+              )}
               <div className="py-2.5 text-center">
-                <span className="text-xs font-semibold cursor-pointer text-[#832388]">View all →</span>
+                <Link href="/sampleDashboard/settings" className="text-xs font-semibold text-[#832388]">View all →</Link>
               </div>
             </div>
           )}
@@ -294,25 +301,78 @@ function PageLoader({ children }: { children: React.ReactNode }) {
 
 // ── ROOT LAYOUT ───────────────────────────────────────────
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
-  const [role,       setRole]       = useState<Role>("student");
-  const [theme,      setTheme]      = useState<"dark" | "light">("light");
-  const [user,       setUser]       = useState<UserData | null>(null);
-  const [isLoading,  setIsLoading]  = useState(true);
-  const [collapsed,  setCollapsed]  = useState(false);
+  const [role, setRole] = useState<Role>("student");
+  const [theme, setTheme] = useState<"dark" | "light">("light");
+  const [user, setUser] = useState<UserData | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
 
   useEffect(() => {
     const t = (localStorage.getItem("theme") || "light") as "dark" | "light";
     setTheme(t);
     document.documentElement.setAttribute("data-theme", t);
+
+    const token = localStorage.getItem("token");
     const raw = localStorage.getItem("user");
-    if (!raw) { window.location.href = "/login"; return; }
-    try {
-      const parsed: UserData = JSON.parse(raw);
-      setUser(parsed);
-      setRole(["student", "instructor", "admin"].includes(parsed.role) ? parsed.role : "student");
-    } catch { window.location.href = "/login"; return; }
-    setIsLoading(false);
+
+    // token না থাকলে login এ পাঠাও
+    if (!token) {
+      window.location.href = "/login";
+      return;
+    }
+
+    // ✅ MongoDB আগে check করো
+    fetch("/api/dashboard", {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+      .then(r => r.json())
+      .then(data => {
+        if (!data.user) {
+          localStorage.removeItem("user");
+          localStorage.removeItem("token");
+          window.location.href = "/login";
+          return;
+        }
+
+        const freshUser = data.user;
+
+        // ✅ localStorage এর সাথে compare করো
+        if (raw) {
+          try {
+            const cachedUser: UserData = JSON.parse(raw);
+            if (cachedUser.role !== freshUser.role) {
+              // role mismatch — log করো
+              console.log(`🔄 Role changed: ${cachedUser.role} → ${freshUser.role}`);
+            }
+          } catch {
+            // localStorage corrupt — কিছু করার নেই
+          }
+        }
+
+        // ✅ সবসময় MongoDB data দিয়ে update
+        localStorage.setItem("user", JSON.stringify(freshUser));
+        setUser(freshUser);
+        setRole(["student", "instructor", "admin"].includes(freshUser.role) ? freshUser.role : "student");
+        setUnreadCount(data.unreadNotifications || 0);
+        setIsLoading(false);
+      })
+      .catch(() => {
+        // ✅ Network error — localStorage দিয়ে fallback
+        if (raw) {
+          try {
+            const parsed: UserData = JSON.parse(raw);
+            setUser(parsed);
+            setRole(["student", "instructor", "admin"].includes(parsed.role) ? parsed.role : "student");
+            setIsLoading(false);
+          } catch {
+            window.location.href = "/login";
+          }
+        } else {
+          window.location.href = "/login";
+        }
+      });
   }, []);
 
   const toggleTheme = () => {
@@ -352,6 +412,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         user={user} onLogout={handleLogout}
         onMobileMenu={() => setMobileOpen(true)}
         collapsed={collapsed}
+        unreadCount={unreadCount}
       />
       <main className={`bg-base-200 min-h-screen pt-16 transition-all duration-300 ${collapsed ? "md:pl-[68px]" : "md:pl-60"}`}>
         <div className="p-6">
