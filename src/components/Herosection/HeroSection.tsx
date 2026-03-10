@@ -636,6 +636,7 @@ const HeroSection: React.FC = () => {
           src="/home-background-min.webp"
           alt="Students learning"
           fill
+          sizes="100vw"
           className="hero-bg"
           priority
           quality={92}

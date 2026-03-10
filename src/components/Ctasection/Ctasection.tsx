@@ -128,6 +128,7 @@ const BootcampFeatures = () => {
                     src={item.imgSrc}
                     alt={item.title}
                     fill
+                    sizes="96px"
                     className="object-contain"
                   />
                 </div>
