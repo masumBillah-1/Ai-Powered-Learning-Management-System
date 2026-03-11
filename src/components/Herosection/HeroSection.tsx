@@ -396,27 +396,27 @@ const HeroSection: React.FC = () => {
             </a>
           </div>
 
-     <div className="hx-stats">
-  <div className="hx-stat-item">
-    <span className="hx-stat-val">12K+</span>
-    <span className="hx-stat-lbl">Students</span>
-  </div>
+          <div className="hx-stats">
+            <div className="hx-stat-item">
+              <span className="hx-stat-val">12K+</span>
+              <span className="hx-stat-lbl">Students</span>
+            </div>
 
-  <div className="hx-stat-item">
-    <span className="hx-stat-val">200+</span>
-    <span className="hx-stat-lbl">Courses</span>
-  </div>
+            <div className="hx-stat-item">
+              <span className="hx-stat-val">200+</span>
+              <span className="hx-stat-lbl">Courses</span>
+            </div>
 
-  <div className="hx-stat-item">
-    <span className="hx-stat-val">4.9★</span>
-    <span className="hx-stat-lbl">Rating</span>
-  </div>
+            <div className="hx-stat-item">
+              <span className="hx-stat-val">4.9★</span>
+              <span className="hx-stat-lbl">Rating</span>
+            </div>
 
-  <div className="hx-stat-item">
-    <span className="hx-stat-val">98%</span>
-    <span className="hx-stat-lbl">Satisfaction</span>
-  </div>
-</div>
+            <div className="hx-stat-item">
+              <span className="hx-stat-val">98%</span>
+              <span className="hx-stat-lbl">Satisfaction</span>
+            </div>
+          </div>
         </div>
 
         <div className="hx-fade-bottom" />
