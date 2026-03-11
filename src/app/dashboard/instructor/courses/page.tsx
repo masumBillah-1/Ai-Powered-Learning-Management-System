@@ -284,7 +284,7 @@ const InstructorCoursesPage = () => {
                   </button>
                 ))}
               </div>
-              <button onClick={() => router.push('/sampleDashboard/instructor/courses/create')}
+              <button onClick={() => router.push('/dashboard/instructor/courses/create')}
                 className="btn gap-2 text-white border-0 cursor-pointer"
                 style={{ background: 'linear-gradient(135deg, #832388, #FF0F7B)' }}>
                 <Plus size={17} /> Create Course
@@ -398,7 +398,7 @@ const InstructorCoursesPage = () => {
                                 <Eye size={14} />
                               </button>
                               <button className="btn btn-ghost btn-xs btn-circle cursor-pointer" title="Edit"
-                                onClick={() => router.push(`/sampleDashboard/instructor/courses/create?id=${course._id}`)}>
+                                onClick={() => router.push(`/dashboard/instructor/courses/create?id=${course._id}`)}>
                                 <Edit2 size={14} />
                               </button>
                               <button className="btn btn-ghost btn-xs btn-circle cursor-pointer text-error" title="Delete"
@@ -464,7 +464,7 @@ const InstructorCoursesPage = () => {
                               <BarChart3 size={14} />
                             </button>
                             <button className="btn btn-ghost btn-sm btn-circle cursor-pointer" title="Edit"
-                              onClick={() => router.push(`/sampleDashboard/instructor/courses/create?id=${course._id}`)}>
+                              onClick={() => router.push(`/dashboard/instructor/courses/create?id=${course._id}`)}>
                               <Edit2 size={14} />
                             </button>
                             <button className="btn btn-ghost btn-sm btn-circle cursor-pointer text-error" title="Delete"
@@ -491,7 +491,7 @@ const InstructorCoursesPage = () => {
                 <>
                   <h3 className="text-xl font-bold mb-2">No Courses Yet</h3>
                   <p className="opacity-50 mb-6">Create your first course to get started!</p>
-                  <button onClick={() => router.push('/sampleDashboard/instructor/courses/create')}
+                  <button onClick={() => router.push('/dashboard/instructor/courses/create')}
                     className="btn gap-2 text-white border-0 cursor-pointer"
                     style={{ background: 'linear-gradient(135deg, #832388, #FF0F7B)' }}>
                     <Plus size={17} /> Create First Course

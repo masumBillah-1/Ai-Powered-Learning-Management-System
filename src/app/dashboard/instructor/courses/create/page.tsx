@@ -444,7 +444,7 @@ export default function CreateCoursePage() {
               : "#1e1e2e",
         },
       });
-      setTimeout(() => router.push("/sampleDashboard/instructor/courses"), 1500);
+      setTimeout(() => router.push("/dashboard/instructor/courses"), 1500);
     } catch (err: any) {
       toast.error(`❌ ${err.message || "Failed. Try again!"}`, { id: tid, ...tErr, duration: 4000 });
     } finally {
@@ -489,7 +489,7 @@ export default function CreateCoursePage() {
       <div className="bg-base-100 border-b border-base-300 px-6 py-4 flex items-center justify-between">
         <div className="flex items-center gap-2 text-sm">
           <span className="font-semibold cursor-pointer hover:underline" style={{ color: "#832388" }}
-            onClick={() => router.push("/sampleDashboard/instructor/courses")}>
+            onClick={() => router.push("/dashboard/instructor/courses")}>
             My Courses
           </span>
           <span className="opacity-30">/</span>
