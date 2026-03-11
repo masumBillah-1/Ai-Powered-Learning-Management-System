@@ -66,7 +66,7 @@ const PrivacyPolicy = () => {
             <h2 className="text-2xl font-semibold">Our Commitment</h2>
           </div>
           <p className="leading-relaxed opacity-90">
-            At <strong>SmartLMS Pro</strong>, we believe education and privacy
+            At <strong>CareerCanvas</strong>, we believe education and privacy
             go hand-in-hand. This policy outlines our transparent approach to
             data handling within our AI-powered ecosystem.
           </p>

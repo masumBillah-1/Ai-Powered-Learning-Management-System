@@ -115,7 +115,7 @@ function Sidebar({ items, collapsed, onToggle, mobileOpen, onMobileClose }: {
           })}
         </nav>
 
-        {w && <div className="px-3.5 py-3 border-t border-white/[0.07] text-[11px] text-white/20 flex-shrink-0">SmartLMS Pro v2.0</div>}
+        {w && <div className="px-3.5 py-3 border-t border-white/[0.07] text-[11px] text-white/20 flex-shrink-0">CareerCanvas v2.0</div>}
       </div>
     );
   };
