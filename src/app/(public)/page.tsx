@@ -21,7 +21,7 @@ export default function Home() {
       <HeroSectionNew />
       <HeroSections /> 
       <HeroSection />
-      <div className="container mx-auto px-6 py-10">
+
         <ImpactSection />
         <ProblemSolution />
         <BootcampFeatures />
@@ -31,7 +31,7 @@ export default function Home() {
         <LearnSection />
         <FAQ />
         <JoinNow />
-      </div>
+
     </div>
   );
 }
