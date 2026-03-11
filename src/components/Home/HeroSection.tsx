@@ -1,22 +1,22 @@
 "use client";
 
-import React, { useState } from "react";
-import { motion } from "framer-motion";
-import { FaPlay, FaCheckCircle, FaRocket } from "react-icons/fa";
-import { HiSparkles } from "react-icons/hi2";
+import React, { useState } from 'react';
+import { motion } from 'framer-motion';
+import { FaPlay, FaCheckCircle, FaRocket } from 'react-icons/fa';
+import { HiSparkles } from 'react-icons/hi2';
 
 const HeroSection = () => {
   const [isPlaying, setIsPlaying] = useState(false);
 
-  const phGradient =
-    "bg-gradient-to-r from-[#832388] via-[#E3436B] to-[#F0772F]";
-  const phTextGradient =
-    "text-transparent bg-clip-text bg-gradient-to-r from-[#832388] via-[#E3436B] to-[#F0772F]";
+
+  const phGradient = "bg-gradient-to-r from-[#832388] via-[#E3436B] to-[#F0772F]";
+  const phTextGradient = "text-transparent bg-clip-text bg-gradient-to-r from-[#832388] via-[#E3436B] to-[#F0772F]";
 
   return (
     <div className="w-full bg-[#fcfaff] dark:bg-slate-950 transition-colors overflow-hidden">
-      <div className="container mx-auto px-4 sm:px-6 lg:px-10 pt-8 md:pt-12 pb-16 md:pb-24">
+      <div className="container mx-auto px-4 sm:px-6 lg:px-16 pt-8 md:pt-12 pb-16 md:pb-24">
         <div className="flex flex-col lg:flex-row items-center justify-between gap-10 lg:gap-12">
+
           {/* Left Side: Text Content */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -33,12 +33,13 @@ const HeroSection = () => {
 
             <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-7xl font-black text-[#1e1e2f] dark:text-white leading-[1.2] lg:leading-[1.1]">
               শেখার ধরন হোক <br className="hidden sm:block" />
-              <span className={phTextGradient}>স্মার্ট ও পারসোনালাইজড</span>
+              <span className={phTextGradient}>
+                স্মার্ট ও পারসোনালাইজড
+              </span>
             </h1>
 
             <p className="text-gray-600 dark:text-gray-400 text-base md:text-lg lg:text-xl leading-relaxed max-w-xl mx-auto lg:mx-0 font-medium px-2 sm:px-0">
-              আমাদের AI আপনার শেখার গতি বুঝবে এবং আপনাকে দিবে সঠিক গাইডলাইন।
-              অটোমেটেড গ্রেডিং ও স্মার্ট সামারিতে পড়াশোনা হবে আরও সহজ।
+              আমাদের AI আপনার শেখার গতি বুঝবে এবং আপনাকে দিবে সঠিক গাইডলাইন। অটোমেটেড গ্রেডিং ও স্মার্ট সামারিতে পড়াশোনা হবে আরও সহজ।
             </p>
 
             <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-4 md:gap-5 pt-2">
@@ -54,15 +55,13 @@ const HeroSection = () => {
                 whileHover={{ scale: 1.05 }}
                 className="w-full sm:w-auto flex items-center justify-center gap-2 px-8 md:px-10 py-3.5 md:py-4 bg-white dark:bg-slate-900 border-2 border-gray-200 dark:border-slate-800 text-gray-700 dark:text-white font-black rounded-xl md:rounded-2xl hover:shadow-lg transition-all text-sm md:text-base"
               >
-                <FaPlay className="text-[10px] text-[#E3436B]" /> ওরিয়েন্টেশন
-                ভিডিও
+                <FaPlay className="text-[10px] text-[#E3436B]" /> ওরিয়েন্টেশন ভিডিও
               </motion.button>
             </div>
 
             <div className="flex flex-wrap justify-center lg:justify-start gap-4 md:gap-8 pt-4">
               <span className="flex items-center gap-2 text-sm md:text-base font-bold text-slate-700 dark:text-slate-300">
-                <FaCheckCircle className="text-[#F0772F]" /> AI ভিত্তিক
-                মূল্যায়ন
+                <FaCheckCircle className="text-[#F0772F]" /> AI ভিত্তিক মূল্যায়ন
               </span>
               <span className="flex items-center gap-2 text-sm md:text-base font-bold text-slate-700 dark:text-slate-300">
                 <FaCheckCircle className="text-[#F0772F]" /> স্মার্ট ড্যাশবোর্ড
@@ -82,6 +81,7 @@ const HeroSection = () => {
 
             {/* Main Video Wrapper */}
             <div className="relative rounded-2xl md:rounded-[40px] overflow-hidden border-[6px] md:border-[12px] border-white dark:border-slate-800 shadow-[0_10px_30px_rgba(0,0,0,0.1)] md:shadow-[0_20px_50px_rgba(0,0,0,0.15)] aspect-video bg-black">
+
               {!isPlaying ? (
                 <div
                   className="absolute inset-0 z-30 cursor-pointer flex items-center justify-center"
@@ -125,12 +125,8 @@ const HeroSection = () => {
                 🎓
               </div>
               <div>
-                <h4 className="font-black text-slate-800 dark:text-white text-sm md:text-lg leading-tight">
-                  ১০+ কোর্স
-                </h4>
-                <p className="text-[10px] md:text-sm font-bold text-gray-500 uppercase">
-                  সবই AI গাইডেড
-                </p>
+                <h4 className="font-black text-slate-800 dark:text-white text-sm md:text-lg leading-tight">১০+ কোর্স</h4>
+                <p className="text-[10px] md:text-sm font-bold text-gray-500 uppercase">সবই AI গাইডেড</p>
               </div>
             </motion.div>
           </motion.div>
