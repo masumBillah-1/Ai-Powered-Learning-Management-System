@@ -5,6 +5,8 @@ import { Toaster } from "react-hot-toast";
 import FloatingChat from "@/components/chat/FloatingChat";
 import { cookies } from "next/headers";
 import "./globals.css";
+import Navbar from "@/components/layout/Navbar";
+import Footer from "@/components/layout/Footer";
 
 const geistSans = Geist({ 
   variable: "--font-geist-sans", 

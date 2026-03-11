@@ -2,12 +2,12 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { motion } from "framer-motion";
-import { 
-  FaPlay, 
-  FaClock, 
-  FaUsers, 
-  FaStar, 
-  FaCheckCircle, 
+import {
+  FaPlay,
+  FaClock,
+  FaUsers,
+  FaStar,
+  FaCheckCircle,
   FaBook,
   FaArrowRight,
   FaQuoteLeft
@@ -71,7 +71,7 @@ export default function CourseDetailsPage() {
   const params = useParams();
   const router = useRouter();
   const courseId = params.id as string;
-  
+
   const [course, setCourse] = useState<Course | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -115,9 +115,9 @@ export default function CourseDetailsPage() {
   // Calculate total lessons and duration
   const getTotalStats = () => {
     if (!course) return { totalLessons: 0, totalDuration: '0h 0m' };
-    
+
     const totalLessons = course.modules.reduce((acc, mod) => acc + mod.lessons.length, 0);
-    
+
     const totalMinutes = course.modules.reduce((acc, mod) => {
       return acc + mod.lessons.reduce((sum, lesson) => {
         const duration = lesson.duration || '0:00';
@@ -127,11 +127,11 @@ export default function CourseDetailsPage() {
         return sum + minutes + (seconds / 60);
       }, 0);
     }, 0);
-    
+
     const hours = Math.floor(totalMinutes / 60);
     const mins = Math.round(totalMinutes % 60);
     const totalDuration = `${hours}h ${mins}m`;
-    
+
     return { totalLessons, totalDuration };
   };
 
@@ -177,7 +177,7 @@ export default function CourseDetailsPage() {
 
   return (
     <div className="min-h-screen bg-white dark:bg-[#0b1120] transition-colors duration-300">
-      
+
       {/* Hero Section */}
       <section className="relative py-16 bg-gradient-to-br from-purple-50 via-pink-50 to-purple-50 dark:from-[#0b1120] dark:via-[#1a1535] dark:to-[#0b1120] overflow-hidden">
         {/* Background Decoration */}
@@ -188,7 +188,7 @@ export default function CourseDetailsPage() {
 
         <div className="max-w-[1200px] mx-auto px-4 relative z-10">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-            
+
             {/* Left: Course Info */}
             <motion.div
               initial={{ opacity: 0, x: -50 }}
@@ -206,7 +206,7 @@ export default function CourseDetailsPage() {
               <h1 className="text-4xl md:text-5xl font-black text-gray-900 dark:text-white mb-4 leading-tight">
                 {course.title}
               </h1>
-              
+
               <p className="text-lg text-gray-700 dark:text-gray-300 mb-6 leading-relaxed">
                 {course.description}
               </p>
@@ -251,18 +251,27 @@ export default function CourseDetailsPage() {
 
               {/* CTA Buttons */}
               <div className="flex flex-wrap gap-4">
-                <Link href="/enrollment">
+                <Link href={`/enrollment/${courseId}`}>
+
                   <motion.button
+
                     whileHover={{ scale: 1.05 }}
+
                     whileTap={{ scale: 0.95 }}
+
                     className="px-8 py-4 rounded-2xl text-white font-black text-lg shadow-xl hover:shadow-2xl transition-all flex items-center gap-2"
+
                     style={{ background: "linear-gradient(90deg, #C81D77, #6710C2)" }}
+
                   >
+
                     Enroll Now <FaArrowRight />
+
                   </motion.button>
+
                 </Link>
                 {course.salesVideo.url && (
-                  <button 
+                  <button
                     onClick={() => setShowVideo(true)}
                     className="px-8 py-4 rounded-2xl bg-white dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 font-black text-lg hover:border-[#C81D77] transition-all flex items-center gap-2"
                   >
@@ -282,7 +291,7 @@ export default function CourseDetailsPage() {
               <div className="relative rounded-3xl overflow-hidden shadow-2xl border-8 border-white dark:border-gray-800">
                 {!showVideo ? (
                   <>
-                    <img 
+                    <img
                       src={course.coverImage.url}
                       alt="Course Preview"
                       className="w-full h-[400px] object-cover"
@@ -305,7 +314,7 @@ export default function CourseDetailsPage() {
                   </>
                 ) : (
                   <div className="relative w-full h-[400px]">
-                    <iframe 
+                    <iframe
                       className="w-full h-full"
                       src={`${getYouTubeEmbedUrl(course.salesVideo.url)}?autoplay=1`}
                       title="Course Preview Video"
@@ -405,11 +414,10 @@ export default function CourseDetailsPage() {
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
-                className={`px-6 py-3 font-black text-lg capitalize transition-all ${
-                  activeTab === tab
+                className={`px-6 py-3 font-black text-lg capitalize transition-all ${activeTab === tab
                     ? "text-[#C81D77] border-b-4 border-[#C81D77]"
                     : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
-                }`}
+                  }`}
               >
                 {tab}
               </button>
@@ -427,7 +435,7 @@ export default function CourseDetailsPage() {
               <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-6">
                 {course.description}
               </p>
-              
+
               <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 border border-gray-200 dark:border-gray-700">
                 <h4 className="text-xl font-black text-gray-900 dark:text-white mb-4">Course Details</h4>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -488,7 +496,7 @@ export default function CourseDetailsPage() {
                       </div>
                     </div>
                   </div>
-                  
+
                   <div className="space-y-2 mt-4">
                     {module.lessons.map((lesson, idx) => (
                       <div
@@ -533,7 +541,7 @@ export default function CourseDetailsPage() {
               <div className="flex flex-col md:flex-row items-center gap-8">
                 <div className="w-32 h-32 rounded-full overflow-hidden border-4 border-purple-200 dark:border-purple-800 bg-gray-300">
                   {course.instructorId.photoURL ? (
-                    <img 
+                    <img
                       src={course.instructorId.photoURL}
                       alt={course.instructorId.name}
                       className="w-full h-full object-cover"
