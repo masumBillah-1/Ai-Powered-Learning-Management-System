@@ -1,8 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { useState, useEffect, useRef } from "react";
+import { usePathname, useRouter } from "next/navigation";
+import { useState, useEffect, useRef, useCallback } from "react";
 import {
   LayoutDashboard, User, BookOpen, FileText, HelpCircle, Award,
   MessageSquare, Settings, Bell, ChevronLeft, ChevronRight,
@@ -12,6 +12,8 @@ import { FaSun, FaMoon } from "react-icons/fa";
 
 type Role = "student" | "instructor" | "admin";
 interface UserData { name: string; email: string; photoURL?: string; role: Role; }
+
+const POLL_INTERVAL = 3_000;
 
 const menus: Record<Role, { label: string; href: string; icon: React.ReactNode }[]> = {
   student: [
@@ -49,13 +51,44 @@ const menus: Record<Role, { label: string; href: string; icon: React.ReactNode }
   ],
 };
 
+const roleDashboard: Record<Role, string> = {
+  student: "/sampleDashboard/student",
+  instructor: "/sampleDashboard/instructor",
+  admin: "/sampleDashboard/admin",
+};
+
+const roleProtectedPrefixes: Record<Role, string[]> = {
+  student: ["/sampleDashboard/student"],
+  instructor: ["/sampleDashboard/instructor"],
+  admin: ["/sampleDashboard/admin"],
+};
+
+const sharedPaths = [
+  "/sampleDashboard/profile",
+  "/sampleDashboard/messages",
+  "/sampleDashboard/settings",
+];
+
+function isUnauthorizedPath(path: string, userRole: Role): boolean {
+  if (sharedPaths.some(p => path.startsWith(p))) return false;
+  for (const [role, prefixes] of Object.entries(roleProtectedPrefixes) as [Role, string[]][]) {
+    if (role === userRole) continue;
+    if (prefixes.some(prefix => path.startsWith(prefix))) return true;
+  }
+  return false;
+}
+
 const roleMeta: Record<Role, { color: string; label: string }> = {
   student: { color: "#00C48C", label: "Student" },
   instructor: { color: "#F89B29", label: "Instructor" },
   admin: { color: "#FF0F7B", label: "Admin" },
 };
 
-const rootHrefs = ["/sampleDashboard/instructor", "/sampleDashboard/student", "/sampleDashboard/admin"];
+const rootHrefs = [
+  "/sampleDashboard/instructor",
+  "/sampleDashboard/student",
+  "/sampleDashboard/admin",
+];
 
 function Avatar({ user, sm }: { user: UserData | null; sm?: boolean }) {
   const letter = user?.name?.charAt(0).toUpperCase() || "?";
@@ -65,7 +98,6 @@ function Avatar({ user, sm }: { user: UserData | null; sm?: boolean }) {
     : <div className={`${cls} rounded-lg flex items-center justify-center font-bold text-sm text-white bg-gradient-to-br from-[#832388] to-[#FF0F7B] flex-shrink-0`}>{letter}</div>;
 }
 
-// ── SIDEBAR ───────────────────────────────────────────────
 function Sidebar({ items, collapsed, onToggle, mobileOpen, onMobileClose }: {
   items: { label: string; href: string; icon: React.ReactNode }[];
   collapsed: boolean; onToggle: () => void;
@@ -94,7 +126,6 @@ function Sidebar({ items, collapsed, onToggle, mobileOpen, onMobileClose }: {
             </button>
           )}
         </div>
-
         <nav className="flex-1 overflow-y-auto py-1.5 [scrollbar-width:none]">
           {items.map(item => {
             const active = pathname === item.href || (!rootHrefs.includes(item.href) && pathname.startsWith(item.href));
@@ -102,11 +133,7 @@ function Sidebar({ items, collapsed, onToggle, mobileOpen, onMobileClose }: {
               <Link key={item.href} href={item.href} title={!w ? item.label : undefined}
                 className={`relative flex items-center mx-2 my-0.5 rounded-lg no-underline transition-colors duration-150
                   ${w ? "gap-3 px-3.5 py-2.5 justify-start" : "justify-center py-3"}
-                  ${active
-                    ? "bg-gradient-to-r from-[#83238888] to-[#FF0F7B44] text-white"
-                    : "text-white/50 hover:text-white/80 hover:bg-white/[0.05]"
-                  }`}
-              >
+                  ${active ? "bg-gradient-to-r from-[#83238888] to-[#FF0F7B44] text-white" : "text-white/50 hover:text-white/80 hover:bg-white/[0.05]"}`}>
                 {active && <span className="absolute left-0 top-[18%] h-[64%] w-[3px] rounded-r-sm bg-gradient-to-b from-[#832388] to-[#FF0F7B]" />}
                 <span className={active ? "text-white" : "text-white/40"}>{item.icon}</span>
                 {w && <span className={`text-[13.5px] whitespace-nowrap ${active ? "font-semibold" : "font-normal"}`}>{item.label}</span>}
@@ -114,7 +141,6 @@ function Sidebar({ items, collapsed, onToggle, mobileOpen, onMobileClose }: {
             );
           })}
         </nav>
-
         {w && <div className="px-3.5 py-3 border-t border-white/[0.07] text-[11px] text-white/20 flex-shrink-0">SmartLMS Pro v2.0</div>}
       </div>
     );
@@ -137,7 +163,6 @@ function Sidebar({ items, collapsed, onToggle, mobileOpen, onMobileClose }: {
   );
 }
 
-// ── TOP NAVBAR ────────────────────────────────────────────
 function TopNavbar({ role, items, theme, toggleTheme, user, onLogout, onMobileMenu, collapsed, unreadCount }: {
   role: Role;
   items: { label: string; href: string; icon: React.ReactNode }[];
@@ -164,9 +189,7 @@ function TopNavbar({ role, items, theme, toggleTheme, user, onLogout, onMobileMe
     if (notifications.length === 0) {
       try {
         const token = localStorage.getItem("token");
-        const res = await fetch("/api/notifications", {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        const res = await fetch("/api/notifications", { headers: { Authorization: `Bearer ${token}` } });
         const data = await res.json();
         if (data.notifications) setNotifications(data.notifications);
       } catch { }
@@ -199,7 +222,6 @@ function TopNavbar({ role, items, theme, toggleTheme, user, onLogout, onMobileMe
           {theme === "dark" ? <FaSun size={16} /> : <FaMoon size={16} />}
         </button>
 
-        {/* Bell */}
         <div ref={notifRef} className="relative">
           <button onClick={handleNotifOpen} className="btn btn-ghost btn-sm btn-square cursor-pointer relative">
             <Bell size={18} />
@@ -237,7 +259,6 @@ function TopNavbar({ role, items, theme, toggleTheme, user, onLogout, onMobileMe
 
         <div className="w-px h-6 bg-base-300 mx-1" />
 
-        {/* User dropdown */}
         <div ref={userRef} className="relative">
           <button onClick={() => { setShowUser(v => !v); setShowNotif(false); }} className="btn btn-ghost btn-sm h-auto py-1.5 px-2 rounded-xl cursor-pointer flex items-center gap-2">
             <Avatar user={user} sm />
@@ -280,7 +301,6 @@ function TopNavbar({ role, items, theme, toggleTheme, user, onLogout, onMobileMe
   );
 }
 
-// ── PAGE LOADER ───────────────────────────────────────────
 function PageLoader({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
   const pathname = usePathname();
@@ -299,8 +319,10 @@ function PageLoader({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
-// ── ROOT LAYOUT ───────────────────────────────────────────
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
+  const router = useRouter();
+  const pathname = usePathname();
+
   const [role, setRole] = useState<Role>("student");
   const [theme, setTheme] = useState<"dark" | "light">("light");
   const [user, setUser] = useState<UserData | null>(null);
@@ -309,71 +331,88 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [mobileOpen, setMobileOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
 
-  useEffect(() => {
-    const t = (localStorage.getItem("theme") || "light") as "dark" | "light";
-    setTheme(t);
-    document.documentElement.setAttribute("data-theme", t);
+  const currentRoleRef = useRef<Role>("student");
 
+  const fetchUser = useCallback(async (isInitial = false) => {
     const token = localStorage.getItem("token");
-    const raw = localStorage.getItem("user");
+    if (!token) { router.replace("/login"); return; }
 
-    // token না থাকলে login এ পাঠাও
-    if (!token) {
-      window.location.href = "/login";
-      return;
-    }
+    try {
+      const res = await fetch("/api/dashboard", { headers: { Authorization: `Bearer ${token}` } });
+      const data = await res.json();
 
-    // ✅ MongoDB আগে check করো
-    fetch("/api/dashboard", {
-      headers: { Authorization: `Bearer ${token}` },
-    })
-      .then(r => r.json())
-      .then(data => {
-        if (!data.user) {
-          localStorage.removeItem("user");
-          localStorage.removeItem("token");
-          window.location.href = "/login";
-          return;
-        }
+      if (!data.user) {
+        localStorage.removeItem("user");
+        localStorage.removeItem("token");
+        router.replace("/login");
+        return;
+      }
 
-        const freshUser = data.user;
+      const freshUser: UserData = data.user;
+      const newRole = (["student", "instructor", "admin"].includes(freshUser.role)
+        ? freshUser.role : "student") as Role;
 
-        // ✅ localStorage এর সাথে compare করো
-        if (raw) {
-          try {
-            const cachedUser: UserData = JSON.parse(raw);
-            if (cachedUser.role !== freshUser.role) {
-              // role mismatch — log করো
-              console.log(`🔄 Role changed: ${cachedUser.role} → ${freshUser.role}`);
-            }
-          } catch {
-            // localStorage corrupt — কিছু করার নেই
-          }
-        }
+      localStorage.setItem("user", JSON.stringify(freshUser));
 
-        // ✅ সবসময় MongoDB data দিয়ে update
-        localStorage.setItem("user", JSON.stringify(freshUser));
+      // ── Silent role change — just redirect immediately ──
+      if (!isInitial && newRole !== currentRoleRef.current) {
+        currentRoleRef.current = newRole;
         setUser(freshUser);
-        setRole(["student", "instructor", "admin"].includes(freshUser.role) ? freshUser.role : "student");
-        setUnreadCount(data.unreadNotifications || 0);
+        setRole(newRole);
+        router.replace(roleDashboard[newRole]);
+        return;
+      }
+
+      currentRoleRef.current = newRole;
+      setUser(freshUser);
+      setRole(newRole);
+      setUnreadCount(data.unreadNotifications || 0);
+
+      if (isInitial) {
         setIsLoading(false);
-      })
-      .catch(() => {
-        // ✅ Network error — localStorage দিয়ে fallback
+        if (isUnauthorizedPath(pathname, newRole)) {
+          router.replace(roleDashboard[newRole]);
+        }
+      }
+    } catch {
+      if (isInitial) {
+        const raw = localStorage.getItem("user");
         if (raw) {
           try {
             const parsed: UserData = JSON.parse(raw);
+            const fallbackRole = (["student", "instructor", "admin"].includes(parsed.role)
+              ? parsed.role : "student") as Role;
+            currentRoleRef.current = fallbackRole;
             setUser(parsed);
-            setRole(["student", "instructor", "admin"].includes(parsed.role) ? parsed.role : "student");
+            setRole(fallbackRole);
             setIsLoading(false);
-          } catch {
-            window.location.href = "/login";
-          }
+            if (isUnauthorizedPath(pathname, fallbackRole)) {
+              router.replace(roleDashboard[fallbackRole]);
+            }
+          } catch { router.replace("/login"); }
         } else {
-          window.location.href = "/login";
+          router.replace("/login");
         }
-      });
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  useEffect(() => { fetchUser(true); }, [fetchUser]);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (!isLoading) fetchUser(false);
+    }, POLL_INTERVAL);
+    return () => clearInterval(interval);
+  }, [isLoading, fetchUser]);
+
+  useEffect(() => {
+    if (isLoading) return;
+    if (isUnauthorizedPath(pathname, role)) {
+      router.replace(roleDashboard[role]);
+    }
+  }, [pathname, role, isLoading, router]);
 
   const toggleTheme = () => {
     const next = theme === "light" ? "dark" : "light";
@@ -386,7 +425,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     await fetch("/api/auth/logout", { method: "POST" });
     localStorage.removeItem("user");
     localStorage.removeItem("token");
-    window.location.href = "/login";
+    router.replace("/login");
   };
 
   if (isLoading) return (

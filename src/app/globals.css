@@ -1,60 +1,98 @@
 @import "tailwindcss";
 @plugin "daisyui";
 
-/* CSS Property Support for older browsers */
-@supports not (color: color(display-p3 1 0 0)) {
-  @property --radialprogress {
-    syntax: "<percentage>";
-    inherits: true;
-    initial-value: 0%;
-  }
-}
-
-/* Tailwind-ke dark mode er strategy bole deya */
+/* Dark mode strategy for Tailwind */
 @custom-variant dark (&:where(.dark, [data-theme="dark"], .dark *));
 
+/* =========================
+   Root Theme Variables
+========================= */
 :root {
   --background: #ffffff;
   --foreground: #171717;
   --nav-bg: #ffffff;
   --border-color: #f3f4f6;
-  
+
   /* Font variables */
   --font-geist-sans: "Geist", sans-serif;
   --font-geist-mono: "Geist Mono", monospace;
   --font-hind-siliguri: "Hind Siliguri", sans-serif;
 }
 
-.dark, [data-theme="dark"] {
+/* =========================
+   Dark Theme Variables
+========================= */
+.dark,
+[data-theme="dark"] {
   --background: #0b1120;
   --foreground: #ededed;
   --nav-bg: #0b1120;
   --border-color: #1f2937;
 }
 
+/* =========================
+   Tailwind Theme Mapping
+========================= */
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
 }
 
+/* =========================
+   Base Styles
+========================= */
 body {
   background-color: var(--background);
   color: var(--foreground);
   font-family: var(--font-hind-siliguri), var(--font-geist-sans), sans-serif;
 }
 
-/* Bangla text specific styling */
+/* =========================
+   Font Utilities
+========================= */
+
+/* Bangla text */
 .bangla-text {
   font-family: var(--font-hind-siliguri), sans-serif;
   font-weight: 500;
 }
 
-/* English text specific styling */
+/* English text */
 .english-text {
   font-family: var(--font-geist-sans), sans-serif;
 }
 
-/* Custom Animations for Splash Screen */
+/* =========================
+   Custom Shapes
+========================= */
+
+/* Hexagon shape */
+.clip-hexagon {
+  clip-path: polygon(
+    30% 0%,
+    70% 0%,
+    100% 30%,
+    100% 70%,
+    70% 100%,
+    30% 100%,
+    0% 70%,
+    0% 30%
+  );
+}
+
+/* =========================
+   Global Transitions
+========================= */
+* {
+  transition-property: background-color, border-color, color, fill, stroke;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: 150ms;
+}
+
+/* =========================
+   Splash Screen Animations
+========================= */
+
 @keyframes fadeIn {
   from {
     opacity: 0;
@@ -88,6 +126,7 @@ body {
   }
 }
 
+/* Animation utilities */
 .animate-fade-in {
   animation: fadeIn 1s ease-out;
 }

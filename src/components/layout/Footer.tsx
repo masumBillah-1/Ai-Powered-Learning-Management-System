@@ -2,17 +2,17 @@
 "use client";
 import React from "react";
 import Link from "next/link";
-import {
-  FaFacebook,
-  FaInstagram,
-  FaYoutube,
-  FaLinkedin,
-  FaMapMarkerAlt,
-  FaEnvelope,
+import { 
+  FaFacebook, 
+  FaInstagram, 
+  FaYoutube, 
+  FaLinkedin, 
+  FaMapMarkerAlt, 
+  FaEnvelope, 
   FaPhoneAlt,
   FaApple,
   FaGooglePlay,
-  FaWindows,
+  FaWindows
 } from "react-icons/fa";
 import Logo from "./Logo";
 
@@ -32,8 +32,10 @@ const Footer = () => {
   return (
     // Important: We use !important styles via Tailwind for background to override any conflicts
     <footer className="w-full bg-[#F9F5FF] dark:bg-[#0b1120] pt-16 pb-6 transition-colors duration-300 border-t border-gray-100 dark:border-gray-800">
-      <div className="container mx-auto px-4 sm:px-6 lg:px-12">
+      <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-12">
+        
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10">
+          
           {/* Column 1: BrainBoost Logo & Contact */}
           <div className="space-y-6">
             <Logo />
@@ -50,23 +52,15 @@ const Footer = () => {
 
             {/* Support Card - Dark Mode Contrast Fix */}
             <div className="bg-white dark:bg-[#1e293b] p-5 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700">
-              <p className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase mb-2">
-                যেকোন জিজ্ঞাসায় ফোন করো
-              </p>
+              <p className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase mb-2">যেকোন জিজ্ঞাসায় ফোন করো</p>
               <div className="flex items-center gap-3">
                 <div className="p-2 bg-gray-50 dark:bg-gray-800 rounded-full">
                   <FaPhoneAlt className="text-gray-700 dark:text-gray-300" />
                 </div>
                 <div>
-                  <p className="font-extrabold text-lg text-gray-800 dark:text-white leading-tight">
-                    01322-901105
-                  </p>
-                  <p className="font-extrabold text-lg text-gray-800 dark:text-white leading-tight">
-                    01322-810874
-                  </p>
-                  <p className="text-[11px] text-gray-500 mt-1">
-                    (Sat - Thu, 10:00 AM to 7:00 PM)
-                  </p>
+                  <p className="font-extrabold text-lg text-gray-800 dark:text-white leading-tight">01322-901105</p>
+                  <p className="font-extrabold text-lg text-gray-800 dark:text-white leading-tight">01322-810874</p>
+                  <p className="text-[11px] text-gray-500 mt-1">(Sat - Thu, 10:00 AM to 7:00 PM)</p>
                 </div>
               </div>
             </div>
@@ -74,9 +68,7 @@ const Footer = () => {
 
           {/* Column 2: Links */}
           <div className="lg:pl-10">
-            <h4 className="font-bold text-gray-900 dark:text-white mb-6 text-lg">
-              লিঙ্কসমূহ
-            </h4>
+            <h4 className="font-bold text-gray-900 dark:text-white mb-6 text-lg">লিঙ্কসমূহ</h4>
             <ul className="space-y-4 text-sm font-medium">
               {footerLinks.map((item) => (
                 <li key={item.name}>
@@ -93,9 +85,7 @@ const Footer = () => {
 
           {/* Column 3: Social Media with Dark Mode Icons */}
           <div>
-            <h4 className="font-bold text-gray-900 dark:text-white mb-6 text-lg">
-              সোশ্যাল মিডিয়া
-            </h4>
+            <h4 className="font-bold text-gray-900 dark:text-white mb-6 text-lg">সোশ্যাল মিডিয়া</h4>
             <div className="space-y-4">
               <a
                 href="https://www.facebook.com/"
@@ -138,9 +128,7 @@ const Footer = () => {
 
           {/* Column 4: App Download - Pure Dark Style as per Image */}
           <div>
-            <h4 className="font-bold text-gray-900 dark:text-white mb-6 text-lg">
-              অ্যাপ ডাউনলোড করো
-            </h4>
+            <h4 className="font-bold text-gray-900 dark:text-white mb-6 text-lg">অ্যাপ ডাউনলোড করো</h4>
             <div className="space-y-4">
               <button className="flex items-center gap-3 w-full max-w-[200px] bg-[#1a1a1a] dark:bg-black text-white p-3 rounded-xl hover:opacity-80 transition-all border border-gray-800">
                 <FaApple size={28} />
@@ -157,7 +145,7 @@ const Footer = () => {
                   </a>
                 </div>
               </button>
-
+              
               <button className="flex items-center gap-3 w-full max-w-[200px] bg-[#1a1a1a] dark:bg-black text-white p-3 rounded-xl hover:opacity-80 transition-all border border-gray-800">
                 <FaGooglePlay size={22} className="text-green-400" />
                 <div className="text-left">
