@@ -61,7 +61,6 @@ const BootcampBanner = () => {
       setFormData({ name: '', email: '', phone: '' });
     }, 2000);
   };
-  };
 
   if (!bootcampData) return null;
 
