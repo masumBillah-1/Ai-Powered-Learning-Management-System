@@ -25,7 +25,7 @@ const About = () => {
       role: "Frontend Developer", 
       image: "https://i.ibb.co.com/nND6Jbrz/mine-removebg-preview.png",
       github: "https://github.com/Sayma-Shimu", 
-      linkedin: "https://linkedin.com/" 
+      linkedin: "https://www.linkedin.com/in/sayma-ahmed-shimu/" 
     },
     { 
       name: "Sakib Al Hasan", 
