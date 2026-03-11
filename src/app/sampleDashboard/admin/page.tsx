@@ -17,27 +17,31 @@ export default function AdminDashboard() {
     return () => clearInterval(iv);
   }, [theme]);
 
+  // ── Only 2 colors used everywhere ──
+  const PRIMARY = "#C81D77";
+  const MUTED = "#6B7280";
+
   const stats = [
-    { label: "Students",    value: "1,240",     change: "+12%", icon: Users,      color: "#FF0F7B" },
-    { label: "Instructors", value: "38",         change: "+3%",  icon: Users,      color: "#832388" },
-    { label: "Courses",     value: "94",         change: "+8%",  icon: BookOpen,   color: "#F89B29" },
-    { label: "Revenue",     value: "৳4,82,000",  change: "+21%", icon: DollarSign, color: "#00C48C" },
+    { label: "Students", value: "1,240", change: "+12%", icon: Users },
+    { label: "Instructors", value: "38", change: "+3%", icon: Users },
+    { label: "Courses", value: "94", change: "+8%", icon: BookOpen },
+    { label: "Revenue", value: "৳4,82,000", change: "+21%", icon: DollarSign },
   ];
 
   const transactions = [
-    { name: "Rahim Uddin",   initial: "R", course: "Web Dev Bootcamp",     amount: "৳1,500", date: "Today, 10:00 AM", avatarColor: "#FF0F7B" },
-    { name: "Sumaiya Islam", initial: "S", course: "Python for Beginners", amount: "৳1,200", date: "Today, 9:30 AM",  avatarColor: "#832388" },
-    { name: "Tanvir Ahmed",  initial: "T", course: "React Advanced",       amount: "৳2,000", date: "Yesterday",       avatarColor: "#F89B29" },
+    { name: "Rahim Uddin", initial: "R", course: "Web Dev Bootcamp", amount: "৳1,500", date: "Today, 10:00 AM" },
+    { name: "Sumaiya Islam", initial: "S", course: "Python for Beginners", amount: "৳1,200", date: "Today, 9:30 AM" },
+    { name: "Tanvir Ahmed", initial: "T", course: "React Advanced", amount: "৳2,000", date: "Yesterday" },
   ];
 
   const actions = [
-    { type: "Course Approval", detail: "React Advanced by Karim",   urgent: true,  icon: BookOpen   },
-    { type: "Payout Request",  detail: "৳5,000 from Karim Hossain", urgent: true,  icon: DollarSign },
-    { type: "New Instructor",  detail: "Sadia Islam pending verify", urgent: false, icon: Users      },
+    { type: "Course Approval", detail: "React Advanced by Karim", urgent: true, icon: BookOpen },
+    { type: "Payout Request", detail: "৳5,000 from Karim Hossain", urgent: true, icon: DollarSign },
+    { type: "New Instructor", detail: "Sadia Islam pending verify", urgent: false, icon: Users },
   ];
 
   return (
-    <div className="min-h-screen ">
+    <div className="min-h-screen">
 
       {/* Header */}
       <div className="mb-8">
@@ -47,20 +51,22 @@ export default function AdminDashboard() {
 
       {/* Stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-        {stats.map((s) => (
-          <div key={s.label} className="rounded-2xl bg-base-100 border border-base-300 p-5 overflow-hidden relative group hover:shadow-md transition-shadow">
-            {/* left accent */}
-            <div className="absolute left-0 top-0 h-full w-1 rounded-l-2xl" style={{ background: s.color }} />
-            <div className="flex items-center justify-between mb-4 pl-2">
-              <p className="text-xs font-black uppercase tracking-widest opacity-30">{s.label}</p>
-              <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ backgroundColor: s.color + "15" }}>
-                <s.icon size={16} style={{ color: s.color }} />
+        {stats.map((s, i) => (
+          <div key={s.label} className="rounded-2xl bg-base-100 border border-base-300 p-5 relative overflow-hidden group hover:shadow-md transition-shadow">
+            {/* top accent only on first card */}
+            {i === 0 && (
+              <div className="absolute top-0 left-0 right-0 h-0.5 rounded-t-2xl" style={{ background: PRIMARY }} />
+            )}
+            <div className="flex items-center justify-between mb-4">
+              <p className="text-xs font-bold uppercase tracking-widest opacity-30">{s.label}</p>
+              <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-base-200">
+                <s.icon size={15} className="opacity-50" />
               </div>
             </div>
-            <p className="text-3xl font-black pl-2 mb-1" style={{ color: s.color }}>{s.value}</p>
-            <div className="flex items-center gap-1 pl-2">
-              <TrendingUp size={11} style={{ color: s.color }} />
-              <span className="text-xs font-black" style={{ color: s.color }}>{s.change}</span>
+            <p className="text-3xl font-black mb-1">{s.value}</p>
+            <div className="flex items-center gap-1">
+              <TrendingUp size={11} style={{ color: PRIMARY }} />
+              <span className="text-xs font-bold" style={{ color: PRIMARY }}>{s.change}</span>
               <span className="text-xs opacity-30 ml-0.5">this month</span>
             </div>
           </div>
@@ -73,7 +79,6 @@ export default function AdminDashboard() {
         {/* ── Transactions ── */}
         <div className="lg:col-span-2 rounded-2xl bg-base-100 border border-base-300 overflow-hidden">
 
-          {/* header */}
           <div className="flex items-center justify-between px-6 py-4 border-b border-base-300">
             <div>
               <p className="font-black text-sm">Recent Transactions</p>
@@ -81,112 +86,97 @@ export default function AdminDashboard() {
             </div>
             <Link
               href="/sampleDashboard/admin/earnings"
-              className="flex items-center gap-1 text-xs font-black px-3 py-1.5 rounded-lg transition-opacity hover:opacity-70"
-              style={{ color: "#FF0F7B", backgroundColor: theme === "dark" ? "#2a1520" : "#fff0f5" }}
+              className="flex items-center gap-1 text-xs font-bold px-3 py-1.5 rounded-lg transition-opacity hover:opacity-70"
+              style={{ color: PRIMARY, backgroundColor: PRIMARY + "12" }}
             >
               View all <ArrowRight size={11} />
             </Link>
           </div>
 
-          {/* rows */}
           {transactions.map((t, i) => (
             <div
               key={i}
               className="flex items-center gap-4 px-6 py-4 hover:bg-base-200/50 transition-colors border-b border-base-300 last:border-0"
             >
-              {/* index */}
-              <span className="text-xs font-black opacity-20 w-4 flex-shrink-0">{String(i + 1).padStart(2, "0")}</span>
+              <span className="text-xs font-bold opacity-20 w-4 flex-shrink-0">{String(i + 1).padStart(2, "0")}</span>
 
-              {/* avatar */}
+              {/* avatar — single color, varying opacity */}
               <div
-                className="w-10 h-10 rounded-xl flex items-center justify-center text-white font-black text-sm flex-shrink-0 shadow-sm"
-                style={{ backgroundColor: t.avatarColor }}
+                className="w-10 h-10 rounded-xl flex items-center justify-center text-white font-black text-sm flex-shrink-0"
+                style={{ backgroundColor: i === 0 ? PRIMARY : MUTED }}
               >
                 {t.initial}
               </div>
 
-              {/* name + course */}
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-black leading-tight">{t.name}</p>
                 <p className="text-xs opacity-40 mt-0.5 truncate">{t.course}</p>
               </div>
 
-              {/* amount + date */}
               <div className="text-right flex-shrink-0">
-                <p className="text-sm font-black" style={{ color: "#00C48C" }}>{t.amount}</p>
+                <p className="text-sm font-black" style={{ color: PRIMARY }}>{t.amount}</p>
                 <div className="flex items-center gap-1 justify-end mt-0.5">
                   <Clock size={9} className="opacity-30" />
                   <span className="text-xs opacity-30">{t.date}</span>
                 </div>
               </div>
 
-              {/* paid badge */}
               <div className="flex-shrink-0">
-                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-black bg-success/10 text-success">
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold"
+                  style={{ backgroundColor: PRIMARY + "12", color: PRIMARY }}>
                   <CheckCircle2 size={10} /> Paid
                 </span>
               </div>
             </div>
           ))}
 
-          {/* footer */}
           <div className="flex items-center justify-between px-6 py-3 bg-base-200/40 border-t border-base-300">
             <span className="text-xs opacity-40 font-semibold">Today's collection</span>
-            <span className="text-sm font-black" style={{ color: "#00C48C" }}>৳2,700</span>
+            <span className="text-sm font-black" style={{ color: PRIMARY }}>৳2,700</span>
           </div>
         </div>
 
         {/* ── Pending Actions ── */}
         <div className="rounded-2xl bg-base-100 border border-base-300 overflow-hidden">
 
-          {/* header */}
           <div className="px-5 py-4 border-b border-base-300">
             <p className="font-black text-sm">Pending Actions</p>
             <p className="text-xs opacity-40 mt-0.5">Requires your attention</p>
           </div>
 
-          {/* rows */}
           {actions.map((a, i) => (
             <div
               key={i}
               className="flex items-center gap-3 px-5 py-4 hover:bg-base-200/50 transition-colors border-b border-base-300 last:border-0"
             >
-              {/* icon bubble */}
               <div
                 className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
-                style={{
-                  backgroundColor: a.urgent ? "#FF0F7B15" : "#83238815",
-                }}
+                style={{ backgroundColor: PRIMARY + "12" }}
               >
-                <a.icon size={15} style={{ color: a.urgent ? "#FF0F7B" : "#832388" }} />
+                <a.icon size={15} style={{ color: PRIMARY }} />
               </div>
 
-              {/* text */}
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-1.5">
-                  {a.urgent && <AlertCircle size={11} style={{ color: "#FF0F7B" }} />}
-                  <p className="text-sm font-black truncate" style={{ color: a.urgent ? "#FF0F7B" : undefined }}>
-                    {a.type}
-                  </p>
+                  {a.urgent && <AlertCircle size={11} style={{ color: PRIMARY }} />}
+                  <p className="text-sm font-black truncate">{a.type}</p>
                 </div>
                 <p className="text-xs opacity-40 truncate mt-0.5">{a.detail}</p>
               </div>
 
-              {/* btn */}
               <button
-                className="btn btn-xs border-0 text-white flex-shrink-0 cursor-pointer font-black"
-                style={{ backgroundColor: a.urgent ? "#FF0F7B" : "#832388" }}
+                className="flex-shrink-0 text-xs font-bold px-3 py-1.5 rounded-lg text-white transition-opacity hover:opacity-80 cursor-pointer"
+                style={{ backgroundColor: a.urgent ? PRIMARY : MUTED }}
               >
                 Review
               </button>
             </div>
           ))}
 
-          {/* footer */}
           <div className="px-5 py-3 bg-base-200/40 border-t border-base-300">
             <Link
               href="/sampleDashboard/admin/courses"
-              className="text-xs font-black opacity-40 hover:opacity-70 transition-opacity flex items-center gap-1"
+              className="text-xs font-bold opacity-40 hover:opacity-70 transition-opacity flex items-center gap-1"
             >
               View all actions <ArrowRight size={10} />
             </Link>

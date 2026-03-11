@@ -15,9 +15,6 @@ function getDecoded(req: NextRequest) {
 
 // ─── GET ──────────────────────────────────────────────────────────────────────
 // Handles two modes:
-//   A) Student view  → GET /api/enrollments?courseId=   (নিজের enrollments)
-//   B) Instructor view → GET /api/enrollments?instructorId=<id>&populate=student
-//                     → GET /api/enrollments?mine=true&populate=student   (cookie থেকে)
 export async function GET(req: NextRequest) {
   try {
     await connectDB();
@@ -31,7 +28,7 @@ export async function GET(req: NextRequest) {
     const populateUser  = searchParams.get("populate") === "student";
     const mineOnly      = searchParams.get("mine") === "true";
     const limit         = parseInt(searchParams.get("limit") || "50");
-    const status        = searchParams.get("status"); // optional filter
+    const status        = searchParams.get("status"); 
 
     // ── Mode B: Instructor চাইছে তার course এর students ────────────────────────
     const isInstructorView = (instructorId || (mineOnly && decoded.role === "instructor"));
@@ -39,7 +36,7 @@ export async function GET(req: NextRequest) {
     if (isInstructorView) {
       const targetInstructorId = instructorId || decoded.userId;
 
-      // 1. Instructor এর সব published/draft course IDs বের করো
+ 
       const courses = await Course.find(
         { instructorId: new mongoose.Types.ObjectId(targetInstructorId) },
         { _id: 1, title: 1, coverImage: 1 }
@@ -51,7 +48,7 @@ export async function GET(req: NextRequest) {
 
       const courseIds = courses.map((c: any) => c._id);
 
-      // 2. ওই courses এর সব enrollments আনো
+   
       const query: any = { courseId: { $in: courseIds } };
       if (status) query.status = status;
 
@@ -60,23 +57,23 @@ export async function GET(req: NextRequest) {
         .limit(limit)
         .lean();
 
-      // 3. populate=student হলে User data join করো
+      
       let result = enrollments;
 
       if (populateUser && enrollments.length > 0) {
-        // unique studentId গুলো বের করো
+        
         const studentIds = [...new Set(enrollments.map((e: any) => e.studentId.toString()))];
 
-        // User collection থেকে batch fetch (N+1 এড়াতে)
+        
         const users = await User.find(
           { _id: { $in: studentIds.map(id => new mongoose.Types.ObjectId(id)) } },
           { name: 1, email: 1, phone: 1, photoURL: 1, address: 1, stats: 1, status: 1 }
         ).lean();
 
-        // userId → user map তৈরি করো
+  
         const userMap = new Map(users.map((u: any) => [u._id.toString(), u]));
 
-        // enrollment এ studentData inject করো
+
         result = enrollments.map((e: any) => ({
           ...e,
           studentData: userMap.get(e.studentId.toString()) || null,
@@ -133,7 +130,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Already enrolled in this course" }, { status: 409 });
     }
 
-    // Course info (denormalized data এর জন্য)
+   
     const course = await Course.findById(courseId)
       .populate("instructorId", "name")
       .lean() as any;
@@ -208,7 +205,7 @@ export async function PUT(req: NextRequest) {
       $inc: { "progress.totalTimeSpent": timeSpent },
     };
 
-    // lessonId completed হলে completedLessons এ add করো (duplicate ছাড়া)
+  
     if (completed && lessonId && mongoose.isValidObjectId(lessonId)) {
       const alreadyDone = enrollment.progress.completedLessons.some(
         (id: any) => id.toString() === lessonId
@@ -224,7 +221,7 @@ export async function PUT(req: NextRequest) {
       { new: true }
     );
 
-    // Total lesson count এর জন্য course আনো
+    
     if (completed && updated) {
       const course = await Course.findById(courseId).lean() as any;
       if (course) {
