@@ -133,8 +133,6 @@ EnrollmentSchema.methods.updateProgress = function(lessonId: string, timeSpent: 
   this.progress.totalTimeSpent += timeSpent;
   this.progress.lastAccessedAt = new Date();
   
-  // Calculate progress percentage (this would need course data to be accurate)
-  // For now, we'll update it when we have the total lesson count
   return this.save();
 };
 
