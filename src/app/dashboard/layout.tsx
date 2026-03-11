@@ -14,12 +14,11 @@ type Role = "student" | "instructor" | "admin";
 interface UserData { name: string; email: string; photoURL?: string; role: Role; }
 
 // ✅ 30 seconds — performance friendly
-const POLL_INTERVAL = 5_000;
+const POLL_INTERVAL = 30_000;
 
-// ✅ Read theme from localStorage before first render (avoids flash)
+// ✅ Always start with "light" for SSR — real theme applied after mount
 function getInitialTheme(): "dark" | "light" {
-  if (typeof window === "undefined") return "light";
-  return (localStorage.getItem("theme") as "dark" | "light") || "light";
+  return "light";
 }
 
 const menus: Record<Role, { label: string; href: string; icon: React.ReactNode }[]> = {
@@ -345,7 +344,14 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   const currentRoleRef = useRef<Role>("student");
 
-  // ✅ Apply theme to <html> on mount & change
+  // ✅ Load real theme from localStorage AFTER mount — fixes SSR hydration mismatch
+  useEffect(() => {
+    const saved = (localStorage.getItem("theme") as "dark" | "light") || "light";
+    setTheme(saved);
+    document.documentElement.setAttribute("data-theme", saved);
+  }, []);
+
+  // Apply theme changes to <html>
   useEffect(() => {
     document.documentElement.setAttribute("data-theme", theme);
   }, [theme]);
@@ -448,7 +454,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   };
 
   if (isLoading) return (
-    <div className="flex items-center justify-center h-screen bg-base-200" data-theme={theme}>
+    <div className="flex items-center justify-center h-screen bg-base-200" data-theme={theme} suppressHydrationWarning>
       <span className="loading loading-spinner loading-lg text-[#832388]" />
     </div>
   );
@@ -456,7 +462,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const items = menus[role];
 
   return (
-    <div className="bg-base-200 min-h-screen" data-theme={theme}>
+    <div className="bg-base-200 min-h-screen" data-theme={theme} suppressHydrationWarning>
       <Sidebar
         items={items}
         collapsed={collapsed}
