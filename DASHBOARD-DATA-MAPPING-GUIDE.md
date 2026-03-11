@@ -16,7 +16,7 @@
 
 ### **👨‍🎓 STUDENT Dashboard Pages**
 
-#### **1. Student Dashboard (`/sampleDashboard/student`)**
+#### **1. Student Dashboard (`/dashboard/student`)**
 **Data Sources:**
 - **users** collection → student stats, profile info
 - **enrollments** collection → enrolled courses, progress
@@ -51,7 +51,7 @@
 }
 ```
 
-#### **2. Student Courses (`/sampleDashboard/student/courses`)**
+#### **2. Student Courses (`/dashboard/student/courses`)**
 **Data Sources:**
 - **enrollments** collection → enrolled courses list
 - **courses** collection → course details (populated)
@@ -71,7 +71,7 @@
 }
 ```
 
-#### **3. Student Assignments (`/sampleDashboard/student/assignments`)**
+#### **3. Student Assignments (`/dashboard/student/assignments`)**
 **Data Sources:**
 - **enrollments** collection → assignment results embedded
 - **courses** collection → assignment details from lessons
@@ -93,12 +93,12 @@
 }
 ```
 
-#### **4. Student Quiz (`/sampleDashboard/student/quiz`)**
+#### **4. Student Quiz (`/dashboard/student/quiz`)**
 **Data Sources:**
 - **enrollments** collection → quiz results embedded
 - **courses** collection → quiz questions from lessons
 
-#### **5. Student Certificates (`/sampleDashboard/student/certificates`)**
+#### **5. Student Certificates (`/dashboard/student/certificates`)**
 **Data Sources:**
 - **enrollments** collection → certificate info embedded
 
@@ -119,7 +119,7 @@
 
 ### **👨‍🏫 INSTRUCTOR Dashboard Pages**
 
-#### **1. Instructor Dashboard (`/sampleDashboard/instructor`)**
+#### **1. Instructor Dashboard (`/dashboard/instructor`)**
 **Data Sources:**
 - **users** collection → instructor stats
 - **courses** collection → instructor's courses
@@ -142,16 +142,16 @@
 }
 ```
 
-#### **2. Instructor Courses (`/sampleDashboard/instructor/courses`)**
+#### **2. Instructor Courses (`/dashboard/instructor/courses`)**
 **Data Sources:**
 - **courses** collection → instructor's courses
 - **enrollments** collection → enrollment count per course
 
-#### **3. Instructor Course Create (`/sampleDashboard/instructor/courses/create`)**
+#### **3. Instructor Course Create (`/dashboard/instructor/courses/create`)**
 **Data Sources:**
 - **courses** collection → create/update course data
 
-#### **4. Instructor Announcements (`/sampleDashboard/instructor/announcements`)**
+#### **4. Instructor Announcements (`/dashboard/instructor/announcements`)**
 **Data Sources:**
 - **notifications** collection → announcements created by instructor
 
@@ -168,26 +168,26 @@
 }
 ```
 
-#### **5. Instructor Assignments (`/sampleDashboard/instructor/assignments`)**
+#### **5. Instructor Assignments (`/dashboard/instructor/assignments`)**
 **Data Sources:**
 - **courses** collection → assignment lessons
 - **enrollments** collection → student submissions
 
-#### **6. Instructor Students (`/sampleDashboard/instructor/students`)**
+#### **6. Instructor Students (`/dashboard/instructor/students`)**
 **Data Sources:**
 - **enrollments** collection → students enrolled in instructor's courses
 - **users** collection → student details (populated)
 
-#### **7. Instructor Quiz (`/sampleDashboard/instructor/quiz`)**
+#### **7. Instructor Quiz (`/dashboard/instructor/quiz`)**
 **Data Sources:**
 - **courses** collection → quiz lessons
 - **enrollments** collection → quiz results
 
-#### **8. Instructor Quiz Results (`/sampleDashboard/instructor/quiz-results`)**
+#### **8. Instructor Quiz Results (`/dashboard/instructor/quiz-results`)**
 **Data Sources:**
 - **enrollments** collection → all quiz results for instructor's courses
 
-#### **9. Instructor Earnings (`/sampleDashboard/instructor/earnings`)**
+#### **9. Instructor Earnings (`/dashboard/instructor/earnings`)**
 **Data Sources:**
 - **transactions** collection → instructor's earnings
 - **users** collection → earnings stats
@@ -210,7 +210,7 @@
 
 ### **👨‍💼 ADMIN Dashboard Pages**
 
-#### **1. Admin Dashboard (`/sampleDashboard/admin`)**
+#### **1. Admin Dashboard (`/dashboard/admin`)**
 **Data Sources:**
 - **users** collection → total users count
 - **courses** collection → total courses count
@@ -229,7 +229,7 @@
 }
 ```
 
-#### **2. Admin Users (`/sampleDashboard/admin/users`)**
+#### **2. Admin Users (`/dashboard/admin/users`)**
 **Data Sources:**
 - **users** collection → all users with filtering
 
@@ -250,17 +250,17 @@
 }
 ```
 
-#### **3. Admin Courses (`/sampleDashboard/admin/courses`)**
+#### **3. Admin Courses (`/dashboard/admin/courses`)**
 **Data Sources:**
 - **courses** collection → all courses
 - **users** collection → instructor details (populated)
 - **enrollments** collection → enrollment counts
 
-#### **4. Admin Announcements (`/sampleDashboard/admin/announcements`)**
+#### **4. Admin Announcements (`/dashboard/admin/announcements`)**
 **Data Sources:**
 - **notifications** collection → system-wide announcements
 
-#### **5. Admin Earnings (`/sampleDashboard/admin/earnings`)**
+#### **5. Admin Earnings (`/dashboard/admin/earnings`)**
 **Data Sources:**
 - **transactions** collection → all platform transactions
 - **users** collection → instructor earnings
@@ -269,7 +269,7 @@
 
 ### **🔄 SHARED Dashboard Pages**
 
-#### **1. Messages (`/sampleDashboard/messages`)**
+#### **1. Messages (`/dashboard/messages`)**
 **Data Sources:**
 - **messages** collection → user conversations
 
@@ -286,11 +286,11 @@
 }
 ```
 
-#### **2. Profile (`/sampleDashboard/profile`)**
+#### **2. Profile (`/dashboard/profile`)**
 **Data Sources:**
 - **users** collection → user profile data
 
-#### **3. Settings (`/sampleDashboard/settings`)**
+#### **3. Settings (`/dashboard/settings`)**
 **Data Sources:**
 - **users** collection → user preferences
 

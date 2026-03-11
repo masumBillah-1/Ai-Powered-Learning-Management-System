@@ -3,29 +3,29 @@ import { jwtVerify } from "jose";
 
 const roleRoutes: Record<string, string[]> = {
   student: [
-    "/sampleDashboard/student",
-    "/sampleDashboard/profile",
-    "/sampleDashboard/messages",
-    "/sampleDashboard/settings",
+    "/dashboard/student",
+    "/dashboard/profile",
+    "/dashboard/messages",
+    "/dashboard/settings",
   ],
   instructor: [
-    "/sampleDashboard/instructor",
-    "/sampleDashboard/profile",
-    "/sampleDashboard/messages",
-    "/sampleDashboard/settings",
+    "/dashboard/instructor",
+    "/dashboard/profile",
+    "/dashboard/messages",
+    "/dashboard/settings",
   ],
   admin: [
-    "/sampleDashboard/admin",
-    "/sampleDashboard/profile",
-    "/sampleDashboard/messages",
-    "/sampleDashboard/settings",
+    "/dashboard/admin",
+    "/dashboard/profile",
+    "/dashboard/messages",
+    "/dashboard/settings",
   ],
 };
 
 const roleDashboard: Record<string, string> = {
-  student: "/sampleDashboard/student",
-  instructor: "/sampleDashboard/instructor",
-  admin: "/sampleDashboard/admin",
+  student: "/dashboard/student",
+  instructor: "/dashboard/instructor",
+  admin: "/dashboard/admin",
 };
 
 const authRoutes = ["/login", "/register"];
@@ -43,7 +43,7 @@ export async function middleware(req: NextRequest) {
   const token = getToken(req);
 
   const isAuthRoute = authRoutes.includes(pathname);
-  const isDashboardRoute = pathname.startsWith("/sampleDashboard");
+  const isDashboardRoute = pathname.startsWith("/dashboard");
 
   if (isAuthRoute) {
     if (token) {
@@ -52,7 +52,7 @@ export async function middleware(req: NextRequest) {
         const { payload } = await jwtVerify(token, secret);
         const role = payload.role as string;
         return NextResponse.redirect(
-          new URL(roleDashboard[role] || "/sampleDashboard/student", req.url)
+          new URL(roleDashboard[role] || "/dashboard/student", req.url)
         );
       } catch {
         return NextResponse.next();
@@ -79,7 +79,7 @@ export async function middleware(req: NextRequest) {
       if (!isAllowed) {
         console.log(`🚫 ${role} tried to access ${pathname} → redirecting`);
         return NextResponse.redirect(
-          new URL(roleDashboard[role] || "/sampleDashboard/student", req.url)
+          new URL(roleDashboard[role] || "/dashboard/student", req.url)
         );
       }
 
@@ -97,7 +97,7 @@ export async function middleware(req: NextRequest) {
 
 export const config = {
   matcher: [
-    "/sampleDashboard/:path*",
+    "/dashboard/:path*",
     "/login",
     "/register",
   ],
