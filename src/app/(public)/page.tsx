@@ -17,15 +17,17 @@ export default function Home() {
       <HeroSectionNew />
       <HeroSections /> 
       <HeroSection />
-      <ImpactSection />
-      <ProblemSolution />
-      <BootcampFeatures />
-      <SuccessSection />
-      <Timeline />
-      <StepSection />
-      <LearnSection />
-      <FAQ />
-      <JoinNow />
+      <div className="container mx-auto px-6 py-10">
+        <ImpactSection />
+        <ProblemSolution />
+        <BootcampFeatures />
+        <SuccessSection />
+        <Timeline />
+        <StepSection />
+        <LearnSection />
+        <FAQ />
+        <JoinNow />
+      </div>
     </div>
   );
 }

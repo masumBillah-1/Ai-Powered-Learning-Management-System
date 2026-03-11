@@ -44,7 +44,7 @@ next-env.d.ts
 .vercel
 
 # dashboard-2 folder (hidden from git)
-src/app/dashboard-2/
-src/app/dashboard/
+
+src/app/(public)/myclasses/
 .kiro
 .vscode

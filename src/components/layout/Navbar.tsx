@@ -134,7 +134,7 @@ const Navbar = () => {
 
   const navLinks = [
     { name: "Course Details", href: "/courses" },
-    { name: "Student Feedback", href: "/student-feedback" },
+    { name: "Student Feedback", href: "/feedback" },
     { name: "Blog", href: "/blog" },
     { name: "About", href: "/about" },
   ];
@@ -296,14 +296,14 @@ const Navbar = () => {
                             </span>
                           </div>
                           <Link
-                            href="/sampleDashboard/profile"
+                            href="/dashboard/profile"
                             className="flex items-center gap-2.5 px-4 py-2.5 text-[13.5px] text-gray-700 dark:text-gray-200 border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors no-underline"
                             onClick={() => setShowMenu(false)}
                           >
                             <FaUser size={13} className="text-[#6710C2] opacity-70" /> My Profile
                           </Link>
                           <Link
-                            href="/sampleDashboard/settings"
+                            href="/dashboard/settings"
                             className="flex items-center gap-2.5 px-4 py-2.5 text-[13.5px] text-gray-700 dark:text-gray-200 border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors no-underline"
                             onClick={() => setShowMenu(false)}
                           >
@@ -409,7 +409,7 @@ const Navbar = () => {
                   {user ? (
                     <>
                       <Link
-                        href={`/sampleDashboard/${user.role}`}
+                        href={`/dashboard/${user.role}`}
                         className="flex items-center justify-center gap-2 w-full bg-[#f3f4f6] dark:bg-gray-800 text-gray-800 dark:text-white py-4 rounded-2xl font-bold"
                         onClick={() => setIsOpen(false)}
                       >
