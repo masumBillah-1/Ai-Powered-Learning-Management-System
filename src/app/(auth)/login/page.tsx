@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import { FiEye, FiEyeOff } from "react-icons/fi";
 import toast from "react-hot-toast";
 import { signInWithPopup } from "firebase/auth";
@@ -13,43 +13,60 @@ import Link from "next/link";
 
 type LoginFormData = { email: string; password: string; };
 
+const roleDashboard: Record<string, string> = {
+  admin: "/sampleDashboard/admin",
+  instructor: "/sampleDashboard/instructor",
+  student: "/sampleDashboard/student",
+};
+
 const GoogleIcon = () => (
   <svg width="18" height="18" viewBox="0 0 48 48">
-    <path fill="#FFC107" d="M43.6 20H24v8h11.3C33.6 33.3 29.3 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3 0 5.8 1.1 7.9 3l5.7-5.7C34.1 6.5 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20c11 0 19.7-8 19.7-20 0-1.3-.1-2.7-.1-4z"/>
-    <path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.5 15.1 18.9 12 24 12c3 0 5.8 1.1 7.9 3l5.7-5.7C34.1 6.5 29.3 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/>
-    <path fill="#4CAF50" d="M24 44c5.2 0 9.9-1.9 13.5-5l-6.2-5.2C29.4 35.6 26.8 36 24 36c-5.2 0-9.6-3.5-11.2-8.2l-6.5 5C9.5 39.6 16.2 44 24 44z"/>
-    <path fill="#1976D2" d="M43.6 20H24v8h11.3c-.9 2.4-2.5 4.4-4.6 5.8l6.2 5.2C40.8 35.8 44 30.3 44 24c0-1.3-.1-2.7-.4-4z"/>
+    <path fill="#FFC107" d="M43.6 20H24v8h11.3C33.6 33.3 29.3 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3 0 5.8 1.1 7.9 3l5.7-5.7C34.1 6.5 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20c11 0 19.7-8 19.7-20 0-1.3-.1-2.7-.1-4z" />
+    <path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.5 15.1 18.9 12 24 12c3 0 5.8 1.1 7.9 3l5.7-5.7C34.1 6.5 29.3 4 24 4 16.3 4 9.7 8.3 6.3 14.7z" />
+    <path fill="#4CAF50" d="M24 44c5.2 0 9.9-1.9 13.5-5l-6.2-5.2C29.4 35.6 26.8 36 24 36c-5.2 0-9.6-3.5-11.2-8.2l-6.5 5C9.5 39.6 16.2 44 24 44z" />
+    <path fill="#1976D2" d="M43.6 20H24v8h11.3c-.9 2.4-2.5 4.4-4.6 5.8l6.2 5.2C40.8 35.8 44 30.3 44 24c0-1.3-.1-2.7-.4-4z" />
   </svg>
 );
 
 const GitHubIcon = () => (
   <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
-    <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z"/>
+    <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z" />
   </svg>
 );
 
 const LoginPage = () => {
   const { register, handleSubmit, formState: { errors } } = useForm<LoginFormData>();
   const searchParams = useSearchParams();
-  const redirectUrl = searchParams.get("redirect") || "/sampleDashboard/admin";
+  const router = useRouter();
+  const redirectUrl = searchParams.get("redirect") || "";
+
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
+  const [checking, setChecking] = useState(true); // checking existing session
 
-  const redirect = (role: string) => {
-    // If there's a redirect URL, use it, otherwise use role-based redirect
-    if (redirectUrl && redirectUrl !== "/dashboard/student") {
-      window.location.href = redirectUrl;
-    } else if (role === "admin") {
-      window.location.href = "/dashboard/admin";
-    } else if (role === "instructor") {
-      window.location.href = "/dashboard/instructor";
-    } else {
-      window.location.href = "/dashboard/student";
+  // ── If already logged in → redirect immediately ──────
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    const raw = localStorage.getItem("user");
+
+    if (token && raw) {
+      try {
+        const user = JSON.parse(raw);
+        const dest = redirectUrl || roleDashboard[user.role] || "/sampleDashboard/student";
+        router.replace(dest);
+        return;
+      } catch { /* corrupt data — fall through */ }
     }
+    setChecking(false);
+  }, [router, redirectUrl]);
+
+  const doRedirect = (role: string) => {
+    const dest = redirectUrl || roleDashboard[role] || "/sampleDashboard/student";
+    router.replace(dest);
   };
 
-  // ✅ Google Login — OTP নেই, সরাসরি dashboard
+  // ── Google Login ──────────────────────────────────────
   const handleGoogleLogin = async () => {
     setGoogleLoading(true);
     try {
@@ -65,7 +82,7 @@ const LoginPage = () => {
       localStorage.setItem("token", data.token);
       localStorage.setItem("user", JSON.stringify(data.user));
       toast.success("Google login successful!");
-      setTimeout(() => redirect(data.user.role), 800);
+      setTimeout(() => doRedirect(data.user.role), 500);
     } catch (err: any) {
       toast.error(err.message || "Google login failed");
     } finally {
@@ -73,7 +90,7 @@ const LoginPage = () => {
     }
   };
 
-  // ✅ Email/Password Login — OTP verify page এ যাবে
+  // ── Email/Password Login ──────────────────────────────
   const onSubmit = async (data: LoginFormData) => {
     setLoading(true);
     try {
@@ -83,51 +100,40 @@ const LoginPage = () => {
         body: JSON.stringify({ email: data.email, password: data.password }),
       });
       const result = await res.json();
-      
-      console.log("Login response:", { status: res.status, result });
 
       if (!res.ok) {
-        console.log("Login failed:", result.error);
-        
-        if (result.locked) { 
-          toast.error(result.error); 
-          return; 
-        }
-        
+        if (result.locked) { toast.error(result.error); return; }
         if (result.error === "Invalid email or password") {
-          toast.error("Email বা Password ভুল! আবার চেষ্টা করুন।");
-          return;
+          toast.error("Email বা Password ভুল! আবার চেষ্টা করুন।"); return;
         }
-        
-        if (result.error?.includes("social login")) {
-          toast.error(result.error);
-          return;
-        }
-        
+        if (result.error?.includes("social login")) { toast.error(result.error); return; }
         toast.error(result.error || "Login failed");
         return;
       }
 
-      // ✅ OTP required — verify page এ পাঠাও
       if (result.requireOtp) {
         toast.success("OTP পাঠানো হয়েছে! Email চেক করুন।");
         setTimeout(() => {
-          window.location.href = `/verify-otp?email=${encodeURIComponent(data.email)}&mode=login`;
-        }, 800);
+          router.push(`/verify-otp?email=${encodeURIComponent(data.email)}&mode=login${redirectUrl ? `&redirect=${encodeURIComponent(redirectUrl)}` : ""}`);
+        }, 600);
         return;
       }
 
     } catch (err: any) {
-      console.error("Login error:", err);
       toast.error(err.message || "Something went wrong");
     } finally {
       setLoading(false);
     }
   };
 
+  // ── Show nothing while checking existing session ──────
+  if (checking) return null;
+
   return (
     <>
       <Navbar />
+      <title>Login</title>
+
       <div className="py-16 relative flex items-center justify-center overflow-hidden px-2 min-h-screen bg-white dark:bg-[#05010D] transition-colors">
         <div className="absolute inset-0 bg-gradient-to-br from-purple-50 to-orange-50 dark:from-transparent dark:to-transparent" />
         <div className="absolute inset-0 backdrop-blur-3xl" />
