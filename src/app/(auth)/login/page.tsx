@@ -14,9 +14,9 @@ import Link from "next/link";
 type LoginFormData = { email: string; password: string; };
 
 const roleDashboard: Record<string, string> = {
-  admin: "/sampleDashboard/admin",
-  instructor: "/sampleDashboard/instructor",
-  student: "/sampleDashboard/student",
+  admin: "/dashboard/admin",
+  instructor: "/dashboard/instructor",
+  student: "/dashboard/student",
 };
 
 const GoogleIcon = () => (
@@ -53,7 +53,7 @@ const LoginPage = () => {
     if (token && raw) {
       try {
         const user = JSON.parse(raw);
-        const dest = redirectUrl || roleDashboard[user.role] || "/sampleDashboard/student";
+        const dest = redirectUrl || roleDashboard[user.role] || "/dashboard/student";
         router.replace(dest);
         return;
       } catch { /* corrupt data — fall through */ }
@@ -62,7 +62,7 @@ const LoginPage = () => {
   }, [router, redirectUrl]);
 
   const doRedirect = (role: string) => {
-    const dest = redirectUrl || roleDashboard[role] || "/sampleDashboard/student";
+    const dest = redirectUrl || roleDashboard[role] || "/dashboard/student";
     router.replace(dest);
   };
 

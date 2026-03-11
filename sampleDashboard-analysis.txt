@@ -1,8 +1,8 @@
-# SampleDashboard - Complete Feature Analysis
+# dashboard - Complete Feature Analysis
 
 ## 📁 FOLDER STRUCTURE
 ```
-src/app/sampleDashboard/
+src/app/dashboard/
 ├── layout.tsx                    # Main layout with role-based sidebar
 ├── profile/page.tsx              # Shared profile page (all roles)
 ├── messages/page.tsx             # Shared messaging system (all roles)
