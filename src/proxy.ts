@@ -1,60 +1,103 @@
 import { NextRequest, NextResponse } from "next/server";
+import { jwtVerify } from "jose";
 
-// Protected routes — login ছাড়া ঢুকতে পারবে না
-const protectedRoutes = [
-  "/dashboard",
-  "/(public)/dashboard", // Public folder এর dashboard ও protect করো
-  "/profile",
-  "/my-classes",
-  "/enrollment",
-];
+const roleRoutes: Record<string, string[]> = {
+  student: [
+    "/sampleDashboard/student",
+    "/sampleDashboard/profile",
+    "/sampleDashboard/messages",
+    "/sampleDashboard/settings",
+  ],
+  instructor: [
+    "/sampleDashboard/instructor",
+    "/sampleDashboard/profile",
+    "/sampleDashboard/messages",
+    "/sampleDashboard/settings",
+  ],
+  admin: [
+    "/sampleDashboard/admin",
+    "/sampleDashboard/profile",
+    "/sampleDashboard/messages",
+    "/sampleDashboard/settings",
+  ],
+};
 
-// Auth routes — login থাকলে ঢুকতে পারবে না
+const roleDashboard: Record<string, string> = {
+  student: "/sampleDashboard/student",
+  instructor: "/sampleDashboard/instructor",
+  admin: "/sampleDashboard/admin",
+};
+
 const authRoutes = ["/login", "/register"];
 
-export function middleware(req: NextRequest) {
-  const token = req.cookies.get("token")?.value;
+function getToken(req: NextRequest): string | undefined {
+  return (
+    req.cookies.get("token")?.value ||
+    req.headers.get("x-auth-token") ||
+    undefined
+  );
+}
+
+export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
+  const token = getToken(req);
 
-  console.log("🔒 Middleware:", { pathname, hasToken: !!token });
-
-  // Check if route is protected
-  const isProtectedRoute = protectedRoutes.some((route) => pathname.startsWith(route));
   const isAuthRoute = authRoutes.includes(pathname);
+  const isDashboardRoute = pathname.startsWith("/sampleDashboard");
 
-  console.log("🔍 Route check:", { isProtectedRoute, isAuthRoute });
-
-  // Protected route without token → redirect to login
-  if (isProtectedRoute && !token) {
-    console.log("❌ No token, redirecting to login");
-    const loginUrl = new URL("/login", req.url);
-    loginUrl.searchParams.set("redirect", pathname);
-    return NextResponse.redirect(loginUrl);
+  if (isAuthRoute) {
+    if (token) {
+      try {
+        const secret = new TextEncoder().encode(process.env.JWT_SECRET!);
+        const { payload } = await jwtVerify(token, secret);
+        const role = payload.role as string;
+        return NextResponse.redirect(
+          new URL(roleDashboard[role] || "/sampleDashboard/student", req.url)
+        );
+      } catch {
+        return NextResponse.next();
+      }
+    }
+    return NextResponse.next();
   }
 
-  // Auth route with token → redirect to dashboard
-  if (isAuthRoute && token) {
-    console.log("✅ Has token, redirecting to dashboard");
-    return NextResponse.redirect(new URL("/dashboard/student", req.url));
+  if (isDashboardRoute) {
+    if (!token) {
+      const loginUrl = new URL("/login", req.url);
+      loginUrl.searchParams.set("redirect", pathname);
+      return NextResponse.redirect(loginUrl);
+    }
+
+    try {
+      const secret = new TextEncoder().encode(process.env.JWT_SECRET!);
+      const { payload } = await jwtVerify(token, secret);
+      const role = payload.role as string;
+
+      const allowed = roleRoutes[role] || [];
+      const isAllowed = allowed.some(route => pathname.startsWith(route));
+
+      if (!isAllowed) {
+        console.log(`🚫 ${role} tried to access ${pathname} → redirecting`);
+        return NextResponse.redirect(
+          new URL(roleDashboard[role] || "/sampleDashboard/student", req.url)
+        );
+      }
+
+      return NextResponse.next();
+
+    } catch {
+      const loginUrl = new URL("/login", req.url);
+      loginUrl.searchParams.set("redirect", pathname);
+      return NextResponse.redirect(loginUrl);
+    }
   }
 
-  console.log("✅ Allowing access");
   return NextResponse.next();
 }
 
-// Export as default and named export for compatibility
-export default middleware;
-
-// Also export as proxy for Next.js compatibility
-export const proxy = middleware;
-
 export const config = {
   matcher: [
-    "/dashboard/:path*",
-    "/dashboard",
-    "/profile/:path*",
-    "/my-classes/:path*",
-    "/enrollment/:path*",
+    "/sampleDashboard/:path*",
     "/login",
     "/register",
   ],

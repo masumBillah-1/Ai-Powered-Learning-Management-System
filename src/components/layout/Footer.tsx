@@ -1,9 +1,5 @@
-// "use client";
-// import React from "react";
-// import Link from "next/link";
-// import { FaFacebook, FaInstagram, FaLinkedin, FaYoutube } from "react-icons/fa";
-// import Logo from "./Logo";
 
+<<<<<<< HEAD
 // const Footer = () => {
 //   return (
 //     <footer className="bg-[#0b1120] text-gray-400 py-16 px-4">
@@ -86,6 +82,8 @@
 // };
 
 // export default Footer;
+=======
+>>>>>>> 5903b4acab9c5598cbcf04e0d08ba85c131f506f
 
 "use client";
 import React from "react";
@@ -104,6 +102,18 @@ import {
 } from "react-icons/fa";
 import Logo from "./Logo";
 
+const footerLinks = [
+  { name: "About Us", path: "/about" },
+  { name: "Success Page", path: "/" },
+  { name: "Blog", path: "/blog" },
+  { name: "Refund policy", path: "/refound" },
+  { name: "Privacy Policy", path: "/privacy-policy" },
+  { name: "Terms and condition", path: "/terms" },
+  { name: "Newsletter", path: "/privacy" },
+
+  // New Link
+  { name: "Become an Instructor", path: "/become-instructor" },
+];
 const Footer = () => {
   return (
     // Important: We use !important styles via Tailwind for background to override any conflicts
@@ -146,6 +156,7 @@ const Footer = () => {
           <div className="lg:pl-10">
             <h4 className="font-bold text-gray-900 dark:text-white mb-6 text-lg">লিঙ্কসমূহ</h4>
             <ul className="space-y-4 text-sm font-medium">
+<<<<<<< HEAD
               {[
                 "About Us", "Success Page", "Blog", "Refund policy", 
                 "Privacy Policy", "Terms and condition", "Newsletter"
@@ -153,6 +164,15 @@ const Footer = () => {
                 <li key={item}>
                   <Link href="#" className="text-gray-600 dark:text-gray-400 hover:text-[#007BFF] dark:hover:text-[#F89B29] transition-colors">
                     {item}
+=======
+              {footerLinks.map((item) => (
+                <li key={item.name}>
+                  <Link
+                    href={item.path}
+                    className="text-gray-600 dark:text-gray-400 hover:text-[#007BFF] dark:hover:text-[#F89B29] transition-colors"
+                  >
+                    {item.name}
+>>>>>>> 5903b4acab9c5598cbcf04e0d08ba85c131f506f
                   </Link>
                 </li>
               ))}
@@ -163,6 +183,7 @@ const Footer = () => {
           <div>
             <h4 className="font-bold text-gray-900 dark:text-white mb-6 text-lg">সোশ্যাল মিডিয়া</h4>
             <div className="space-y-4">
+<<<<<<< HEAD
               <a href="#" className="flex items-center gap-3 text-sm text-gray-600 dark:text-gray-400 group">
                 <div className="w-8 h-8 flex items-center justify-center bg-blue-100 dark:bg-blue-900/30 rounded-full text-blue-600 dark:text-blue-400 group-hover:scale-110 transition-transform"><FaFacebook /></div> ফেসবুক
               </a>
@@ -174,6 +195,43 @@ const Footer = () => {
               </a>
               <a href="#" className="flex items-center gap-3 text-sm text-gray-600 dark:text-gray-400 group">
                 <div className="w-8 h-8 flex items-center justify-center bg-blue-50 dark:bg-blue-900/40 rounded-full text-blue-700 dark:text-blue-300 group-hover:scale-110 transition-transform"><FaLinkedin /></div> লিঙ্কডইন
+=======
+              <a
+                href="https://www.facebook.com/"
+                className="flex items-center gap-3 text-sm text-gray-600 dark:text-gray-400 group"
+              >
+                <div className="w-8 h-8 flex items-center justify-center bg-blue-100 dark:bg-blue-900/30 rounded-full text-blue-600 dark:text-blue-400 group-hover:scale-110 transition-transform">
+                  <FaFacebook />
+                </div>{" "}
+                ফেসবুক
+              </a>
+              <a
+                href="https://www.instagram.com/?hl=en"
+                className="flex items-center gap-3 text-sm text-gray-600 dark:text-gray-400 group"
+              >
+                <div className="w-8 h-8 flex items-center justify-center bg-pink-100 dark:bg-pink-900/30 rounded-full text-pink-600 dark:text-pink-400 group-hover:scale-110 transition-transform">
+                  <FaInstagram />
+                </div>{" "}
+                ইন্সটাগ্রাম
+              </a>
+              <a
+                href="https://www.youtube.com/"
+                className="flex items-center gap-3 text-sm text-gray-600 dark:text-gray-400 group"
+              >
+                <div className="w-8 h-8 flex items-center justify-center bg-red-100 dark:bg-red-900/30 rounded-full text-red-600 dark:text-red-400 group-hover:scale-110 transition-transform">
+                  <FaYoutube />
+                </div>{" "}
+                ইউটিউব
+              </a>
+              <a
+                href="https://www.linkedin.com/feed/"
+                className="flex items-center gap-3 text-sm text-gray-600 dark:text-gray-400 group"
+              >
+                <div className="w-8 h-8 flex items-center justify-center bg-blue-50 dark:bg-blue-900/40 rounded-full text-blue-700 dark:text-blue-300 group-hover:scale-110 transition-transform">
+                  <FaLinkedin />
+                </div>{" "}
+                লিঙ্কডইন
+>>>>>>> 5903b4acab9c5598cbcf04e0d08ba85c131f506f
               </a>
             </div>
           </div>
@@ -185,24 +243,63 @@ const Footer = () => {
               <button className="flex items-center gap-3 w-full max-w-[200px] bg-[#1a1a1a] dark:bg-black text-white p-3 rounded-xl hover:opacity-80 transition-all border border-gray-800">
                 <FaApple size={28} />
                 <div className="text-left">
+<<<<<<< HEAD
                   <p className="text-[9px] uppercase font-semibold text-gray-400">Download on the</p>
                   <p className="text-base font-bold">App Store</p>
+=======
+                  <p className="text-[9px] uppercase font-semibold text-gray-400">
+                    Download on the
+                  </p>
+                  <a
+                    href="https://www.apple.com/app-store/"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    <p className="text-base font-bold">App Store</p>
+                  </a>
+>>>>>>> 5903b4acab9c5598cbcf04e0d08ba85c131f506f
                 </div>
               </button>
               
               <button className="flex items-center gap-3 w-full max-w-[200px] bg-[#1a1a1a] dark:bg-black text-white p-3 rounded-xl hover:opacity-80 transition-all border border-gray-800">
                 <FaGooglePlay size={22} className="text-green-400" />
                 <div className="text-left">
+<<<<<<< HEAD
                   <p className="text-[9px] uppercase font-semibold text-gray-400">Get it on</p>
                   <p className="text-base font-bold">Google Play</p>
+=======
+                  <p className="text-[9px] uppercase font-semibold text-gray-400">
+                    Get it on
+                  </p>
+                  <a
+                    href="https://play.google.com/store/apps?hl=en"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    <p className="text-base font-bold">Google Play</p>
+                  </a>
+>>>>>>> 5903b4acab9c5598cbcf04e0d08ba85c131f506f
                 </div>
               </button>
 
               <button className="flex items-center gap-3 w-full max-w-[200px] bg-[#1a1a1a] dark:bg-black text-white p-3 rounded-xl hover:opacity-80 transition-all border border-gray-800">
                 <FaWindows size={22} className="text-blue-400" />
                 <div className="text-left">
+<<<<<<< HEAD
                   <p className="text-[9px] uppercase font-semibold text-gray-400">Download for</p>
                   <p className="text-base font-bold">Microsoft</p>
+=======
+                  <p className="text-[9px] uppercase font-semibold text-gray-400">
+                    Download for
+                  </p>
+                  <a
+                    href="https://apps.microsoft.com/home?hl=en-US&gl=BD"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    <p className="text-base font-bold">Microsoft</p>
+                  </a>
+>>>>>>> 5903b4acab9c5598cbcf04e0d08ba85c131f506f
                 </div>
               </button>
             </div>
