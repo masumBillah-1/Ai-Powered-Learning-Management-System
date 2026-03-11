@@ -26,7 +26,7 @@ const services: ServiceCard[] = [
     title: "AI পার্সোনালাইজড",
     description:
       "তোমার লার্নিং স্টাইল অনুযায়ী আমাদের ডেভেলপ করা AI সিস্টেম তোমাকে গাইড করবে, চ্যালেঞ্জ দিবে শেখার, ট্র্যাকে রাখবে - যাতে হারিয়ে না যাও।",
-    bgColor: "bg-blue-50",
+    bgColor: "bg-blue-50/50",
     imgSrc: ima2,
   },
   {
@@ -35,7 +35,7 @@ const services: ServiceCard[] = [
     title: "১:১ মেন্টরশিপ",
     description:
       "একদল দক্ষ মেন্টর তোমার পাশে থাকবে, প্রয়োজনে তোমার সাথে আলাদাভাবে গুগল মিটে বসে তোমার জন্য প্ল্যান সাজাবে, প্রব্লেম সলভ করবে, গাইড করবে লক্ষ্যে পৌছাতে।",
-    bgColor: "bg-purple-50",
+    bgColor: "bg-purple-50/50",
     imgSrc: ima3,
   },
   {
@@ -44,7 +44,7 @@ const services: ServiceCard[] = [
     title: "১:১ সাপোর্ট সেশন",
     description:
       "দিনে ৩ বেলা আমাদের সিস্টেমে লাইভ ক্লাসে সরাসরি প্রশ্ন করো, স্ক্রিন শেয়ার করে প্রব্লেম দেখাও। সমাধান নাও। কিছু বুঝতে না পারলে হাজারবার বুঝিয়ে নাও, একসাথে শেখো সবার সাথে",
-    bgColor: "bg-pink-50",
+    bgColor: "bg-pink-50/100",
     imgSrc: ima4,
   },
   {
@@ -53,7 +53,7 @@ const services: ServiceCard[] = [
     title: "২৪/৭ কমিউনিটি সাপোর্ট",
     description:
       "দিন-রাত ২৪ ঘন্টা, সপ্তাহের ৭ দিন, যেখানে তোমার যেকোনো সমস্যা থাকবে সহজেই পাবে সমাধান। ডেডিকেটেড ফেসবুক গ্রুপ ও নিজস্ব হেল্পডেস্ক প্লাটফর্মে।",
-    bgColor: "bg-yellow-50",
+    bgColor: "bg-yellow-50/50",
     imgSrc: ima,
   },
   {
@@ -62,7 +62,7 @@ const services: ServiceCard[] = [
     title: "গাইডেড এনভায়রনমেন্ট",
     description:
       "আমাদের সাথে শিখবে ৬০+ মডিউল, ১০০০+ ভিডিও, ৩৫+ কন্সেপচুয়াল সেশন, ১০+ এসাইনমেন্টের মাধ্যমে। দেশসেরা যে এনভারনমেন্টে গতো ৪ বছরে ৫৪০০+ স্টুডেন্ট জব পেয়েছে।",
-    bgColor: "bg-green-100",
+    bgColor: "bg-gradient-to-b from-[#FBFDFB] to-[#F4F8F4]",
     imgSrc: ima5,
   },
   {
@@ -71,14 +71,14 @@ const services: ServiceCard[] = [
     title: "ইন্টার্ন/চাকরি গ্যারান্টি",
     description:
       "তোমার সাফল্যের নিশ্চয়তা, যদি তুমি আমাদের সাথে লেগে থাকো। শুধুমাত্র গতো ১ বছরেই ১৪০০+ শিক্ষার্থী ইতোমধ্যে ক্যারিয়ার শুরু করেছে এই বুটক্যাম্প শেষে।",
-    bgColor: "bg-green-50",
+    bgColor: "bg-green-50/100",
     imgSrc: ima6,
   },
 ];
 
 const BootcampFeatures = () => {
   return (
-    <section className="py-16 bg-white dark:bg-black transition-colors duration-300">
+    <section className="py-16 bg-white">
       <div className="container mx-auto px-4">
         {/* Header */}
         <motion.div
@@ -88,12 +88,11 @@ const BootcampFeatures = () => {
           viewport={{ once: false }}
           className="flex justify-center items-center gap-2 mb-12"
         >
-          <h2 className="text-4xl font-extrabold text-slate-800 dark:text-white">
+          <h2 className="text-4xl font-extrabold text-slate-800">
             এই বুটক্যাম্পের
           </h2>
-
           <div className="bg-gradient-to-r from-orange-400 to-purple-600 text-white px-4 py-1 rounded-full text-2xl font-bold italic flex items-center gap-1 shadow-lg">
-            <span>X</span> ফ্যাক্টর
+            <span className="text-white">X</span> ফ্যাক্টর
           </div>
         </motion.div>
 
@@ -106,14 +105,7 @@ const BootcampFeatures = () => {
               whileInView={{ opacity: 1, y: 0 }}
               transition={{ duration: 1, delay: index * 0.1 }}
               viewport={{ once: false }}
-              className={`
-                rounded-3xl p-8 flex flex-col justify-between
-                transition-transform hover:scale-[1.02] duration-300
-                ${item.bgColor.includes("gradient") ? item.bgColor : item.bgColor}
-                dark:bg-gray-900
-                dark:border dark:border-gray-800
-                dark:shadow-lg dark:shadow-black/40
-              `}
+              className={`rounded-3xl p-8 flex flex-col justify-between transition-transform hover:scale-[1.02] duration-300 ${item.bgColor}`}
             >
               <div>
                 <span
@@ -122,11 +114,10 @@ const BootcampFeatures = () => {
                   {item.badgeText}
                 </span>
 
-                <h3 className="text-2xl font-bold text-slate-800 dark:text-white mb-4">
+                <h3 className="text-2xl font-bold text-slate-800 mb-4">
                   {item.title}
                 </h3>
-
-                <p className="text-slate-600 dark:text-gray-300 leading-relaxed text-sm lg:text-base">
+                <p className="text-slate-600 leading-relaxed text-sm lg:text-base">
                   {item.description}
                 </p>
               </div>
@@ -137,6 +128,7 @@ const BootcampFeatures = () => {
                     src={item.imgSrc}
                     alt={item.title}
                     fill
+                    sizes="96px"
                     className="object-contain"
                   />
                 </div>
