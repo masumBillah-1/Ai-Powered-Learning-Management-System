@@ -235,7 +235,7 @@ const HeroSection: React.FC = () => {
   overflow:hidden;
 
   /* glass effect */
-  background:rgba(255,255,255,0.15);
+  background:rgba(255,255,255,0.14);
   backdrop-filter:blur(20px);
   -webkit-backdrop-filter:blur(20px);
 
