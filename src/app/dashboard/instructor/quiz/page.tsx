@@ -3,11 +3,11 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import {
-  Plus, 
-  Edit2, 
-  Trash2, 
+  Plus,
+  Edit2,
+  Trash2,
   MessageSquare,
-  Clock, 
+  Clock,
   Eye,
   Award,
   CheckCircle,
@@ -60,55 +60,55 @@ export default function InstructorQuizPage() {
   }, [theme]);
 
   const quizData: Quiz[] = [
-    { 
-      id: 1, 
-      title: "Information About UI/UX Design Degree", 
+    {
+      id: 1,
+      title: "Information About UI/UX Design Degree",
       course: "UI/UX Design Fundamentals",
-      questions: 25, 
+      questions: 25,
       duration: "30 Minutes",
       totalMarks: 100,
       passMarks: 60,
       status: "Published",
       attempts: 45
     },
-    { 
-      id: 2, 
-      title: "Learn JavaScript and Express to become a Expert", 
+    {
+      id: 2,
+      title: "Learn JavaScript and Express to become a Expert",
       course: "JavaScript Development",
-      questions: 15, 
+      questions: 15,
       duration: "25 Minutes",
       totalMarks: 75,
       passMarks: 45,
       status: "Published",
       attempts: 32
     },
-    { 
-      id: 3, 
-      title: "Introduction to Python Programming", 
+    {
+      id: 3,
+      title: "Introduction to Python Programming",
       course: "Python Basics",
-      questions: 22, 
+      questions: 22,
       duration: "15 Minutes",
       totalMarks: 50,
       passMarks: 30,
       status: "Draft",
       attempts: 0
     },
-    { 
-      id: 4, 
-      title: "Build Responsive Websites with HTML5 and CSS3", 
+    {
+      id: 4,
+      title: "Build Responsive Websites with HTML5 and CSS3",
       course: "Web Development",
-      questions: 30, 
+      questions: 30,
       duration: "50 Minutes",
       totalMarks: 150,
       passMarks: 90,
       status: "Published",
       attempts: 68
     },
-    { 
-      id: 5, 
-      title: "Information About Photoshop Design Degree", 
+    {
+      id: 5,
+      title: "Information About Photoshop Design Degree",
       course: "Graphic Design",
-      questions: 20, 
+      questions: 20,
       duration: "20 Minutes",
       totalMarks: 80,
       passMarks: 48,
@@ -119,11 +119,11 @@ export default function InstructorQuizPage() {
 
   // Filter quizzes
   const filteredQuizzes = quizData.filter(quiz => {
-    const matchesSearch = 
+    const matchesSearch =
       quiz.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       quiz.course.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesStatus = 
-      filterStatus === 'All Status' || 
+    const matchesStatus =
+      filterStatus === 'All Status' ||
       quiz.status === filterStatus;
     return matchesSearch && matchesStatus;
   });
@@ -160,10 +160,10 @@ export default function InstructorQuizPage() {
 
   return (
     <div className="min-h-screen ">
-      
+
       {/* Stats Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-8">
-        <div 
+        <div
           className="card bg-base-100 shadow-lg border"
           style={{ borderColor: theme === 'dark' ? '#2a1f35' : '#f3e8ff' }}
         >
@@ -177,7 +177,7 @@ export default function InstructorQuizPage() {
                   {stats.total}
                 </h2>
               </div>
-              <div 
+              <div
                 className="w-12 h-12 rounded-xl flex items-center justify-center"
                 style={{ backgroundColor: theme === 'dark' ? '#2a1f35' : '#f3e8ff' }}
               >
@@ -187,7 +187,7 @@ export default function InstructorQuizPage() {
           </div>
         </div>
 
-        <div 
+        <div
           className="card bg-base-100 shadow-lg border"
           style={{ borderColor: theme === 'dark' ? '#0f2520' : '#d1fae5' }}
         >
@@ -201,7 +201,7 @@ export default function InstructorQuizPage() {
                   {stats.published}
                 </h2>
               </div>
-              <div 
+              <div
                 className="w-12 h-12 rounded-xl flex items-center justify-center"
                 style={{ backgroundColor: theme === 'dark' ? '#0f2520' : '#d1fae5' }}
               >
@@ -211,7 +211,7 @@ export default function InstructorQuizPage() {
           </div>
         </div>
 
-        <div 
+        <div
           className="card bg-base-100 shadow-lg border"
           style={{ borderColor: theme === 'dark' ? '#2a1f15' : '#fef3c7' }}
         >
@@ -225,7 +225,7 @@ export default function InstructorQuizPage() {
                   {stats.draft}
                 </h2>
               </div>
-              <div 
+              <div
                 className="w-12 h-12 rounded-xl flex items-center justify-center"
                 style={{ backgroundColor: theme === 'dark' ? '#2a1f15' : '#fef3c7' }}
               >
@@ -235,7 +235,7 @@ export default function InstructorQuizPage() {
           </div>
         </div>
 
-        <div 
+        <div
           className="card bg-base-100 shadow-lg border"
           style={{ borderColor: theme === 'dark' ? '#2a1520' : '#fce7f3' }}
         >
@@ -249,7 +249,7 @@ export default function InstructorQuizPage() {
                   {stats.totalAttempts}
                 </h2>
               </div>
-              <div 
+              <div
                 className="w-12 h-12 rounded-xl flex items-center justify-center"
                 style={{ backgroundColor: theme === 'dark' ? '#2a1520' : '#fce7f3' }}
               >
@@ -263,11 +263,11 @@ export default function InstructorQuizPage() {
       {/* Main Content */}
       <div className="card bg-base-100 shadow-xl border border-base-300">
         <div className="card-body p-6 md:p-8">
-          
+
           {/* Header */}
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
             <h1 className="text-2xl font-bold">Quiz Management</h1>
-            <button 
+            <button
               className="btn gap-2 text-white border-0 cursor-pointer hover:opacity-90"
               style={{ background: 'linear-gradient(135deg, #832388, #E3436B, #F89B29)' }}
               onClick={() => setShowCreateModal(true)}
@@ -282,17 +282,17 @@ export default function InstructorQuizPage() {
             {/* Search */}
             <div className="relative flex-1">
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 opacity-40" size={18} />
-              <input 
-                type="text" 
-                placeholder="Search quizzes or courses..." 
+              <input
+                type="text"
+                placeholder="Search quizzes or courses..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="input input-bordered w-full pl-11 bg-base-100"
               />
             </div>
-            
+
             {/* Status Filter */}
-            <select 
+            <select
               className="select select-bordered bg-base-100 cursor-pointer min-w-[180px]"
               value={filterStatus}
               onChange={(e) => setFilterStatus(e.target.value)}
@@ -309,7 +309,7 @@ export default function InstructorQuizPage() {
               <div className="text-6xl mb-4">📝</div>
               <h3 className="text-xl font-bold mb-2">No Quizzes Found</h3>
               <p className="opacity-60 mb-6">Try adjusting your search or filters</p>
-              <button 
+              <button
                 className="btn gap-2 cursor-pointer"
                 style={{ backgroundColor: '#832388', color: 'white', border: 'none' }}
                 onClick={() => {
@@ -339,9 +339,9 @@ export default function InstructorQuizPage() {
                     <tr key={quiz.id} className="hover">
                       <td>
                         <div className="flex items-center gap-3">
-                          <div 
+                          <div
                             className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0"
-                            style={{ 
+                            style={{
                               backgroundColor: theme === 'dark' ? '#2a1f35' : '#f3e8ff'
                             }}
                           >
@@ -384,7 +384,7 @@ export default function InstructorQuizPage() {
                       <td className="text-center">
                         {quiz.status === 'Published' ? (
                           <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold"
-                            style={{ 
+                            style={{
                               backgroundColor: theme === 'dark' ? '#0f2520' : '#d1fae5',
                               color: '#00C48C'
                             }}
@@ -394,7 +394,7 @@ export default function InstructorQuizPage() {
                           </div>
                         ) : (
                           <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold"
-                            style={{ 
+                            style={{
                               backgroundColor: theme === 'dark' ? '#2a1f15' : '#fef3c7',
                               color: '#F89B29'
                             }}
@@ -406,20 +406,20 @@ export default function InstructorQuizPage() {
                       </td>
                       <td>
                         <div className="flex justify-end gap-2">
-                          <Link 
-                            href="/sampleDashboard/instructor/quiz-results"
+                          <Link
+                            href="/dashboard/instructor/quiz-results"
                             className="btn btn-ghost btn-sm cursor-pointer"
                             title="View Results"
                           >
                             <Eye size={16} />
                           </Link>
-                          <button 
+                          <button
                             className="btn btn-ghost btn-sm cursor-pointer"
                             title="Edit"
                           >
                             <Edit2 size={16} />
                           </button>
-                          <button 
+                          <button
                             className="btn btn-ghost btn-sm text-error cursor-pointer"
                             title="Delete"
                             onClick={() => handleDelete(quiz.id)}
@@ -457,7 +457,7 @@ export default function InstructorQuizPage() {
         <div className="modal modal-open">
           <div className="modal-box max-w-2xl">
             <h3 className="font-bold text-lg mb-6">Add New Quiz</h3>
-            
+
             <div className="space-y-4">
               {/* Course Selection */}
               <div className="form-control">
@@ -466,10 +466,10 @@ export default function InstructorQuizPage() {
                     Course <span className="text-error">*</span>
                   </span>
                 </label>
-                <select 
+                <select
                   className="select select-bordered"
                   value={formData.course}
-                  onChange={(e) => setFormData({...formData, course: e.target.value})}
+                  onChange={(e) => setFormData({ ...formData, course: e.target.value })}
                 >
                   <option value="">Select Course</option>
                   <option>UI/UX Design Fundamentals</option>
@@ -486,12 +486,12 @@ export default function InstructorQuizPage() {
                     Quiz Title <span className="text-error">*</span>
                   </span>
                 </label>
-                <input 
-                  type="text" 
+                <input
+                  type="text"
                   placeholder="Enter quiz title"
                   className="input input-bordered"
                   value={formData.title}
-                  onChange={(e) => setFormData({...formData, title: e.target.value})}
+                  onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                 />
               </div>
 
@@ -503,12 +503,12 @@ export default function InstructorQuizPage() {
                       No of Questions <span className="text-error">*</span>
                     </span>
                   </label>
-                  <input 
-                    type="number" 
+                  <input
+                    type="number"
                     placeholder="25"
                     className="input input-bordered"
                     value={formData.questions}
-                    onChange={(e) => setFormData({...formData, questions: e.target.value})}
+                    onChange={(e) => setFormData({ ...formData, questions: e.target.value })}
                   />
                 </div>
                 <div className="form-control">
@@ -517,12 +517,12 @@ export default function InstructorQuizPage() {
                       Total Marks <span className="text-error">*</span>
                     </span>
                   </label>
-                  <input 
-                    type="number" 
+                  <input
+                    type="number"
                     placeholder="100"
                     className="input input-bordered"
                     value={formData.totalMarks}
-                    onChange={(e) => setFormData({...formData, totalMarks: e.target.value})}
+                    onChange={(e) => setFormData({ ...formData, totalMarks: e.target.value })}
                   />
                 </div>
               </div>
@@ -535,12 +535,12 @@ export default function InstructorQuizPage() {
                       Pass Mark <span className="text-error">*</span>
                     </span>
                   </label>
-                  <input 
-                    type="number" 
+                  <input
+                    type="number"
                     placeholder="60"
                     className="input input-bordered"
                     value={formData.passMarks}
-                    onChange={(e) => setFormData({...formData, passMarks: e.target.value})}
+                    onChange={(e) => setFormData({ ...formData, passMarks: e.target.value })}
                   />
                 </div>
                 <div className="form-control">
@@ -549,24 +549,24 @@ export default function InstructorQuizPage() {
                       Duration <span className="text-error">*</span>
                     </span>
                   </label>
-                  <input 
-                    type="time" 
+                  <input
+                    type="time"
                     className="input input-bordered"
                     value={formData.duration}
-                    onChange={(e) => setFormData({...formData, duration: e.target.value})}
+                    onChange={(e) => setFormData({ ...formData, duration: e.target.value })}
                   />
                 </div>
               </div>
             </div>
 
             <div className="modal-action">
-              <button 
+              <button
                 className="btn btn-ghost cursor-pointer"
                 onClick={() => setShowCreateModal(false)}
               >
                 Cancel
               </button>
-              <button 
+              <button
                 className="btn text-white border-0 cursor-pointer"
                 style={{ backgroundColor: '#832388' }}
                 onClick={handleSubmit}
