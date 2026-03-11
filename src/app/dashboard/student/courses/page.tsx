@@ -47,18 +47,18 @@ function SkeletonCard() {
 
 export default function StudentCoursesPage() {
   const router = useRouter();
-  const [activeTab, setActiveTab]     = useState<TabType>("active");
+  const [activeTab, setActiveTab] = useState<TabType>("active");
   const [enrollments, setEnrollments] = useState<Enrollment[]>([]);
-  const [loading, setLoading]         = useState(true);
+  const [loading, setLoading] = useState(true);
   const [likedCourses, setLikedCourses] = useState<string[]>([]);
-  const [page, setPage]               = useState(1);
+  const [page, setPage] = useState(1);
 
   useEffect(() => { fetchEnrollments(); }, []);
 
   const fetchEnrollments = async () => {
     try {
       setLoading(true);
-      const res  = await fetch("/api/enrollments?limit=100");
+      const res = await fetch("/api/enrollments?limit=100");
       const data = await res.json();
       if (data.success) setEnrollments(data.enrollments || []);
     } catch (err) {
@@ -68,20 +68,20 @@ export default function StudentCoursesPage() {
     }
   };
 
-  const filtered   = enrollments.filter((e) => e.status === activeTab);
+  const filtered = enrollments.filter((e) => e.status === activeTab);
   const totalPages = Math.ceil(filtered.length / ITEMS_PER_PAGE);
-  const paginated  = filtered.slice((page - 1) * ITEMS_PER_PAGE, page * ITEMS_PER_PAGE);
+  const paginated = filtered.slice((page - 1) * ITEMS_PER_PAGE, page * ITEMS_PER_PAGE);
 
   const counts = {
-    active:    enrollments.filter((e) => e.status === "active").length,
+    active: enrollments.filter((e) => e.status === "active").length,
     completed: enrollments.filter((e) => e.status === "completed").length,
-    dropped:   enrollments.filter((e) => e.status === "dropped").length,
+    dropped: enrollments.filter((e) => e.status === "dropped").length,
   };
 
   const tabs: { key: TabType; label: string }[] = [
-    { key: "active",    label: "Active" },
+    { key: "active", label: "Active" },
     { key: "completed", label: "Completed" },
-    { key: "dropped",   label: "Dropped" },
+    { key: "dropped", label: "Dropped" },
   ];
 
   const toggleLike = (id: string) =>
@@ -107,9 +107,8 @@ export default function StudentCoursesPage() {
             <button
               key={tab.key}
               onClick={() => handleTabChange(tab.key)}
-              className={`px-5 py-2 rounded-full text-xs font-bold transition-all duration-300 cursor-pointer ${
-                activeTab === tab.key ? "text-white shadow-lg" : "hover:bg-base-300"
-              }`}
+              className={`px-5 py-2 rounded-full text-xs font-bold transition-all duration-300 cursor-pointer ${activeTab === tab.key ? "text-white shadow-lg" : "hover:bg-base-300"
+                }`}
               style={{ backgroundColor: activeTab === tab.key ? "#FF0F7B" : "transparent" }}
             >
               {tab.label} ({counts[tab.key].toString().padStart(2, "0")})
@@ -121,7 +120,7 @@ export default function StudentCoursesPage() {
       {/* Loading */}
       {loading ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {[1,2,3,4,5,6].map((i) => <SkeletonCard key={i} />)}
+          {[1, 2, 3, 4, 5, 6].map((i) => <SkeletonCard key={i} />)}
         </div>
       ) : filtered.length === 0 ? (
         /* Empty state */
@@ -138,8 +137,8 @@ export default function StudentCoursesPage() {
             {activeTab === "active"
               ? "Explore our courses and start learning today!"
               : activeTab === "completed"
-              ? "Complete an enrolled course to see it here."
-              : "You haven't dropped any courses."}
+                ? "Complete an enrolled course to see it here."
+                : "You haven't dropped any courses."}
           </p>
           {activeTab === "active" && (
             <button
@@ -284,7 +283,7 @@ export default function StudentCoursesPage() {
                       <button
                         onClick={() =>
                           // ✅ Continue → learning page
-                          router.push(`/sampleDashboard/student/learn/${enrollment.courseId}`)
+                          router.push(`/dashboard/student/learn/${enrollment.courseId}`)
                         }
                         className="btn btn-sm text-white border-0 gap-1 hover:opacity-90 cursor-pointer"
                         style={{ backgroundColor: "#171717" }}
