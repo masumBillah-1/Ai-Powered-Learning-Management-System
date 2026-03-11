@@ -315,7 +315,7 @@ const HeroSection: React.FC = () => {
 
         {/* ── Real education background image (Unsplash) ── */}
         <img
-          src="https://png.pngtree.com/background/20250105/original/pngtree-beautiful-green-nature-blurred-background-picture-image_15534396.jpg"
+          src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRhSiFhhRYyJlyA_eXpeq5vQf1vFFLtrPaX-Q&s"
           alt="Students learning together"
           className="hx-bg-img"
         />
