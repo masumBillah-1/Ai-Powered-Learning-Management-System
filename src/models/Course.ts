@@ -5,7 +5,9 @@ export interface ILesson {
   title: string;
   type: "video" | "quiz" | "assignment" | "text";
   duration: string;
-  url?: string;
+  url?: string;           // video URL
+  textContent?: string;   // text lesson content
+  assignmentDesc?: string; // assignment instructions
   order: number;
 }
 
@@ -46,11 +48,13 @@ export interface ICourseDocument extends Document {
 
 // ─── Sub Schemas ──────────────────────────────────────────────────────────────
 const LessonSchema = new Schema<ILesson>({
-  title:    { type: String, required: true, trim: true },
-  type:     { type: String, enum: ["video", "quiz", "assignment", "text"], default: "video" },
-  duration: { type: String, default: "" },
-  url:      { type: String, default: "" },
-  order:    { type: Number, default: 0 },
+  title:          { type: String, required: true, trim: true },
+  type:           { type: String, enum: ["video", "quiz", "assignment", "text"], default: "video" },
+  duration:       { type: String, default: "" },
+  url:            { type: String, default: "" },          // video URL
+  textContent:    { type: String, default: "" },          // text lesson body
+  assignmentDesc: { type: String, default: "" },          // assignment instructions
+  order:          { type: Number, default: 0 },
 });
 
 const ModuleSchema = new Schema<IModule>({
@@ -113,6 +117,5 @@ const CourseSchema = new Schema<ICourseDocument>(
 CourseSchema.index({ instructorId: 1 });
 CourseSchema.index({ status: 1, visibility: 1 });
 
-// ✅ Better model export pattern
 const Course = mongoose.models.Course || mongoose.model<ICourseDocument>("Course", CourseSchema);
 export default Course;

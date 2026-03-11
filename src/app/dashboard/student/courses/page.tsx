@@ -7,7 +7,7 @@ import { motion, AnimatePresence } from "framer-motion";
 
 interface Enrollment {
   _id: string;
-  courseId: string;
+  courseId: string | { _id: string; title?: string; coverImage?: { url: string } | string; instructorId?: { name: string; photoURL?: string } };
   courseName: string;
   courseImage: string;
   instructorName: string;
@@ -24,12 +24,47 @@ interface Enrollment {
 
 type TabType = "active" | "completed" | "dropped";
 const ITEMS_PER_PAGE = 6;
+const PLACEHOLDER = "https://placehold.co/400x200/1a1a2e/C81D77?text=Course";
 
 const getProgressColor = (p: number) => {
   if (p >= 80) return "#00C48C";
   if (p >= 50) return "#F89B29";
   return "#FF0F7B";
 };
+
+// ✅ enrollment থেকে safe values বের করো
+function getCourseId(e: Enrollment): string {
+  if (typeof e.courseId === "string") return e.courseId;
+  return e.courseId?._id || "";
+}
+
+function getCourseImage(e: Enrollment): string {
+  // ১. enrollment এ directly save করা image
+  if (e.courseImage) return e.courseImage;
+  // ২. populate করা courseId object থেকে
+  if (typeof e.courseId === "object" && e.courseId?.coverImage) {
+    const img = e.courseId.coverImage as any;
+    // { url: "..." } বা সরাসরি string
+    return img?.url || img || PLACEHOLDER;
+  }
+  return PLACEHOLDER;
+}
+
+function getCourseName(e: Enrollment): string {
+  if (e.courseName) return e.courseName;
+  if (typeof e.courseId === "object" && e.courseId?.title) {
+    return e.courseId.title;
+  }
+  return "Untitled Course";
+}
+
+function getInstructorName(e: Enrollment): string {
+  if (e.instructorName) return e.instructorName;
+  if (typeof e.courseId === "object" && e.courseId?.instructorId) {
+    return (e.courseId.instructorId as any)?.name || "Instructor";
+  }
+  return "Instructor";
+}
 
 function SkeletonCard() {
   return (
@@ -55,12 +90,30 @@ export default function StudentCoursesPage() {
 
   useEffect(() => { fetchEnrollments(); }, []);
 
+  // ✅ Smart default tab — যে tab এ course আছে সেটা automatically select করো
+  useEffect(() => {
+    if (enrollments.length === 0) return;
+    const hasActive = enrollments.some(e => e.status === "active");
+    const hasCompleted = enrollments.some(e => e.status === "completed");
+    const hasDropped = enrollments.some(e => e.status === "dropped");
+    if (!hasActive && hasCompleted) setActiveTab("completed");
+    else if (!hasActive && !hasCompleted && hasDropped) setActiveTab("dropped");
+  }, [enrollments]);
+
   const fetchEnrollments = async () => {
     try {
       setLoading(true);
-      const res = await fetch("/api/enrollments?limit=100");
+      // ✅ Authorization header — localStorage token
+      const token = localStorage.getItem("token");
+      const res = await fetch("/api/enrollments?limit=100", {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
       const data = await res.json();
-      if (data.success) setEnrollments(data.enrollments || []);
+      if (data.success) {
+        setEnrollments(data.enrollments || []);
+      } else {
+        console.error("Enrollments error:", data.error);
+      }
     } catch (err) {
       console.error("Failed to fetch enrollments:", err);
     } finally {
@@ -123,7 +176,6 @@ export default function StudentCoursesPage() {
           {[1, 2, 3, 4, 5, 6].map((i) => <SkeletonCard key={i} />)}
         </div>
       ) : filtered.length === 0 ? (
-        /* Empty state */
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -152,7 +204,6 @@ export default function StudentCoursesPage() {
         </motion.div>
       ) : (
         <>
-          {/* Course Grid */}
           <AnimatePresence mode="wait">
             <motion.div
               key={activeTab + page}
@@ -162,139 +213,145 @@ export default function StudentCoursesPage() {
               transition={{ duration: 0.2 }}
               className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6"
             >
-              {paginated.map((enrollment, idx) => (
-                <motion.div
-                  key={enrollment._id}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: idx * 0.05 }}
-                  className="card bg-base-100 border border-base-300 shadow-lg hover:shadow-2xl transition-all duration-300 group overflow-hidden"
-                >
-                  {/* Thumbnail */}
-                  <figure className="relative h-48 w-full overflow-hidden">
-                    <img
-                      src={enrollment.courseImage || "https://via.placeholder.com/400x200?text=Course"}
-                      alt={enrollment.courseName}
-                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-                      onError={(e) => {
-                        (e.target as HTMLImageElement).src = "https://via.placeholder.com/400x200?text=Course";
-                      }}
-                    />
+              {paginated.map((enrollment, idx) => {
+                const courseId = getCourseId(enrollment);
+                const courseImage = getCourseImage(enrollment);
+                const courseName = getCourseName(enrollment);
+                const instructorName = getInstructorName(enrollment);
+                const progress = enrollment.progress?.progressPercentage || 0;
 
-                    {/* Heart */}
-                    <button
-                      onClick={() => toggleLike(enrollment._id)}
-                      className="absolute top-3 right-3 w-9 h-9 bg-base-100/95 backdrop-blur-sm rounded-full flex items-center justify-center shadow-md hover:scale-110 transition-transform border-0 cursor-pointer z-10"
-                    >
-                      <Heart
-                        size={16}
-                        className={likedCourses.includes(enrollment._id) ? "fill-[#FF0F7B] text-[#FF0F7B]" : ""}
+                return (
+                  <motion.div
+                    key={enrollment._id}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: idx * 0.05 }}
+                    className="card bg-base-100 border border-base-300 shadow-lg hover:shadow-2xl transition-all duration-300 group overflow-hidden"
+                  >
+                    {/* Thumbnail */}
+                    <figure className="relative h-48 w-full overflow-hidden">
+                      <img
+                        src={courseImage}
+                        alt={courseName}
+                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                        onError={(e) => {
+                          (e.target as HTMLImageElement).src = PLACEHOLDER;
+                        }}
                       />
-                    </button>
 
-                    {/* Completed overlay */}
-                    {enrollment.status === "completed" && (
-                      <div className="absolute bottom-3 left-3 right-3">
-                        <div
-                          className="text-white text-sm font-bold px-4 py-2 rounded-xl text-center shadow-lg backdrop-blur-md flex items-center justify-center gap-2"
-                          style={{ backgroundColor: "#00C48C" }}
-                        >
-                          <CheckCircle size={16} />
-                          <span>Completed</span>
+                      {/* Heart */}
+                      <button
+                        onClick={() => toggleLike(enrollment._id)}
+                        className="absolute top-3 right-3 w-9 h-9 bg-base-100/95 backdrop-blur-sm rounded-full flex items-center justify-center shadow-md hover:scale-110 transition-transform border-0 cursor-pointer z-10"
+                      >
+                        <Heart
+                          size={16}
+                          className={likedCourses.includes(enrollment._id) ? "fill-[#FF0F7B] text-[#FF0F7B]" : ""}
+                        />
+                      </button>
+
+                      {/* Completed overlay */}
+                      {enrollment.status === "completed" && (
+                        <div className="absolute bottom-3 left-3 right-3">
+                          <div
+                            className="text-white text-sm font-bold px-4 py-2 rounded-xl text-center shadow-lg backdrop-blur-md flex items-center justify-center gap-2"
+                            style={{ backgroundColor: "#00C48C" }}
+                          >
+                            <CheckCircle size={16} />
+                            <span>Completed</span>
+                          </div>
                         </div>
-                      </div>
-                    )}
+                      )}
 
-                    {/* Progress badge */}
-                    {enrollment.status === "active" && (
-                      <div className="absolute top-3 left-3">
-                        <span
-                          className="text-white text-xs font-black px-3 py-1 rounded-full shadow"
-                          style={{ backgroundColor: getProgressColor(enrollment.progress?.progressPercentage || 0) }}
-                        >
-                          {enrollment.progress?.progressPercentage || 0}%
-                        </span>
-                      </div>
-                    )}
-                  </figure>
-
-                  {/* Card Body */}
-                  <div className="card-body p-5">
-                    <div className="flex justify-between items-center mb-2">
-                      <div className="flex items-center gap-2">
-                        <div className="w-6 h-6 rounded-full overflow-hidden bg-[#C81D77] flex items-center justify-center">
-                          <span className="text-white text-xs font-bold">
-                            {enrollment.instructorName?.charAt(0)?.toUpperCase() || "?"}
+                      {/* Progress badge */}
+                      {enrollment.status === "active" && (
+                        <div className="absolute top-3 left-3">
+                          <span
+                            className="text-white text-xs font-black px-3 py-1 rounded-full shadow"
+                            style={{ backgroundColor: getProgressColor(progress) }}
+                          >
+                            {progress}%
                           </span>
                         </div>
-                        <span className="text-xs font-semibold opacity-60 truncate max-w-[120px]">
-                          {enrollment.instructorName || "Instructor"}
+                      )}
+                    </figure>
+
+                    {/* Card Body */}
+                    <div className="card-body p-5">
+                      <div className="flex justify-between items-center mb-2">
+                        <div className="flex items-center gap-2">
+                          <div className="w-6 h-6 rounded-full overflow-hidden bg-[#C81D77] flex items-center justify-center">
+                            <span className="text-white text-xs font-bold">
+                              {instructorName?.charAt(0)?.toUpperCase() || "?"}
+                            </span>
+                          </div>
+                          <span className="text-xs font-semibold opacity-60 truncate max-w-[120px]">
+                            {instructorName}
+                          </span>
+                        </div>
+                        <span className="text-xs font-bold uppercase tracking-wider" style={{ color: "#832388" }}>
+                          {enrollment.status}
                         </span>
                       </div>
-                      <span className="text-xs font-bold uppercase tracking-wider" style={{ color: "#832388" }}>
-                        {enrollment.status}
-                      </span>
-                    </div>
 
-                    <h3 className="font-bold text-base leading-snug mb-3 line-clamp-2 h-12 group-hover:text-[#FF0F7B] transition-colors">
-                      {enrollment.courseName}
-                    </h3>
+                      <h3 className="font-bold text-base leading-snug mb-3 line-clamp-2 h-12 group-hover:text-[#FF0F7B] transition-colors">
+                        {courseName}
+                      </h3>
 
-                    <div className="flex items-center gap-1 mb-3">
-                      <Star size={12} className="text-yellow-400 fill-yellow-400" />
-                      <span className="text-xs opacity-60">
-                        Enrolled: {new Date(enrollment.enrolledAt).toLocaleDateString("en-US", {
-                          day: "numeric", month: "short", year: "numeric"
-                        })}
-                      </span>
-                    </div>
-
-                    {/* Progress bar — active only */}
-                    {enrollment.status === "active" && (
-                      <div className="mb-4">
-                        <div className="flex justify-between items-center mb-1.5">
-                          <span className="text-xs font-bold opacity-60">Progress</span>
-                          <span className="text-xs font-bold">{enrollment.progress?.progressPercentage || 0}%</span>
-                        </div>
-                        <div className="w-full bg-base-300 rounded-full h-2 overflow-hidden">
-                          <div
-                            className="h-full rounded-full transition-all duration-700"
-                            style={{
-                              width: `${enrollment.progress?.progressPercentage || 0}%`,
-                              backgroundColor: getProgressColor(enrollment.progress?.progressPercentage || 0),
-                            }}
-                          />
-                        </div>
+                      <div className="flex items-center gap-1 mb-3">
+                        <Star size={12} className="text-yellow-400 fill-yellow-400" />
+                        <span className="text-xs opacity-60">
+                          Enrolled:{" "}
+                          {new Date(enrollment.enrolledAt).toLocaleDateString("en-US", {
+                            day: "numeric", month: "short", year: "numeric",
+                          })}
+                        </span>
                       </div>
-                    )}
 
-                    {/* Certificate */}
-                    {enrollment.status === "completed" && enrollment.certificate?.issued && (
-                      <div className="mb-3 flex items-center gap-2 text-xs font-bold text-emerald-600 dark:text-emerald-400">
-                        <CheckCircle size={14} /> Certificate Issued
+                      {/* Progress bar */}
+                      {enrollment.status === "active" && (
+                        <div className="mb-4">
+                          <div className="flex justify-between items-center mb-1.5">
+                            <span className="text-xs font-bold opacity-60">Progress</span>
+                            <span className="text-xs font-bold">{progress}%</span>
+                          </div>
+                          <div className="w-full bg-base-300 rounded-full h-2 overflow-hidden">
+                            <div
+                              className="h-full rounded-full transition-all duration-700"
+                              style={{
+                                width: `${progress}%`,
+                                backgroundColor: getProgressColor(progress),
+                              }}
+                            />
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Certificate */}
+                      {enrollment.status === "completed" && enrollment.certificate?.issued && (
+                        <div className="mb-3 flex items-center gap-2 text-xs font-bold text-emerald-600 dark:text-emerald-400">
+                          <CheckCircle size={14} /> Certificate Issued
+                        </div>
+                      )}
+
+                      {/* Footer */}
+                      <div className="flex items-center justify-between border-t border-base-300 pt-4 mt-auto">
+                        <span className="text-xs opacity-50">
+                          {enrollment.progress?.completedLessons?.length || 0} lessons done
+                        </span>
+                        <button
+                          onClick={() => router.push(`/learn/${courseId}`)}
+                          className="btn btn-sm text-white border-0 gap-1 hover:opacity-90 cursor-pointer"
+                          style={{ backgroundColor: "#171717" }}
+                        >
+                          {enrollment.status === "active" ? "Continue" : "Review"}
+                          <ChevronRight size={14} />
+                        </button>
                       </div>
-                    )}
-
-                    {/* Footer */}
-                    <div className="flex items-center justify-between border-t border-base-300 pt-4 mt-auto">
-                      <span className="text-xs opacity-50">
-                        {enrollment.progress?.completedLessons?.length || 0} lessons done
-                      </span>
-                      <button
-                        onClick={() =>
-                          // ✅ Continue → learning page
-                          router.push(`/dashboard/student/learn/${enrollment.courseId}`)
-                        }
-                        className="btn btn-sm text-white border-0 gap-1 hover:opacity-90 cursor-pointer"
-                        style={{ backgroundColor: "#171717" }}
-                      >
-                        {enrollment.status === "active" ? "Continue" : "Review"}
-                        <ChevronRight size={14} />
-                      </button>
                     </div>
-                  </div>
-                </motion.div>
-              ))}
+                  </motion.div>
+                );
+              })}
             </motion.div>
           </AnimatePresence>
 
@@ -302,7 +359,8 @@ export default function StudentCoursesPage() {
           {totalPages > 1 && (
             <div className="mt-12 flex flex-col sm:flex-row items-center justify-between gap-4 border-t border-base-300 pt-6">
               <p className="text-xs font-semibold opacity-60">
-                Showing {(page - 1) * ITEMS_PER_PAGE + 1}–{Math.min(page * ITEMS_PER_PAGE, filtered.length)} of {filtered.length} courses
+                Showing {(page - 1) * ITEMS_PER_PAGE + 1}–{Math.min(page * ITEMS_PER_PAGE, filtered.length)} of{" "}
+                {filtered.length} courses
               </p>
               <div className="flex items-center gap-2">
                 <button
@@ -316,7 +374,8 @@ export default function StudentCoursesPage() {
                   <button
                     key={p}
                     onClick={() => setPage(p)}
-                    className={`btn btn-sm btn-circle font-bold border-0 cursor-pointer ${page === p ? "text-white shadow-md" : "btn-ghost"}`}
+                    className={`btn btn-sm btn-circle font-bold border-0 cursor-pointer ${page === p ? "text-white shadow-md" : "btn-ghost"
+                      }`}
                     style={page === p ? { backgroundColor: "#FF0F7B" } : {}}
                   >
                     {p}
