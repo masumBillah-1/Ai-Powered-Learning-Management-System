@@ -1,8 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { useState, useEffect, useRef } from "react";
+import { usePathname, useRouter } from "next/navigation";
+import { useState, useEffect, useRef, useCallback } from "react";
 import {
   LayoutDashboard, User, BookOpen, FileText, HelpCircle, Award,
   MessageSquare, Settings, Bell, ChevronLeft, ChevronRight,
@@ -13,41 +13,73 @@ import { FaSun, FaMoon } from "react-icons/fa";
 type Role = "student" | "instructor" | "admin";
 interface UserData { name: string; email: string; photoURL?: string; role: Role; }
 
+// ✅ 30 seconds — performance friendly
+const POLL_INTERVAL = 5_000;
+
+// ✅ Read theme from localStorage before first render (avoids flash)
+function getInitialTheme(): "dark" | "light" {
+  if (typeof window === "undefined") return "light";
+  return (localStorage.getItem("theme") as "dark" | "light") || "light";
+}
+
 const menus: Record<Role, { label: string; href: string; icon: React.ReactNode }[]> = {
   student: [
-    { label: "Dashboard", href: "/sampleDashboard/student", icon: <LayoutDashboard size={18} /> },
-    { label: "Profile", href: "/sampleDashboard/profile", icon: <User size={18} /> },
-    { label: "Courses", href: "/sampleDashboard/student/courses", icon: <BookOpen size={18} /> },
-    { label: "Assignments", href: "/sampleDashboard/student/assignments", icon: <FileText size={18} /> },
-    { label: "Quiz", href: "/sampleDashboard/student/quiz", icon: <HelpCircle size={18} /> },
-    { label: "Certificates", href: "/sampleDashboard/student/certificates", icon: <Award size={18} /> },
-    { label: "Messages", href: "/sampleDashboard/messages", icon: <MessageSquare size={18} /> },
-    { label: "Settings", href: "/sampleDashboard/settings", icon: <Settings size={18} /> },
+    { label: "Dashboard", href: "/dashboard/student", icon: <LayoutDashboard size={18} /> },
+    { label: "Profile", href: "/dashboard/profile", icon: <User size={18} /> },
+    { label: "Courses", href: "/dashboard/student/courses", icon: <BookOpen size={18} /> },
+    { label: "Assignments", href: "/dashboard/student/assignments", icon: <FileText size={18} /> },
+    { label: "Quiz", href: "/dashboard/student/quiz", icon: <HelpCircle size={18} /> },
+    { label: "Certificates", href: "/dashboard/student/certificates", icon: <Award size={18} /> },
+    { label: "Messages", href: "/dashboard/messages", icon: <MessageSquare size={18} /> },
+    { label: "Settings", href: "/dashboard/settings", icon: <Settings size={18} /> },
   ],
   instructor: [
-    { label: "Dashboard", href: "/sampleDashboard/instructor", icon: <LayoutDashboard size={18} /> },
-    { label: "Profile", href: "/sampleDashboard/profile", icon: <User size={18} /> },
-    { label: "Courses", href: "/sampleDashboard/instructor/courses", icon: <BookOpen size={18} /> },
-    { label: "Announcements", href: "/sampleDashboard/instructor/announcements", icon: <Megaphone size={18} /> },
-    { label: "Assignments", href: "/sampleDashboard/instructor/assignments", icon: <FileText size={18} /> },
-    { label: "Students", href: "/sampleDashboard/instructor/students", icon: <Users size={18} /> },
-    { label: "Quiz", href: "/sampleDashboard/instructor/quiz", icon: <HelpCircle size={18} /> },
-    { label: "Quiz Results", href: "/sampleDashboard/instructor/quiz-results", icon: <BarChart2 size={18} /> },
-    { label: "Earnings", href: "/sampleDashboard/instructor/earnings", icon: <DollarSign size={18} /> },
-    { label: "Messages", href: "/sampleDashboard/messages", icon: <MessageSquare size={18} /> },
-    { label: "Settings", href: "/sampleDashboard/settings", icon: <Settings size={18} /> },
+    { label: "Dashboard", href: "/dashboard/instructor", icon: <LayoutDashboard size={18} /> },
+    { label: "Profile", href: "/dashboard/profile", icon: <User size={18} /> },
+    { label: "Courses", href: "/dashboard/instructor/courses", icon: <BookOpen size={18} /> },
+    { label: "Announcements", href: "/dashboard/instructor/announcements", icon: <Megaphone size={18} /> },
+    { label: "Assignments", href: "/dashboard/instructor/assignments", icon: <FileText size={18} /> },
+    { label: "Students", href: "/dashboard/instructor/students", icon: <Users size={18} /> },
+    { label: "Quiz", href: "/dashboard/instructor/quiz", icon: <HelpCircle size={18} /> },
+    { label: "Quiz Results", href: "/dashboard/instructor/quiz-results", icon: <BarChart2 size={18} /> },
+    { label: "Earnings", href: "/dashboard/instructor/earnings", icon: <DollarSign size={18} /> },
+    { label: "Messages", href: "/dashboard/messages", icon: <MessageSquare size={18} /> },
+    { label: "Settings", href: "/dashboard/settings", icon: <Settings size={18} /> },
   ],
   admin: [
-    { label: "Dashboard", href: "/sampleDashboard/admin", icon: <LayoutDashboard size={18} /> },
-    { label: "Profile", href: "/sampleDashboard/profile", icon: <User size={18} /> },
-    { label: "Courses", href: "/sampleDashboard/admin/courses", icon: <BookOpen size={18} /> },
-    { label: "Users", href: "/sampleDashboard/admin/users", icon: <Users size={18} /> },
-    { label: "Announcements", href: "/sampleDashboard/admin/announcements", icon: <Megaphone size={18} /> },
-    { label: "Earnings", href: "/sampleDashboard/admin/earnings", icon: <DollarSign size={18} /> },
-    { label: "Messages", href: "/sampleDashboard/messages", icon: <MessageSquare size={18} /> },
-    { label: "Settings", href: "/sampleDashboard/settings", icon: <Settings size={18} /> },
+    { label: "Dashboard", href: "/dashboard/admin", icon: <LayoutDashboard size={18} /> },
+    { label: "Profile", href: "/dashboard/profile", icon: <User size={18} /> },
+    { label: "Courses", href: "/dashboard/admin/courses", icon: <BookOpen size={18} /> },
+    { label: "Users", href: "/dashboard/admin/users", icon: <Users size={18} /> },
+    { label: "Announcements", href: "/dashboard/admin/announcements", icon: <Megaphone size={18} /> },
+    { label: "Earnings", href: "/dashboard/admin/earnings", icon: <DollarSign size={18} /> },
+    { label: "Messages", href: "/dashboard/messages", icon: <MessageSquare size={18} /> },
+    { label: "Settings", href: "/dashboard/settings", icon: <Settings size={18} /> },
   ],
 };
+
+const roleDashboard: Record<Role, string> = {
+  student: "/dashboard/student",
+  instructor: "/dashboard/instructor",
+  admin: "/dashboard/admin",
+};
+
+const roleProtectedPrefixes: Record<Role, string[]> = {
+  student: ["/dashboard/student"],
+  instructor: ["/dashboard/instructor"],
+  admin: ["/dashboard/admin"],
+};
+
+const sharedPaths = ["/dashboard/profile", "/dashboard/messages", "/dashboard/settings"];
+
+function isUnauthorizedPath(path: string, userRole: Role): boolean {
+  if (sharedPaths.some(p => path.startsWith(p))) return false;
+  for (const [role, prefixes] of Object.entries(roleProtectedPrefixes) as [Role, string[]][]) {
+    if (role === userRole) continue;
+    if (prefixes.some(prefix => path.startsWith(prefix))) return true;
+  }
+  return false;
+}
 
 const roleMeta: Record<Role, { color: string; label: string }> = {
   student: { color: "#00C48C", label: "Student" },
@@ -55,8 +87,9 @@ const roleMeta: Record<Role, { color: string; label: string }> = {
   admin: { color: "#FF0F7B", label: "Admin" },
 };
 
-const rootHrefs = ["/sampleDashboard/instructor", "/sampleDashboard/student", "/sampleDashboard/admin"];
+const rootHrefs = ["/dashboard/instructor", "/dashboard/student", "/dashboard/admin"];
 
+// ── Avatar ────────────────────────────────────────────────
 function Avatar({ user, sm }: { user: UserData | null; sm?: boolean }) {
   const letter = user?.name?.charAt(0).toUpperCase() || "?";
   const cls = sm ? "w-7 h-7" : "w-9 h-9";
@@ -65,7 +98,7 @@ function Avatar({ user, sm }: { user: UserData | null; sm?: boolean }) {
     : <div className={`${cls} rounded-lg flex items-center justify-center font-bold text-sm text-white bg-gradient-to-br from-[#832388] to-[#FF0F7B] flex-shrink-0`}>{letter}</div>;
 }
 
-// ── SIDEBAR ───────────────────────────────────────────────
+// ── Sidebar ───────────────────────────────────────────────
 function Sidebar({ items, collapsed, onToggle, mobileOpen, onMobileClose }: {
   items: { label: string; href: string; icon: React.ReactNode }[];
   collapsed: boolean; onToggle: () => void;
@@ -83,12 +116,11 @@ function Sidebar({ items, collapsed, onToggle, mobileOpen, onMobileClose }: {
             <div className="w-8 h-8 rounded-lg flex-shrink-0 flex items-center justify-center text-[15px] font-black text-white bg-gradient-to-br from-[#832388] to-[#FF0F7B]">S</div>
             {w && <span className="text-[15px] font-black text-white whitespace-nowrap tracking-tight">SmartLMS<span className="text-[#FF0F7B]">Pro</span></span>}
           </Link>
-          {!forceWide && (
+          {!forceWide ? (
             <button onClick={onToggle} className="w-7 h-7 rounded-md flex items-center justify-center bg-white/[0.08] text-white/55 hover:bg-white/15 transition-colors border-0 cursor-pointer flex-shrink-0">
               {w ? <ChevronLeft size={15} /> : <ChevronRight size={15} />}
             </button>
-          )}
-          {forceWide && (
+          ) : (
             <button onClick={onMobileClose} className="w-7 h-7 rounded-md flex items-center justify-center bg-white/[0.08] text-white/60 hover:bg-white/15 border-0 cursor-pointer flex-shrink-0">
               <X size={15} />
             </button>
@@ -102,11 +134,7 @@ function Sidebar({ items, collapsed, onToggle, mobileOpen, onMobileClose }: {
               <Link key={item.href} href={item.href} title={!w ? item.label : undefined}
                 className={`relative flex items-center mx-2 my-0.5 rounded-lg no-underline transition-colors duration-150
                   ${w ? "gap-3 px-3.5 py-2.5 justify-start" : "justify-center py-3"}
-                  ${active
-                    ? "bg-gradient-to-r from-[#83238888] to-[#FF0F7B44] text-white"
-                    : "text-white/50 hover:text-white/80 hover:bg-white/[0.05]"
-                  }`}
-              >
+                  ${active ? "bg-gradient-to-r from-[#83238888] to-[#FF0F7B44] text-white" : "text-white/50 hover:text-white/80 hover:bg-white/[0.05]"}`}>
                 {active && <span className="absolute left-0 top-[18%] h-[64%] w-[3px] rounded-r-sm bg-gradient-to-b from-[#832388] to-[#FF0F7B]" />}
                 <span className={active ? "text-white" : "text-white/40"}>{item.icon}</span>
                 {w && <span className={`text-[13.5px] whitespace-nowrap ${active ? "font-semibold" : "font-normal"}`}>{item.label}</span>}
@@ -114,7 +142,6 @@ function Sidebar({ items, collapsed, onToggle, mobileOpen, onMobileClose }: {
             );
           })}
         </nav>
-
         {w && <div className="px-3.5 py-3 border-t border-white/[0.07] text-[11px] text-white/20 flex-shrink-0">SmartLMS Pro v2.0</div>}
       </div>
     );
@@ -137,7 +164,7 @@ function Sidebar({ items, collapsed, onToggle, mobileOpen, onMobileClose }: {
   );
 }
 
-// ── TOP NAVBAR ────────────────────────────────────────────
+// ── TopNavbar ─────────────────────────────────────────────
 function TopNavbar({ role, items, theme, toggleTheme, user, onLogout, onMobileMenu, collapsed, unreadCount }: {
   role: Role;
   items: { label: string; href: string; icon: React.ReactNode }[];
@@ -164,9 +191,7 @@ function TopNavbar({ role, items, theme, toggleTheme, user, onLogout, onMobileMe
     if (notifications.length === 0) {
       try {
         const token = localStorage.getItem("token");
-        const res = await fetch("/api/notifications", {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        const res = await fetch("/api/notifications", { headers: { Authorization: `Bearer ${token}` } });
         const data = await res.json();
         if (data.notifications) setNotifications(data.notifications);
       } catch { }
@@ -195,7 +220,9 @@ function TopNavbar({ role, items, theme, toggleTheme, user, onLogout, onMobileMe
       </div>
 
       <div className="flex items-center gap-1 flex-shrink-0">
-        <button onClick={toggleTheme} className="btn btn-ghost btn-sm btn-square cursor-pointer" style={{ color: theme === "dark" ? "#facc15" : "#6b7280" }}>
+        {/* Theme toggle */}
+        <button onClick={toggleTheme} className="btn btn-ghost btn-sm btn-square cursor-pointer"
+          style={{ color: theme === "dark" ? "#facc15" : "#6b7280" }}>
           {theme === "dark" ? <FaSun size={16} /> : <FaMoon size={16} />}
         </button>
 
@@ -217,19 +244,17 @@ function TopNavbar({ role, items, theme, toggleTheme, user, onLogout, onMobileMe
               </div>
               {notifications.length === 0 ? (
                 <div className="px-4 py-6 text-center text-sm text-base-content/40">কোনো notification নেই</div>
-              ) : (
-                notifications.slice(0, 5).map((n, i) => (
-                  <div key={i} className={`flex gap-3 px-4 py-3 border-b border-base-300 cursor-pointer items-start hover:bg-base-200 transition-colors ${!n.isRead ? "bg-base-200/50" : ""}`}>
-                    <div className={`w-2 h-2 rounded-full flex-shrink-0 mt-1.5 ${n.isRead ? "bg-base-content/20" : "bg-[#FF0F7B]"}`} />
-                    <div>
-                      <p className={`text-[13px] leading-snug m-0 ${n.isRead ? "text-base-content/60" : "text-base-content font-semibold"}`}>{n.title}</p>
-                      <p className="text-[11px] text-base-content/40 mt-0.5 m-0">{n.message}</p>
-                    </div>
+              ) : notifications.slice(0, 5).map((n, i) => (
+                <div key={i} className={`flex gap-3 px-4 py-3 border-b border-base-300 cursor-pointer items-start hover:bg-base-200 transition-colors ${!n.isRead ? "bg-base-200/50" : ""}`}>
+                  <div className={`w-2 h-2 rounded-full flex-shrink-0 mt-1.5 ${n.isRead ? "bg-base-content/20" : "bg-[#FF0F7B]"}`} />
+                  <div>
+                    <p className={`text-[13px] leading-snug m-0 ${n.isRead ? "text-base-content/60" : "text-base-content font-semibold"}`}>{n.title}</p>
+                    <p className="text-[11px] text-base-content/40 mt-0.5 m-0">{n.message}</p>
                   </div>
-                ))
-              )}
+                </div>
+              ))}
               <div className="py-2.5 text-center">
-                <Link href="/sampleDashboard/settings" className="text-xs font-semibold text-[#832388]">View all →</Link>
+                <Link href="/dashboard/settings" className="text-xs font-semibold text-[#832388]">View all →</Link>
               </div>
             </div>
           )}
@@ -237,9 +262,10 @@ function TopNavbar({ role, items, theme, toggleTheme, user, onLogout, onMobileMe
 
         <div className="w-px h-6 bg-base-300 mx-1" />
 
-        {/* User dropdown */}
+        {/* User menu */}
         <div ref={userRef} className="relative">
-          <button onClick={() => { setShowUser(v => !v); setShowNotif(false); }} className="btn btn-ghost btn-sm h-auto py-1.5 px-2 rounded-xl cursor-pointer flex items-center gap-2">
+          <button onClick={() => { setShowUser(v => !v); setShowNotif(false); }}
+            className="btn btn-ghost btn-sm h-auto py-1.5 px-2 rounded-xl cursor-pointer flex items-center gap-2">
             <Avatar user={user} sm />
             <div className="text-left hidden sm:block">
               <p className="m-0 text-[13px] font-semibold text-base-content leading-tight max-w-[80px] truncate">{user?.name?.split(" ")[0] || "User"}</p>
@@ -258,18 +284,22 @@ function TopNavbar({ role, items, theme, toggleTheme, user, onLogout, onMobileMe
                 </div>
               </div>
               <div className="px-4 py-2.5 border-b border-base-300">
-                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-bold uppercase tracking-wide" style={{ color: rm.color, background: `${rm.color}22`, border: `1px solid ${rm.color}33` }}>
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-bold uppercase tracking-wide"
+                  style={{ color: rm.color, background: `${rm.color}22`, border: `1px solid ${rm.color}33` }}>
                   <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ background: rm.color }} />
                   {rm.label}
                 </span>
               </div>
-              <Link href="/sampleDashboard/profile" onClick={() => setShowUser(false)} className="flex items-center gap-2.5 px-4 py-2.5 text-[13.5px] text-base-content border-b border-base-300 hover:bg-base-200 transition-colors no-underline">
+              <Link href="/dashboard/profile" onClick={() => setShowUser(false)}
+                className="flex items-center gap-2.5 px-4 py-2.5 text-[13.5px] text-base-content border-b border-base-300 hover:bg-base-200 transition-colors no-underline">
                 <User size={14} className="opacity-50" /> My Profile
               </Link>
-              <Link href="/sampleDashboard/settings" onClick={() => setShowUser(false)} className="flex items-center gap-2.5 px-4 py-2.5 text-[13.5px] text-base-content border-b border-base-300 hover:bg-base-200 transition-colors no-underline">
+              <Link href="/dashboard/settings" onClick={() => setShowUser(false)}
+                className="flex items-center gap-2.5 px-4 py-2.5 text-[13.5px] text-base-content border-b border-base-300 hover:bg-base-200 transition-colors no-underline">
                 <Settings size={14} className="opacity-50" /> Settings
               </Link>
-              <button onClick={() => { setShowUser(false); onLogout(); }} className="flex items-center gap-2.5 w-full px-4 py-2.5 text-[13.5px] font-semibold bg-transparent border-none cursor-pointer hover:bg-base-200 transition-colors text-[#FF0F7B]">
+              <button onClick={() => { setShowUser(false); onLogout(); }}
+                className="flex items-center gap-2.5 w-full px-4 py-2.5 text-[13.5px] font-semibold bg-transparent border-none cursor-pointer hover:bg-base-200 transition-colors text-[#FF0F7B]">
                 <LogOut size={14} /> Logout
               </button>
             </div>
@@ -280,7 +310,7 @@ function TopNavbar({ role, items, theme, toggleTheme, user, onLogout, onMobileMe
   );
 }
 
-// ── PAGE LOADER ───────────────────────────────────────────
+// ── PageLoader ────────────────────────────────────────────
 function PageLoader({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
   const pathname = usePathname();
@@ -299,94 +329,122 @@ function PageLoader({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
-// ── ROOT LAYOUT ───────────────────────────────────────────
+// ── Root Layout ───────────────────────────────────────────
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
+  const router = useRouter();
+  const pathname = usePathname();
+
+  // ✅ Read theme immediately from localStorage — no flash
+  const [theme, setTheme] = useState<"dark" | "light">(getInitialTheme);
   const [role, setRole] = useState<Role>("student");
-  const [theme, setTheme] = useState<"dark" | "light">("light");
   const [user, setUser] = useState<UserData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
 
+  const currentRoleRef = useRef<Role>("student");
+
+  // ✅ Apply theme to <html> on mount & change
   useEffect(() => {
-    const t = (localStorage.getItem("theme") || "light") as "dark" | "light";
-    setTheme(t);
-    document.documentElement.setAttribute("data-theme", t);
+    document.documentElement.setAttribute("data-theme", theme);
+  }, [theme]);
 
+  // ── Fetch user from DB ────────────────────────────────
+  const fetchUser = useCallback(async (isInitial = false) => {
     const token = localStorage.getItem("token");
-    const raw = localStorage.getItem("user");
+    if (!token) { router.replace("/login"); return; }
 
-    // token না থাকলে login এ পাঠাও
-    if (!token) {
-      window.location.href = "/login";
-      return;
-    }
+    try {
+      const res = await fetch("/api/dashboard", { headers: { Authorization: `Bearer ${token}` } });
+      const data = await res.json();
 
-    // ✅ MongoDB আগে check করো
-    fetch("/api/dashboard", {
-      headers: { Authorization: `Bearer ${token}` },
-    })
-      .then(r => r.json())
-      .then(data => {
-        if (!data.user) {
-          localStorage.removeItem("user");
-          localStorage.removeItem("token");
-          window.location.href = "/login";
-          return;
-        }
+      if (!data.user) {
+        localStorage.removeItem("user");
+        localStorage.removeItem("token");
+        router.replace("/login");
+        return;
+      }
 
-        const freshUser = data.user;
+      const freshUser: UserData = data.user;
+      const newRole = (["student", "instructor", "admin"].includes(freshUser.role)
+        ? freshUser.role : "student") as Role;
 
-        // ✅ localStorage এর সাথে compare করো
-        if (raw) {
-          try {
-            const cachedUser: UserData = JSON.parse(raw);
-            if (cachedUser.role !== freshUser.role) {
-              // role mismatch — log করো
-              console.log(`🔄 Role changed: ${cachedUser.role} → ${freshUser.role}`);
-            }
-          } catch {
-            // localStorage corrupt — কিছু করার নেই
-          }
-        }
+      localStorage.setItem("user", JSON.stringify(freshUser));
 
-        // ✅ সবসময় MongoDB data দিয়ে update
-        localStorage.setItem("user", JSON.stringify(freshUser));
+      // Silent role change detection
+      if (!isInitial && newRole !== currentRoleRef.current) {
+        currentRoleRef.current = newRole;
         setUser(freshUser);
-        setRole(["student", "instructor", "admin"].includes(freshUser.role) ? freshUser.role : "student");
-        setUnreadCount(data.unreadNotifications || 0);
+        setRole(newRole);
+        router.replace(roleDashboard[newRole]);
+        return;
+      }
+
+      currentRoleRef.current = newRole;
+      setUser(freshUser);
+      setRole(newRole);
+      setUnreadCount(data.unreadNotifications || 0);
+
+      if (isInitial) {
         setIsLoading(false);
-      })
-      .catch(() => {
-        // ✅ Network error — localStorage দিয়ে fallback
+        if (isUnauthorizedPath(pathname, newRole)) {
+          router.replace(roleDashboard[newRole]);
+        }
+      }
+    } catch {
+      if (isInitial) {
+        const raw = localStorage.getItem("user");
         if (raw) {
           try {
             const parsed: UserData = JSON.parse(raw);
+            const fallbackRole = (["student", "instructor", "admin"].includes(parsed.role)
+              ? parsed.role : "student") as Role;
+            currentRoleRef.current = fallbackRole;
             setUser(parsed);
-            setRole(["student", "instructor", "admin"].includes(parsed.role) ? parsed.role : "student");
+            setRole(fallbackRole);
             setIsLoading(false);
-          } catch {
-            window.location.href = "/login";
-          }
+            if (isUnauthorizedPath(pathname, fallbackRole)) {
+              router.replace(roleDashboard[fallbackRole]);
+            }
+          } catch { router.replace("/login"); }
         } else {
-          window.location.href = "/login";
+          router.replace("/login");
         }
-      });
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  useEffect(() => { fetchUser(true); }, [fetchUser]);
+
+  // ✅ Poll every 30s — not every 3s
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (!isLoading) fetchUser(false);
+    }, POLL_INTERVAL);
+    return () => clearInterval(interval);
+  }, [isLoading, fetchUser]);
+
+  // URL guard on navigation
+  useEffect(() => {
+    if (isLoading) return;
+    if (isUnauthorizedPath(pathname, role)) {
+      router.replace(roleDashboard[role]);
+    }
+  }, [pathname, role, isLoading, router]);
 
   const toggleTheme = () => {
     const next = theme === "light" ? "dark" : "light";
     setTheme(next);
     localStorage.setItem("theme", next);
-    document.documentElement.setAttribute("data-theme", next);
   };
 
   const handleLogout = async () => {
     await fetch("/api/auth/logout", { method: "POST" });
     localStorage.removeItem("user");
     localStorage.removeItem("token");
-    window.location.href = "/login";
+    router.replace("/login");
   };
 
   if (isLoading) return (

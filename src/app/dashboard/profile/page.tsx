@@ -12,105 +12,92 @@ interface UserData {
   bio?: string;
 }
 
-// ─── Role-based stats ─────────────────────────────────────────────────────────
 const roleStats: Record<Role, { label: string; value: string; color: string }[]> = {
   student: [
-    { label: "Enrolled",     value: "5",   color: "#FF0F7B" },
-    { label: "Completed",    value: "2",   color: "#00C48C" },
-    { label: "Certificates", value: "2",   color: "#F89B29" },
-    { label: "Avg Score",    value: "82%", color: "#832388" },
+    { label: "Enrolled", value: "5", color: "#FF0F7B" },
+    { label: "Completed", value: "2", color: "#00C48C" },
+    { label: "Certificates", value: "2", color: "#F89B29" },
+    { label: "Avg Score", value: "82%", color: "#832388" },
   ],
   instructor: [
-    { label: "Courses",   value: "4",    color: "#FF0F7B" },
-    { label: "Students",  value: "320",  color: "#832388" },
-    { label: "Rating",    value: "4.8",  color: "#F89B29" },
-    { label: "Earnings",  value: "৳48k", color: "#00C48C" },
+    { label: "Courses", value: "4", color: "#FF0F7B" },
+    { label: "Students", value: "320", color: "#832388" },
+    { label: "Rating", value: "4.8", color: "#F89B29" },
+    { label: "Earnings", value: "৳48k", color: "#00C48C" },
   ],
   admin: [
-    { label: "Users",    value: "1,278", color: "#FF0F7B" },
-    { label: "Courses",  value: "94",    color: "#832388" },
-    { label: "Revenue",  value: "৳4.8L", color: "#F89B29" },
-    { label: "Pending",  value: "3",     color: "#E3436B" },
+    { label: "Users", value: "1,278", color: "#FF0F7B" },
+    { label: "Courses", value: "94", color: "#832388" },
+    { label: "Revenue", value: "৳4.8L", color: "#F89B29" },
+    { label: "Pending", value: "3", color: "#E3436B" },
   ],
 };
 
-// ─── Role-based recent activity ───────────────────────────────────────────────
 const roleActivity: Record<Role, { text: string; time: string; color: string }[]> = {
   student: [
-    { text: "Scored 85% on HTML Basics Quiz",          time: "2 days ago",  color: "#832388" },
-    { text: "Submitted Todo App Assignment",            time: "5 days ago",  color: "#F89B29" },
-    { text: "Enrolled in Python for Beginners",        time: "1 week ago",  color: "#00C48C" },
-    { text: "Earned Web Fundamentals Certificate",     time: "2 weeks ago", color: "#FF0F7B" },
+    { text: "Scored 85% on HTML Basics Quiz", time: "2 days ago", color: "#832388" },
+    { text: "Submitted Todo App Assignment", time: "5 days ago", color: "#F89B29" },
+    { text: "Enrolled in Python for Beginners", time: "1 week ago", color: "#00C48C" },
+    { text: "Earned Web Fundamentals Certificate", time: "2 weeks ago", color: "#FF0F7B" },
   ],
   instructor: [
-    { text: "Rahim submitted Build a Todo App",        time: "1 day ago",   color: "#832388" },
-    { text: "New student enrolled in Web Dev Bootcamp",time: "3 days ago",  color: "#F89B29" },
-    { text: "Published Python for Beginners course",   time: "1 week ago",  color: "#00C48C" },
-    { text: "Received payout of ৳5,000",               time: "2 weeks ago", color: "#FF0F7B" },
+    { text: "Rahim submitted Build a Todo App", time: "1 day ago", color: "#832388" },
+    { text: "New student enrolled in Web Dev Bootcamp", time: "3 days ago", color: "#F89B29" },
+    { text: "Published Python for Beginners course", time: "1 week ago", color: "#00C48C" },
+    { text: "Received payout of ৳5,000", time: "2 weeks ago", color: "#FF0F7B" },
   ],
   admin: [
-    { text: "Approved payout for Karim Hossain",       time: "2 hours ago", color: "#00C48C" },
-    { text: "Approved course: React Advanced",         time: "1 day ago",   color: "#832388" },
-    { text: "Verified instructor: Sadia Islam",        time: "2 days ago",  color: "#F89B29" },
-    { text: "Blocked suspicious user account",         time: "3 days ago",  color: "#FF0F7B" },
+    { text: "Approved payout for Karim Hossain", time: "2 hours ago", color: "#00C48C" },
+    { text: "Approved course: React Advanced", time: "1 day ago", color: "#832388" },
+    { text: "Verified instructor: Sadia Islam", time: "2 days ago", color: "#F89B29" },
+    { text: "Blocked suspicious user account", time: "3 days ago", color: "#FF0F7B" },
   ],
 };
 
-// ─── Role UI config ───────────────────────────────────────────────────────────
 const roleCfg: Record<Role, { accent: string; label: string; bg: string }> = {
-  student:    { accent: "#FF0F7B", label: "Student",    bg: "rgba(255,15,123,0.08)"  },
+  student: { accent: "#FF0F7B", label: "Student", bg: "rgba(255,15,123,0.08)" },
   instructor: { accent: "#832388", label: "Instructor", bg: "rgba(131,35,136,0.08)" },
-  admin:      { accent: "#F89B29", label: "Admin",      bg: "rgba(248,155,41,0.08)" },
+  admin: { accent: "#F89B29", label: "Admin", bg: "rgba(248,155,41,0.08)" },
 };
 
-// ─── Tiny SVG User icon ───────────────────────────────────────────────────────
 function UserIcon({ size }: { size: number }) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <circle cx="12" cy="8" r="4"/>
-      <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/>
+      <circle cx="12" cy="8" r="4" />
+      <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" />
     </svg>
   );
 }
 
-// ═══════════════════════════════════════════════════════════════════════════════
-// MAIN PAGE
-// ═══════════════════════════════════════════════════════════════════════════════
 export default function ProfilePage() {
-  const [user, setUser]     = useState<UserData | null>(null);
-  const [role, setRole]     = useState<Role>("student");
-  const [theme, setTheme]   = useState("light");
+  const [user, setUser] = useState<UserData | null>(null);
+  const [role, setRole] = useState<Role>("student");
+  const [theme, setTheme] = useState("light");
   const [editMode, setEdit] = useState(false);
-  const [name, setName]     = useState("");
-  const [phone, setPhone]   = useState("");
-  const [bio, setBio]       = useState("");
+  const [name, setName] = useState("");
+  const [phone, setPhone] = useState("");
+  const [bio, setBio] = useState("");
   const [imgErr, setImgErr] = useState(false);
-  const [saved, setSaved]   = useState(false);
+  const [saved, setSaved] = useState(false);
 
-  // ── Load user + role from localStorage ────────────────────────────────────
   useEffect(() => {
-    // theme
     const t = (localStorage.getItem("theme") || "light");
     setTheme(t);
     document.documentElement.setAttribute("data-theme", t);
 
-    // user → role comes from user.role (source of truth)
     const raw = localStorage.getItem("user");
     if (raw) {
       try {
         const parsed: UserData = JSON.parse(raw);
         setUser(parsed);
-        setName(parsed.name  || "");
+        setName(parsed.name || "");
         setPhone(parsed.phone || "");
-        setBio(parsed.bio   || "");
-
-        // role from user object
+        setBio(parsed.bio || "");
         const r = parsed.role as Role;
         if (["student", "instructor", "admin"].includes(r)) setRole(r);
-      } catch { /* ignore */ }
+      } catch { }
     }
 
-    // watch theme changes (dark mode toggle from navbar)
     const iv = setInterval(() => {
       const ct = localStorage.getItem("theme") || "light";
       if (ct !== theme) {
@@ -121,7 +108,6 @@ export default function ProfilePage() {
     return () => clearInterval(iv);
   }, [theme]);
 
-  // ── Save edits ────────────────────────────────────────────────────────────
   const handleSave = () => {
     if (!user) return;
     const updated = { ...user, name, phone, bio };
@@ -131,27 +117,23 @@ export default function ProfilePage() {
     setTimeout(() => { setSaved(false); setEdit(false); }, 1200);
   };
 
-  // ── Loading ───────────────────────────────────────────────────────────────
   if (!user) return (
     <div className="flex items-center justify-center h-48 opacity-30 text-sm font-semibold">
       Loading…
     </div>
   );
 
-  const cfg      = roleCfg[role];
-  const stats    = roleStats[role];
+  const cfg = roleCfg[role];
+  const stats = roleStats[role];
   const activity = roleActivity[role];
-  const letter   = (user.name || user.email || "?").charAt(0).toUpperCase();
+  const letter = (user.name || user.email || "?").charAt(0).toUpperCase();
   const showPhoto = !!user.photoURL && !imgErr;
 
-  // ─── Render ───────────────────────────────────────────────────────────────
   return (
-    <div className="min-h-screen p-4 md:p-6 lg:p-8" data-theme={theme}>
+    <div>
 
-      {/* ══ Hero Card ══ */}
-      <div className="rounded-3xl bg-base-100 border border-base-300 overflow-hidden mb-5 shadow-sm">
-
-        {/* Cover */}
+      {/* Hero Card */}
+      <div className="rounded-3xl border border-base-300 overflow-hidden mb-5 shadow-sm">
         <div className="relative h-36 overflow-hidden" style={{
           background: `linear-gradient(135deg, ${cfg.accent}22 0%, #83238822 50%, #F89B2922 100%)`,
         }}>
@@ -163,19 +145,14 @@ export default function ProfilePage() {
           </span>
         </div>
 
-        {/* Avatar + actions */}
         <div className="px-6 pb-6">
           <div className="flex items-end justify-between -mt-10 mb-4 flex-wrap gap-3">
-
-            {/* Avatar */}
             <div className="w-20 h-20 rounded-2xl border-4 border-base-100 flex items-center justify-center text-white text-3xl font-black overflow-hidden shadow-lg flex-shrink-0"
               style={{ background: `linear-gradient(135deg, ${cfg.accent}, #F89B29)` }}>
               {showPhoto
                 ? <img src={user.photoURL} alt={user.name} onError={() => setImgErr(true)} className="w-full h-full object-cover" />
                 : letter}
             </div>
-
-            {/* Edit button */}
             <button
               onClick={() => setEdit(v => !v)}
               className="btn btn-sm gap-1.5 border-0 cursor-pointer text-white mb-1"
@@ -184,7 +161,6 @@ export default function ProfilePage() {
             </button>
           </div>
 
-          {/* Name + role badge */}
           <div className="flex flex-wrap items-center gap-2 mb-2">
             <h2 className="text-2xl font-black tracking-tight">{user.name}</h2>
             <span className="px-3 py-0.5 rounded-full text-xs font-black uppercase tracking-wider text-white"
@@ -193,7 +169,6 @@ export default function ProfilePage() {
             </span>
           </div>
 
-          {/* Meta */}
           <div className="flex flex-wrap gap-4">
             <span className="flex items-center gap-1.5 text-xs opacity-50 font-medium">
               <Mail size={12} /> {user.email}
@@ -210,7 +185,7 @@ export default function ProfilePage() {
         </div>
       </div>
 
-      {/* ══ Stats row ══ */}
+      {/* Stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-5">
         {stats.map(s => (
           <div key={s.label} className="rounded-2xl bg-base-100 border border-base-300 p-5 relative overflow-hidden shadow-sm">
@@ -221,7 +196,7 @@ export default function ProfilePage() {
         ))}
       </div>
 
-      {/* ══ Edit Form ══ */}
+      {/* Edit Form */}
       {editMode && (
         <div className="rounded-2xl bg-base-100 border border-base-300 p-6 mb-5 shadow-sm">
           <p className="text-xs font-black uppercase tracking-widest opacity-40 mb-5">Edit Profile</p>
@@ -250,22 +225,19 @@ export default function ProfilePage() {
         </div>
       )}
 
-      {/* ══ Info + Activity (hidden during edit) ══ */}
+      {/* Info + Activity */}
       {!editMode && (
         <div className="grid grid-cols-1 lg:grid-cols-5 gap-5">
-
-          {/* Account Info — 2 cols */}
           <div className="lg:col-span-2 rounded-2xl bg-base-100 border border-base-300 overflow-hidden shadow-sm">
             <div className="px-5 py-4 border-b border-base-300">
               <p className="text-xs font-black uppercase tracking-widest opacity-40">Account Info</p>
             </div>
-
             {[
-              { label: "Full Name", value: user.name,          icon: <UserIcon size={13} /> },
-              { label: "Email",     value: user.email,         icon: <Mail size={13} />     },
-              { label: "Phone",     value: user.phone || "—",  icon: <Phone size={13} />    },
-              { label: "Role",      value: cfg.label,          icon: <UserIcon size={13} /> },
-              { label: "Bio",       value: user.bio   || "—",  icon: <Clock size={13} />    },
+              { label: "Full Name", value: user.name, icon: <UserIcon size={13} /> },
+              { label: "Email", value: user.email, icon: <Mail size={13} /> },
+              { label: "Phone", value: user.phone || "—", icon: <Phone size={13} /> },
+              { label: "Role", value: cfg.label, icon: <UserIcon size={13} /> },
+              { label: "Bio", value: user.bio || "—", icon: <Clock size={13} /> },
             ].map((item, i, arr) => (
               <div key={item.label}
                 className={`flex items-start gap-3 px-5 py-3.5 ${i < arr.length - 1 ? "border-b border-base-300" : ""}`}>
@@ -273,7 +245,6 @@ export default function ProfilePage() {
                 <div className="min-w-0">
                   <p className="text-xs font-bold opacity-40 uppercase tracking-wider">{item.label}</p>
                   {item.label === "Role" ? (
-                    /* role shows as colored chip */
                     <span className="inline-flex items-center gap-1.5 mt-1 px-2.5 py-0.5 rounded-full text-xs font-bold text-white"
                       style={{ backgroundColor: cfg.accent }}>
                       {cfg.label}
@@ -286,26 +257,18 @@ export default function ProfilePage() {
             ))}
           </div>
 
-          {/* Recent Activity — 3 cols */}
           <div className="lg:col-span-3 rounded-2xl bg-base-100 border border-base-300 overflow-hidden shadow-sm">
             <div className="px-5 py-4 border-b border-base-300 flex items-center justify-between">
               <p className="text-xs font-black uppercase tracking-widest opacity-40">Recent Activity</p>
-              {/* Role indicator chip inside activity header */}
               <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold"
                 style={{ backgroundColor: cfg.bg, color: cfg.accent }}>
-                <span style={{
-                  width: 6, height: 6, borderRadius: "50%",
-                  background: cfg.accent, display: "inline-block",
-                  boxShadow: `0 0 5px ${cfg.accent}`,
-                }} />
+                <span style={{ width: 6, height: 6, borderRadius: "50%", background: cfg.accent, display: "inline-block", boxShadow: `0 0 5px ${cfg.accent}` }} />
                 {cfg.label}
               </span>
             </div>
-
             <div className="p-5 space-y-1">
               {activity.map((a, i) => (
                 <div key={i} className="flex items-start gap-4 group">
-                  {/* Timeline dot + line */}
                   <div className="flex flex-col items-center flex-shrink-0">
                     <div className="w-2.5 h-2.5 rounded-full mt-1 transition-transform group-hover:scale-125"
                       style={{ backgroundColor: a.color, boxShadow: `0 0 6px ${a.color}60` }} />
@@ -313,7 +276,6 @@ export default function ProfilePage() {
                       <div className="w-px bg-base-300 mt-1" style={{ minHeight: 28 }} />
                     )}
                   </div>
-                  {/* Text */}
                   <div className="pb-3 flex-1 min-w-0">
                     <p className="text-sm font-semibold leading-snug">{a.text}</p>
                     <p className="text-xs opacity-40 mt-0.5 flex items-center gap-1">
@@ -324,7 +286,6 @@ export default function ProfilePage() {
               ))}
             </div>
           </div>
-
         </div>
       )}
     </div>

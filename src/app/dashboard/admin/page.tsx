@@ -85,7 +85,7 @@ export default function AdminDashboard() {
               <p className="text-xs opacity-40 mt-0.5">Latest enrollments & payments</p>
             </div>
             <Link
-              href="/sampleDashboard/admin/earnings"
+              href="/dashboard/admin/earnings"
               className="flex items-center gap-1 text-xs font-bold px-3 py-1.5 rounded-lg transition-opacity hover:opacity-70"
               style={{ color: PRIMARY, backgroundColor: PRIMARY + "12" }}
             >
@@ -175,7 +175,7 @@ export default function AdminDashboard() {
 
           <div className="px-5 py-3 bg-base-200/40 border-t border-base-300">
             <Link
-              href="/sampleDashboard/admin/courses"
+              href="/dashboard/admin/courses"
               className="text-xs font-bold opacity-40 hover:opacity-70 transition-opacity flex items-center gap-1"
             >
               View all actions <ArrowRight size={10} />
