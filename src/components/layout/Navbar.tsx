@@ -140,12 +140,6 @@ const Navbar = () => {
   ];
 
   return (
-<<<<<<< HEAD
-    <nav className="bg-[var(--nav-bg)] border-b border-[var(--border-color)] sticky top-0 z-[100] shadow-sm transition-all duration-300">
-      <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-12">
-        <div className="flex justify-between items-center h-20">
-          <Logo />
-=======
     <>
       <style>{`
         @keyframes navSlideDown {
@@ -196,7 +190,6 @@ const Navbar = () => {
         }
         .nav-link-hover:hover::after { width: 100%; }
       `}</style>
->>>>>>> 5903b4acab9c5598cbcf04e0d08ba85c131f506f
 
       <nav
         className={`
@@ -362,61 +355,6 @@ const Navbar = () => {
           </div>
         </div>
 
-<<<<<<< HEAD
-      {/* MOBILE DRAWER */}
-      <div
-        className={`fixed inset-0 bg-black/50 backdrop-blur-sm z-[101] lg:hidden transition-opacity duration-300 ${
-          isOpen ? "opacity-100 visible" : "opacity-0 invisible"
-        }`}
-        onClick={() => setIsOpen(false)}
-      >
-        <div
-          className={`absolute top-0 right-0 h-full w-[80%] max-w-[350px] bg-white dark:bg-[#0b1120] shadow-2xl transition-transform duration-300 transform ${
-            isOpen ? "translate-x-0" : "translate-x-full"
-          }`}
-          onClick={(e) => e.stopPropagation()}
-        >
-          <div className="p-6 flex flex-col h-full">
-            <div className="flex justify-between items-center mb-6">
-              <Logo />
-              <button onClick={() => setIsOpen(false)} className="p-2 text-gray-500">
-                <FaTimes size={24} />
-              </button>
-            </div>
-
-            {user && (
-              <div className="flex items-center gap-3 p-4 rounded-xl bg-gray-50 dark:bg-gray-800 mb-4">
-                <AvatarImage />
-                <div className="flex flex-col leading-tight overflow-hidden">
-                  <span className="font-bold text-gray-800 dark:text-white text-sm truncate">
-                    {user.name}
-                  </span>
-                  <span className="text-xs text-gray-400 truncate">{user.email}</span>
-                </div>
-              </div>
-            )}
-
-            <div className="space-y-3 flex-grow overflow-y-auto">
-              {navLinks.map((link) => (
-                <Link
-                  key={link.name}
-                  href={link.href}
-                  className="flex justify-between items-center p-4 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-800 text-gray-800 dark:text-gray-200 font-bold"
-                  onClick={() => setIsOpen(false)}
-                >
-                  {link.name} <FaChevronRight size={12} className="text-gray-400" />
-                </Link>
-              ))}
-              {user && (
-                <Link
-                  href="/dashboard/my-classes"
-                  className="flex justify-between items-center p-4 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-800 text-gray-800 dark:text-gray-200 font-bold"
-                  onClick={() => setIsOpen(false)}
-                >
-                  My Classes <FaChevronRight size={12} />
-                </Link>
-              )}
-=======
         {/* ── MOBILE DRAWER ── */}
         {isOpen && (
           <>
@@ -511,7 +449,6 @@ const Navbar = () => {
                   )}
                 </div>
               </div>
->>>>>>> 5903b4acab9c5598cbcf04e0d08ba85c131f506f
             </div>
           </>
         )}
@@ -574,8 +511,4 @@ const Navbar = () => {
   );
 };
 
-<<<<<<< HEAD
 export default Navbar;
-=======
-export default Navbar;
->>>>>>> 5903b4acab9c5598cbcf04e0d08ba85c131f506f

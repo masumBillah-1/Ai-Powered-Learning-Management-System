@@ -1,4 +1,4 @@
-<<<<<<< HEAD
+
 import React from "react";
 import { BiMessageSquareDetail } from "react-icons/bi";
 import { CiGlobe } from "react-icons/ci";

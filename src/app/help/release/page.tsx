@@ -1,4 +1,4 @@
-<<<<<<< HEAD
+
 import React from "react";
 
 const ReleaseNotesPage = () => {
@@ -123,4 +123,4 @@ const ReleaseNotesPage = () => {
 };
 
 export default ReleaseNotesPage;
->>>>>>> e5ced0ed5788abe0c2211e1dc67a7c791796484f
+

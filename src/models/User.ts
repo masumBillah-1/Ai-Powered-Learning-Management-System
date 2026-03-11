@@ -113,24 +113,6 @@ const UserPreferencesSchema = new Schema<IUserPreferences>({
 
 const UserSchema = new Schema<IUserDocument>(
   {
-<<<<<<< HEAD
-    name: { type: String, required: true, trim: true },
-    email: { type: String, required: true, unique: true, lowercase: true },
-    phone: { type: String, sparse: true },
-    password: { type: String, minlength: 6 },
-    photoURL: { type: String, default: "" },
-    role: {
-      type: String,
-      enum: ["student", "instructor", "admin"],
-      default: "student",
-    },
-    provider: {
-      type: String,
-      enum: ["credentials", "google", "github"],
-      default: "credentials",
-    },
-    resetToken: { type: String },
-=======
     name:  { type: String, required: true, trim: true },
     email: { type: String, required: true, unique: true, lowercase: true, trim: true },
 
@@ -160,7 +142,6 @@ const UserSchema = new Schema<IUserDocument>(
     
     // Security fields
     resetToken:       { type: String },
->>>>>>> 5903b4acab9c5598cbcf04e0d08ba85c131f506f
     resetTokenExpiry: { type: Date },
     loginAttempts:    { type: Number, default: 0 },
     lockUntil:        { type: Date },
@@ -171,10 +152,6 @@ const UserSchema = new Schema<IUserDocument>(
   }
 );
 
-<<<<<<< HEAD
-export default mongoose.models.User ||
-  mongoose.model<IUserDocument>("User", UserSchema);
-=======
 // ✅ শুধু email unique index — phone index সম্পূর্ণ remove
 UserSchema.index({ email: 1 }, { unique: true });
 UserSchema.index({ role: 1, status: 1 });
@@ -256,4 +233,3 @@ UserSchema.statics.getActiveUsers = function(days: number = 30) {
 // ✅ Better model export pattern
 const User = mongoose.models.User || mongoose.model<IUserDocument>("User", UserSchema);
 export default User;
->>>>>>> 5903b4acab9c5598cbcf04e0d08ba85c131f506f

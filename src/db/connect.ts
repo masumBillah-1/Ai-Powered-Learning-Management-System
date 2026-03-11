@@ -27,15 +27,10 @@ export async function connectDB() {
   if (!cached.promise) {
     const opts = {
       bufferCommands: false,
-<<<<<<< HEAD
-      serverSelectionTimeoutMS: 5000, // 5 second timeout
-      socketTimeoutMS: 10000,
-=======
       serverSelectionTimeoutMS: 10000, // ✅ 10 seconds
       socketTimeoutMS: 45000,
       family: 4, // ✅ Force IPv4
       dbName: "learning-management", // ✅ Fixed database name in code
->>>>>>> 5903b4acab9c5598cbcf04e0d08ba85c131f506f
     };
 
     console.log("🔄 Connecting to MongoDB...");

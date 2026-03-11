@@ -32,16 +32,25 @@ const HeroSection: React.FC = () => {
         }
 
         /* ── Dark cinematic overlays ── */
-        .hx-ov1 {
-          position: absolute; inset: 0; z-index: 1;
-          background: linear-gradient(
-            160deg,
-            rgba(5,1,15,0.75) 0%,
-            rgba(10,1,25,0.65) 30%,
-            rgba(8,2,18,0.55) 60%,
-            rgba(5,1,12,0.70) 100%
-          );
-        }
+      .hx-ov1 {
+  position: absolute; inset: 0; z-index: 1;
+  background: linear-gradient(
+    160deg,
+    rgba(5,1,15,0.55) 0%,
+    rgba(10,1,25,0.45) 30%,
+    rgba(8,2,18,0.35) 60%,
+    rgba(5,1,12,0.50) 100%
+  );
+}.hx-ov1 {
+  position: absolute; inset: 0; z-index: 1;
+  background: linear-gradient(
+    160deg,
+    rgba(5,1,15,0.55) 0%,
+    rgba(10,1,25,0.45) 30%,
+    rgba(8,2,18,0.35) 60%,
+    rgba(5,1,12,0.50) 100%
+  );
+}
         .hx-ov2 {
           position: absolute; inset: 0; z-index: 2;
           background:
@@ -49,12 +58,11 @@ const HeroSection: React.FC = () => {
             radial-gradient(ellipse 50% 50% at 0% 0%, rgba(255,15,123,0.15) 0%, transparent 60%),
             radial-gradient(ellipse 50% 50% at 100% 0%, rgba(248,155,41,0.12) 0%, transparent 60%);
         }
-        .hx-ov3 {
-          position: absolute; bottom: 0; left: 0;
-          width: 100%; height: 60%; z-index: 3;
-          background: linear-gradient(to top, rgba(5,1,15,0.85) 0%, rgba(8,2,20,0.5) 40%, transparent 100%);
-        }
-
+     .hx-ov3 {
+  position: absolute; bottom: 0; left: 0;
+  width: 100%; height: 60%; z-index: 3;
+  background: linear-gradient(to top, rgba(5,1,15,0.60) 0%, rgba(8,2,20,0.30) 40%, transparent 100%);
+}
         /* ── Scanline texture ── */
         .hx-scanline {
           position: absolute; inset: 0; z-index: 4; pointer-events: none;
@@ -219,13 +227,24 @@ const HeroSection: React.FC = () => {
         }
 
         /* ── Stats bar ── */
-        .hx-stats {
-          display: flex; align-items: stretch; gap: 0; margin-top: 52px;
-          animation: hxFade 1s 0.65s ease both;
-          border: 1px solid rgba(255,255,255,0.1); border-radius: 20px;
-          background: rgba(0,0,0,0.35); backdrop-filter: blur(24px); overflow: hidden;
-          box-shadow: inset 0 1px 0 rgba(255,255,255,0.06), 0 0 0 1px rgba(255,15,123,0.08);
-        }
+   .hx-stats{
+  display:flex;
+  align-items:stretch;
+  margin-top:50px;
+  border-radius:20px;
+  overflow:hidden;
+
+  /* glass effect */
+  background:rgba(255,255,255,0.15);
+  backdrop-filter:blur(20px);
+  -webkit-backdrop-filter:blur(20px);
+
+  border:1px solid rgba(255,255,255,0.4);
+
+  box-shadow:
+    0 10px 40px rgba(0,0,0,0.25),
+    inset 0 1px 0 rgba(255,255,255,0.6);
+}
         .hx-stat-item {
           flex: 1; padding: 22px 28px; text-align: center;
           border-right: 1px solid rgba(255,255,255,0.08);
@@ -271,11 +290,11 @@ const HeroSection: React.FC = () => {
         .hx-corner-bl { bottom:20px; left:20px; border-bottom:1px solid rgba(131,35,136,0.3); border-left:1px solid rgba(131,35,136,0.3); }
         .hx-corner-br { bottom:20px; right:20px; border-bottom:1px solid rgba(227,67,107,0.3); border-right:1px solid rgba(227,67,107,0.3); }
 
-        .hx-fade-bottom {
-          position: absolute; bottom: 0; left: 0; width: 100%; height: 120px;
-          z-index: 8; pointer-events: none;
-          background: linear-gradient(to bottom, transparent, rgba(5,1,15,0.65));
-        }
+   .hx-fade-bottom {
+  position: absolute; bottom: 0; left: 0; width: 100%; height: 120px;
+  z-index: 8; pointer-events: none;
+  background: linear-gradient(to bottom, transparent, rgba(5,1,15,0.40));
+}
 
         @keyframes hxFade { from { opacity:0; transform:translateY(18px); } to { opacity:1; transform:translateY(0); } }
 
@@ -294,23 +313,11 @@ const HeroSection: React.FC = () => {
 
       <section className="hx-wrap">
 
-<<<<<<< HEAD
-        {/* ── Background image ── */}
-        <Image
-          src="/home-background-min.webp"
-          alt="Students learning"
-          fill
-          sizes="100vw"
-          className="hero-bg"
-          priority
-          quality={92}
-=======
         {/* ── Real education background image (Unsplash) ── */}
         <img
-          src="https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=1920&q=85&auto=format&fit=crop"
+          src="https://png.pngtree.com/background/20250105/original/pngtree-beautiful-green-nature-blurred-background-picture-image_15534396.jpg"
           alt="Students learning together"
           className="hx-bg-img"
->>>>>>> 5903b4acab9c5598cbcf04e0d08ba85c131f506f
         />
 
         {/* ── Overlays ── */}
@@ -389,24 +396,27 @@ const HeroSection: React.FC = () => {
             </a>
           </div>
 
-          <div className="hx-stats">
-            <div className="hx-stat-item">
-              <span className="hx-stat-val">12K+</span>
-              <span className="hx-stat-lbl">Students</span>
-            </div>
-            <div className="hx-stat-item">
-              <span className="hx-stat-val">200+</span>
-              <span className="hx-stat-lbl">Courses</span>
-            </div>
-            <div className="hx-stat-item">
-              <span className="hx-stat-val">4.9★</span>
-              <span className="hx-stat-lbl">Rating</span>
-            </div>
-            <div className="hx-stat-item">
-              <span className="hx-stat-val">98%</span>
-              <span className="hx-stat-lbl">Satisfaction</span>
-            </div>
-          </div>
+     <div className="hx-stats">
+  <div className="hx-stat-item">
+    <span className="hx-stat-val">12K+</span>
+    <span className="hx-stat-lbl">Students</span>
+  </div>
+
+  <div className="hx-stat-item">
+    <span className="hx-stat-val">200+</span>
+    <span className="hx-stat-lbl">Courses</span>
+  </div>
+
+  <div className="hx-stat-item">
+    <span className="hx-stat-val">4.9★</span>
+    <span className="hx-stat-lbl">Rating</span>
+  </div>
+
+  <div className="hx-stat-item">
+    <span className="hx-stat-val">98%</span>
+    <span className="hx-stat-lbl">Satisfaction</span>
+  </div>
+</div>
         </div>
 
         <div className="hx-fade-bottom" />

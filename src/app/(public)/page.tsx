@@ -11,11 +11,6 @@ import HeroSections from "@/components/mainhome/HeroSections";
 import HeroSectionNew from "@/components/Herosection/HeroSection";
 import Timeline from "@/components/Timeline/Timeline";
 
-<<<<<<< HEAD
-export default function Home() {
-  return (
-    <div>
-=======
 
 
 
@@ -23,7 +18,6 @@ export default function Home() {
   return (
     <div >
       
->>>>>>> 5903b4acab9c5598cbcf04e0d08ba85c131f506f
       <HeroSectionNew />
       <HeroSections /> 
       <HeroSection />

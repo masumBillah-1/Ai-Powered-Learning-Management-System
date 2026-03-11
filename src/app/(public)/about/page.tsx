@@ -99,10 +99,6 @@ const About = () => {
           />
         </div>
 
-<<<<<<< HEAD
-=======
-
->>>>>>> e5ced0ed5788abe0c2211e1dc67a7c791796484f
         {/* Team Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-x-10 gap-y-20">
           {team.map((member, index) => (

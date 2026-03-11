@@ -1,12 +1,9 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono, Hind_Siliguri } from "next/font/google";
 import { Toaster } from "react-hot-toast";
-<<<<<<< HEAD
-=======
 
 import FloatingChat from "@/components/chat/FloatingChat";
 import { cookies } from "next/headers";
->>>>>>> 5903b4acab9c5598cbcf04e0d08ba85c131f506f
 import "./globals.css";
 
 const geistSans = Geist({ 
@@ -30,15 +27,10 @@ const hindSiliguri = Hind_Siliguri({
 
 export const metadata: Metadata = {
   title: "SmartLMS Pro : Smart Online LMS Platform",
-<<<<<<< HEAD
-  description:
-    "SmartLMS Pro learning management system designed to deliver smart, personalized, and interactive online education experiences.",
-=======
   description: "SmartLMS Pro learning management system designed to deliver smart, personalized, and interactive online education experiences.",
   icons: {
     icon: [{ url: "/favicon.svg", type: "image/svg+xml" }, { url: "/favicon.ico", sizes: "32x32" }],
   },
->>>>>>> 5903b4acab9c5598cbcf04e0d08ba85c131f506f
 };
 
 // ─────────────────────────────────────────────────────────
@@ -75,42 +67,6 @@ export default async function RootLayout({ children }: { children: React.ReactNo
 
   return (
     <html lang="en" suppressHydrationWarning>
-<<<<<<< HEAD
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} ${hindSiliguri.variable} antialiased`}
-        style={{
-          fontFamily:
-            "var(--font-hind-siliguri), var(--font-geist-sans), sans-serif",
-        }}
-      >
-        <Toaster
-          position="top-center"
-          reverseOrder={false}
-          toastOptions={{
-            duration: 3000,
-            style: {
-              background: "#1f2937",
-              color: "#fff",
-              borderRadius: "8px",
-              padding: "12px 20px",
-              fontSize: "14px",
-            },
-            success: {
-              iconTheme: {
-                primary: "#10b981",
-                secondary: "#fff",
-              },
-            },
-            error: {
-              iconTheme: {
-                primary: "#ef4444",
-                secondary: "#fff",
-              },
-            },
-          }}
-        />
-        {children}
-=======
       <head>
         <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
         <link rel="icon" type="image/x-icon" href="/favicon.ico" />
@@ -167,7 +123,6 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             />
           )}
   
->>>>>>> 5903b4acab9c5598cbcf04e0d08ba85c131f506f
       </body>
     </html>
   );

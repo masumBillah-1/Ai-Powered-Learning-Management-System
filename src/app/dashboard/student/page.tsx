@@ -43,27 +43,15 @@ const I = {
   Moon: () => (<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" /></svg>),
   Chevron: () => (<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="9 18 15 12 9 6" /></svg>),
   Menu: () => (<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="3" y1="6" x2="21" y2="6" /><line x1="3" y1="12" x2="21" y2="12" /><line x1="3" y1="18" x2="21" y2="18" /></svg>),
-<<<<<<< HEAD
-  Close: () => (<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>),
-=======
->>>>>>> e5ced0ed5788abe0c2211e1dc67a7c791796484f
 };
 
 // ── Mock Data ──────────────────────────────────────────────────────────────
 const courses = [
-<<<<<<< HEAD
-  { id: 1, title: "React & Next.js Masterclass", instructor: "Ahmed Hossain", progress: 68, totalLessons: 48, completedLessons: 33, duration: "24h 30m", rating: 4.8, category: "Web Dev", color: "from-blue-500 to-cyan-400", lastLesson: "Server Components Deep Dive", enrolled: "Jan 10, 2025", videoUrl: "https://www.youtube.com/embed/Z-EkslDJTJI" },
-  { id: 2, title: "Python for Data Science", instructor: "Fatima Khan", progress: 35, totalLessons: 60, completedLessons: 21, duration: "32h 15m", rating: 4.9, category: "Data Science", color: "from-yellow-500 to-orange-400", lastLesson: "Pandas DataFrame Operations", enrolled: "Jan 22, 2025", videoUrl: "https://www.youtube.com/embed/iWuEpnTTD3k" },
-  { id: 3, title: "UI/UX Design Fundamentals", instructor: "Rafi Islam", progress: 82, totalLessons: 36, completedLessons: 30, duration: "18h 45m", rating: 4.7, category: "Design", color: "from-pink-500 to-rose-400", lastLesson: "Prototyping with Figma", enrolled: "Dec 5, 2024", videoUrl: "https://www.youtube.com/embed/pJQXGmMofro" },
-  { id: 4, title: "Node.js Backend Development", instructor: "Sakib Rahman", progress: 12, totalLessons: 52, completedLessons: 6, duration: "28h 00m", rating: 4.6, category: "Backend", color: "from-green-500 to-emerald-400", lastLesson: "REST API Design", enrolled: "Feb 1, 2025", videoUrl: "https://www.youtube.com/embed/WTmXc2xGwY4" },
-  { id: 5, title: "HTML & CSS Fundamentals", instructor: "Nadia Islam", progress: 100, totalLessons: 24, completedLessons: 24, duration: "12h 00m", rating: 4.8, category: "Web Dev", color: "from-orange-500 to-red-400", lastLesson: "CSS Grid Layout", enrolled: "Nov 15, 2024", videoUrl: "https://www.youtube.com/embed/WTmXc2xGwY4" },
-=======
   { id: 1, title: "React & Next.js Masterclass", instructor: "Ahmed Hossain", progress: 68, totalLessons: 48, completedLessons: 33, duration: "24h 30m", rating: 4.8, category: "Web Dev", color: "from-blue-500 to-cyan-400", lastLesson: "Server Components Deep Dive", enrolled: "Jan 10, 2025" },
   { id: 2, title: "Python for Data Science", instructor: "Fatima Khan", progress: 35, totalLessons: 60, completedLessons: 21, duration: "32h 15m", rating: 4.9, category: "Data Science", color: "from-yellow-500 to-orange-400", lastLesson: "Pandas DataFrame Operations", enrolled: "Jan 22, 2025" },
   { id: 3, title: "UI/UX Design Fundamentals", instructor: "Rafi Islam", progress: 82, totalLessons: 36, completedLessons: 30, duration: "18h 45m", rating: 4.7, category: "Design", color: "from-pink-500 to-rose-400", lastLesson: "Prototyping with Figma", enrolled: "Dec 5, 2024" },
   { id: 4, title: "Node.js Backend Development", instructor: "Sakib Rahman", progress: 12, totalLessons: 52, completedLessons: 6, duration: "28h 00m", rating: 4.6, category: "Backend", color: "from-green-500 to-emerald-400", lastLesson: "REST API Design", enrolled: "Feb 1, 2025" },
   { id: 5, title: "HTML & CSS Fundamentals", instructor: "Nadia Islam", progress: 100, totalLessons: 24, completedLessons: 24, duration: "12h 00m", rating: 4.8, category: "Web Dev", color: "from-orange-500 to-red-400", lastLesson: "CSS Grid Layout", enrolled: "Nov 15, 2024" },
->>>>>>> e5ced0ed5788abe0c2211e1dc67a7c791796484f
 ];
 const certs = [
   { id: 1, title: "HTML & CSS Fundamentals", instructor: "Nadia Islam", date: "Dec 20, 2024", code: "CERT-2024-001", color: "from-orange-500 to-red-400" },
@@ -101,59 +89,13 @@ const Ring = ({ v, size = 88, stroke = 7 }: { v: number; size?: number; stroke?:
   );
 };
 
-<<<<<<< HEAD
-// ── Video Modal Component ──────────────────────────────────────────────────
-const VideoModal = ({
-  isOpen,
-  onClose,
-  videoUrl,
-  title,
-}: {
-  isOpen: boolean;
-  onClose: () => void;
-  videoUrl: string;
-  title: string;
-}) => {
-  if (!isOpen) return null;
-
-  return (
-    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4" onClick={onClose}>
-      <div className="relative w-full max-w-5xl bg-[#0D0818] rounded-2xl overflow-hidden border border-white/10" onClick={(e) => e.stopPropagation()}>
-        <div className="flex items-center justify-between p-4 border-b border-white/10">
-          <h3 className="text-lg font-bold text-white">{title}</h3>
-          <button
-            onClick={onClose}
-            className="text-white/60 hover:text-white transition-colors"
-          >
-            <I.Close />
-          </button>
-        </div>
-        <div className="relative w-full" style={{ paddingBottom: "56.25%" }}>
-          <iframe
-            src={videoUrl}
-            className="absolute inset-0 w-full h-full"
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-            allowFullScreen
-          />
-        </div>
-      </div>
-    </div>
-  );
-};
-
-=======
->>>>>>> e5ced0ed5788abe0c2211e1dc67a7c791796484f
 // ── Theme helper ───────────────────────────────────────────────────────────
 const th = (dark: boolean, d: string, l: string) => dark ? d : l;
 
 // ══════════════════════════════════════════════════════════════════════════
 // HOME PAGE
 // ══════════════════════════════════════════════════════════════════════════
-<<<<<<< HEAD
-const HomePage = ({ firstName, overallProgress, dark, onPlayVideo }: any) => {
-=======
 const HomePage = ({ firstName, overallProgress, dark }: any) => {
->>>>>>> e5ced0ed5788abe0c2211e1dc67a7c791796484f
   const card = th(dark, "bg-white/[0.03] border-white/5 hover:border-white/10", "bg-white border-gray-200 hover:border-gray-300 shadow-sm");
   const sub = th(dark, "text-white/40", "text-gray-400");
   const muted = th(dark, "text-white/30", "text-gray-400");
@@ -224,13 +166,7 @@ const HomePage = ({ firstName, overallProgress, dark }: any) => {
                       <span className="flex items-center gap-1"><I.Clock />{c.duration}</span>
                       <span>{c.completedLessons}/{c.totalLessons}</span>
                     </div>
-<<<<<<< HEAD
-  <button
-    onClick={() => onPlayVideo(c.videoUrl, c.title)}
-    className={`flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg transition-colors cursor-pointer ${dark ? "text-white bg-white/10 hover:bg-white/15" : "text-gray-700 bg-gray-100 hover:bg-gray-200"}`}>
-=======
                     <button className={`flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg transition-colors ${dark ? "text-white bg-white/10 hover:bg-white/15" : "text-gray-700 bg-gray-100 hover:bg-gray-200"}`}>
->>>>>>> e5ced0ed5788abe0c2211e1dc67a7c791796484f
       <I.Play /> Continue
     </button>
   </div>
