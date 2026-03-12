@@ -13,13 +13,7 @@ import { FaSun, FaMoon } from "react-icons/fa";
 type Role = "student" | "instructor" | "admin";
 interface UserData { name: string; email: string; photoURL?: string; role: Role; }
 
-// ✅ 30 seconds — performance friendly
-const POLL_INTERVAL = 30_000;
-
-// ✅ Always start with "light" for SSR — real theme applied after mount
-function getInitialTheme(): "dark" | "light" {
-  return "light";
-}
+const POLL_INTERVAL = 5_000;
 
 const menus: Record<Role, { label: string; href: string; icon: React.ReactNode }[]> = {
   student: [
@@ -88,7 +82,6 @@ const roleMeta: Record<Role, { color: string; label: string }> = {
 
 const rootHrefs = ["/dashboard/instructor", "/dashboard/student", "/dashboard/admin"];
 
-// ── Avatar ────────────────────────────────────────────────
 function Avatar({ user, sm }: { user: UserData | null; sm?: boolean }) {
   const letter = user?.name?.charAt(0).toUpperCase() || "?";
   const cls = sm ? "w-7 h-7" : "w-9 h-9";
@@ -97,7 +90,6 @@ function Avatar({ user, sm }: { user: UserData | null; sm?: boolean }) {
     : <div className={`${cls} rounded-lg flex items-center justify-center font-bold text-sm text-white bg-gradient-to-br from-[#832388] to-[#FF0F7B] flex-shrink-0`}>{letter}</div>;
 }
 
-// ── Sidebar ───────────────────────────────────────────────
 function Sidebar({ items, collapsed, onToggle, mobileOpen, onMobileClose }: {
   items: { label: string; href: string; icon: React.ReactNode }[];
   collapsed: boolean; onToggle: () => void;
@@ -163,14 +155,11 @@ function Sidebar({ items, collapsed, onToggle, mobileOpen, onMobileClose }: {
   );
 }
 
-// ── TopNavbar ─────────────────────────────────────────────
 function TopNavbar({ role, items, theme, toggleTheme, user, onLogout, onMobileMenu, collapsed, unreadCount }: {
-  role: Role;
-  items: { label: string; href: string; icon: React.ReactNode }[];
+  role: Role; items: { label: string; href: string; icon: React.ReactNode }[];
   theme: "dark" | "light"; toggleTheme: () => void;
   user: UserData | null; onLogout: () => void;
-  onMobileMenu: () => void; collapsed: boolean;
-  unreadCount: number;
+  onMobileMenu: () => void; collapsed: boolean; unreadCount: number;
 }) {
   const pathname = usePathname();
   const [showUser, setShowUser] = useState(false);
@@ -219,9 +208,12 @@ function TopNavbar({ role, items, theme, toggleTheme, user, onLogout, onMobileMe
       </div>
 
       <div className="flex items-center gap-1 flex-shrink-0">
-        {/* Theme toggle */}
-        <button onClick={toggleTheme} className="btn btn-ghost btn-sm btn-square cursor-pointer"
-          style={{ color: theme === "dark" ? "#facc15" : "#6b7280" }}>
+        {/* ✅ Theme toggle — এখান থেকেই সব control হয় */}
+        <button
+          onClick={toggleTheme}
+          className="btn btn-ghost btn-sm btn-square cursor-pointer"
+          style={{ color: theme === "dark" ? "#facc15" : "#6b7280" }}
+        >
           {theme === "dark" ? <FaSun size={16} /> : <FaMoon size={16} />}
         </button>
 
@@ -263,8 +255,10 @@ function TopNavbar({ role, items, theme, toggleTheme, user, onLogout, onMobileMe
 
         {/* User menu */}
         <div ref={userRef} className="relative">
-          <button onClick={() => { setShowUser(v => !v); setShowNotif(false); }}
-            className="btn btn-ghost btn-sm h-auto py-1.5 px-2 rounded-xl cursor-pointer flex items-center gap-2">
+          <button
+            onClick={() => { setShowUser(v => !v); setShowNotif(false); }}
+            className="btn btn-ghost btn-sm h-auto py-1.5 px-2 rounded-xl cursor-pointer flex items-center gap-2"
+          >
             <Avatar user={user} sm />
             <div className="text-left hidden sm:block">
               <p className="m-0 text-[13px] font-semibold text-base-content leading-tight max-w-[80px] truncate">{user?.name?.split(" ")[0] || "User"}</p>
@@ -309,7 +303,6 @@ function TopNavbar({ role, items, theme, toggleTheme, user, onLogout, onMobileMe
   );
 }
 
-// ── PageLoader ────────────────────────────────────────────
 function PageLoader({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
   const pathname = usePathname();
@@ -328,13 +321,11 @@ function PageLoader({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
-// ── Root Layout ───────────────────────────────────────────
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
 
-  // ✅ Read theme immediately from localStorage — no flash
-  const [theme, setTheme] = useState<"dark" | "light">(getInitialTheme);
+  const [theme, setTheme] = useState<"dark" | "light">("light");
   const [role, setRole] = useState<Role>("student");
   const [user, setUser] = useState<UserData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -344,19 +335,29 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   const currentRoleRef = useRef<Role>("student");
 
-  // ✅ Load real theme from localStorage AFTER mount — fixes SSR hydration mismatch
+  // ✅ Theme: mount এ একবারই localStorage পড়ো — কোনো interval নেই
   useEffect(() => {
     const saved = (localStorage.getItem("theme") as "dark" | "light") || "light";
     setTheme(saved);
     document.documentElement.setAttribute("data-theme", saved);
+    if (saved === "dark") document.documentElement.classList.add("dark");
+    else document.documentElement.classList.remove("dark");
   }, []);
 
-  // Apply theme changes to <html>
+  // ✅ Theme change হলে <html> update করো
   useEffect(() => {
     document.documentElement.setAttribute("data-theme", theme);
+    if (theme === "dark") document.documentElement.classList.add("dark");
+    else document.documentElement.classList.remove("dark");
   }, [theme]);
 
-  // ── Fetch user from DB ────────────────────────────────
+  // ✅ Toggle theme — শুধু এটাই দরকার, child page এ আর কিছু নেই
+  const toggleTheme = () => {
+    const next = theme === "light" ? "dark" : "light";
+    setTheme(next);
+    localStorage.setItem("theme", next);
+  };
+
   const fetchUser = useCallback(async (isInitial = false) => {
     const token = localStorage.getItem("token");
     if (!token) { router.replace("/login"); return; }
@@ -378,7 +379,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
       localStorage.setItem("user", JSON.stringify(freshUser));
 
-      // Silent role change detection
       if (!isInitial && newRole !== currentRoleRef.current) {
         currentRoleRef.current = newRole;
         setUser(freshUser);
@@ -424,7 +424,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   useEffect(() => { fetchUser(true); }, [fetchUser]);
 
-  // ✅ Poll every 30s — not every 3s
   useEffect(() => {
     const interval = setInterval(() => {
       if (!isLoading) fetchUser(false);
@@ -432,19 +431,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     return () => clearInterval(interval);
   }, [isLoading, fetchUser]);
 
-  // URL guard on navigation
   useEffect(() => {
     if (isLoading) return;
     if (isUnauthorizedPath(pathname, role)) {
       router.replace(roleDashboard[role]);
     }
   }, [pathname, role, isLoading, router]);
-
-  const toggleTheme = () => {
-    const next = theme === "light" ? "dark" : "light";
-    setTheme(next);
-    localStorage.setItem("theme", next);
-  };
 
   const handleLogout = async () => {
     await fetch("/api/auth/logout", { method: "POST" });
@@ -464,8 +456,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   return (
     <div className="bg-base-200 min-h-screen" data-theme={theme} suppressHydrationWarning>
       <Sidebar
-        items={items}
-        collapsed={collapsed}
+        items={items} collapsed={collapsed}
         onToggle={() => setCollapsed(v => !v)}
         mobileOpen={mobileOpen}
         onMobileClose={() => setMobileOpen(false)}
@@ -475,8 +466,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         theme={theme} toggleTheme={toggleTheme}
         user={user} onLogout={handleLogout}
         onMobileMenu={() => setMobileOpen(true)}
-        collapsed={collapsed}
-        unreadCount={unreadCount}
+        collapsed={collapsed} unreadCount={unreadCount}
       />
       <main className={`bg-base-200 min-h-screen pt-16 transition-all duration-300 ${collapsed ? "md:pl-[68px]" : "md:pl-60"}`}>
         <div className="p-6">

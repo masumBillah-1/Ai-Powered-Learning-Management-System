@@ -27,18 +27,22 @@ export async function connectDB() {
   if (!cached.promise) {
     const opts = {
       bufferCommands: false,
-      serverSelectionTimeoutMS: 10000, // ✅ 10 seconds
+      serverSelectionTimeoutMS: 30000, // Increased to 30 seconds
       socketTimeoutMS: 45000,
-      family: 4, // ✅ Force IPv4
-      dbName: "learning-management", // ✅ Fixed database name in code
+      connectTimeoutMS: 30000,
+      family: 4, // Force IPv4
+      maxPoolSize: 10,
+      retryWrites: true,
+      w: 'majority'
     };
 
     console.log("🔄 Connecting to MongoDB...");
+    console.log("🔗 URI:", MONGODB_URI.replace(/\/\/.*@/, '//***:***@')); // Hide credentials in logs
+    
     cached.promise = mongoose.connect(MONGODB_URI, opts)
       .then((conn) => {
         console.log("✅ MongoDB connected successfully!");
-        console.log("📊 Database: learning-management");
-        console.log("📋 Collections: users, aichatmessages");
+        console.log("📊 Database:", conn.connection.db?.databaseName);
         return conn;
       })
       .catch((error) => {
@@ -53,6 +57,7 @@ export async function connectDB() {
     return cached.conn;
   } catch (error) {
     cached.promise = null;
+    console.error("❌ Database connection error:", error);
     throw error;
   }
 }

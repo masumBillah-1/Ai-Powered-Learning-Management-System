@@ -21,10 +21,10 @@ const Logo = () => {
             <span
               className="text-2xl font-[1000] tracking-tighter transition-colors duration-300 text-gray-900 dark:text-white"
             >
-              Smartlms-
+              Career
             </span>
             <span className="text-2xl font-[1000] tracking-tighter bg-gradient-to-r from-[#FF0F7B] to-[#F89B29] bg-clip-text text-transparent">
-              Pro
+              Canvas
             </span>
           </div>
 

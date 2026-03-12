@@ -20,7 +20,6 @@ interface UserData {
   role: string;
 }
 
-// ✅ SSR-safe helper functions
 function getStoredUser(): UserData | null {
   if (typeof window === "undefined") return null;
   try {
@@ -36,13 +35,15 @@ function getStoredTheme(): string {
   return localStorage.getItem("theme") || "light";
 }
 
+// ✅ document.cookie থেকে token cookie আছে কিনা check করে
+function hasTokenCookie(): boolean {
+  if (typeof document === "undefined") return false;
+  return document.cookie.split(";").some((c) => c.trim().startsWith("token="));
+}
+
 const Navbar = () => {
-  // ✅ KEY FIX: lazy initializer দিয়ে useState
-  // এতে React প্রথম render এর আগেই localStorage পড়বে
-  // কোনো useEffect এর জন্য অপেক্ষা করতে হবে না → avatar instant দেখাবে
   const [user, setUser] = useState<UserData | null>(getStoredUser);
   const [theme, setTheme] = useState<string>(getStoredTheme);
-
   const [mounted, setMounted] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
@@ -50,7 +51,6 @@ const Navbar = () => {
   const [scrolled, setScrolled] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
-  // ✅ DOM side effects only — user read এখানে নেই
   useEffect(() => {
     setMounted(true);
     document.documentElement.setAttribute("data-theme", theme);
@@ -61,7 +61,34 @@ const Navbar = () => {
     }
   }, []);
 
-  // ✅ অন্য tab এ login/logout হলেও এই tab update হবে
+  // ✅ FIX: Page load এ cookie check করো
+  // Cookie নেই মানে logged out — localStorage clear করো
+  // এতে net reconnect বা browser restart এ inconsistent state থাকবে না
+  useEffect(() => {
+    if (!hasTokenCookie()) {
+      localStorage.removeItem("user");
+      localStorage.removeItem("token");
+      setUser(null);
+    }
+  }, []);
+
+  // ✅ Tab focus হলে re-check করো
+  // অন্য tab এ logout করলে বা net reconnect এ এই tab ও sync হবে
+  useEffect(() => {
+    const onFocus = () => {
+      if (!hasTokenCookie()) {
+        localStorage.removeItem("user");
+        localStorage.removeItem("token");
+        setUser(null);
+      } else {
+        setUser(getStoredUser());
+      }
+    };
+    window.addEventListener("focus", onFocus);
+    return () => window.removeEventListener("focus", onFocus);
+  }, []);
+
+  // ✅ একই browser এর অন্য tab এ login/logout sync
   useEffect(() => {
     const onStorage = (e: StorageEvent) => {
       if (e.key === "user") {
