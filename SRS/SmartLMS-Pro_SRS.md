@@ -1,15 +1,15 @@
-# SmartLMS Pro - AI-Powered Learning Management System
+# CareerCanvas - AI-Powered Learning Management System
 ## Requirements Document
 
 ## Introduction
 
-SmartLMS Pro is a comprehensive AI-powered Learning Management System designed to facilitate online education through interactive courses, real-time communication, and intelligent assessment tools. The system serves three primary user roles: Students (learners), Instructors (course creators), and Administrators (platform managers), providing a complete ecosystem for digital learning and teaching.
+CareerCanvas is a comprehensive AI-powered Learning Management System designed to facilitate online education through interactive courses, real-time communication, and intelligent assessment tools. The system serves three primary user roles: Students (learners), Instructors (course creators), and Administrators (platform managers), providing a complete ecosystem for digital learning and teaching.
 
 The platform combines modern web technologies with artificial intelligence to deliver personalized learning experiences, automated content generation, and intelligent tutoring capabilities. Built on Next.js 16, React 19, and MongoDB, the system supports both Bengali and English languages, making it accessible to diverse user populations.
 
 ## Glossary
 
-- **System**: The SmartLMS Pro platform including web application, database, and external services
+- **System**: The CareerCanvas platform including web application, database, and external services
 - **Student**: A registered user who enrolls in and takes courses
 - **Instructor**: A verified user who creates and manages courses
 - **Administrator**: A system user with platform management privileges

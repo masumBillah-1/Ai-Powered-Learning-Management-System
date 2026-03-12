@@ -5,14 +5,32 @@ import { FaPaperPlane, FaCheckCircle } from "react-icons/fa";
 const NewsletterSection = () => {
   const [email, setEmail] = useState("");
   const [isSubscribed, setIsSubscribed] = useState(false);
+  const [selectedTopics, setSelectedTopics] = useState<string[]>([]);
+  const [frequency, setFrequency] = useState("weekly");
+
+  const topics = ["Web Development", "Digital Marketing", "Graphics Design", "Career Tips", "Tech Updates"];
+  const frequencies = [
+    { value: "daily", label: "Daily" },
+    { value: "weekly", label: "Weekly" },
+    { value: "monthly", label: "Monthly" }
+  ];
+
+  const toggleTopic = (topic: string) => {
+    setSelectedTopics(prev => 
+      prev.includes(topic) 
+        ? prev.filter(t => t !== topic)
+        : [...prev, topic]
+    );
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (email) {
+    if (email && selectedTopics.length > 0) {
       setIsSubscribed(true);
       setTimeout(() => {
         setIsSubscribed(false);
         setEmail("");
+        setSelectedTopics([]);
       }, 3000);
     }
   };
@@ -43,7 +61,6 @@ const NewsletterSection = () => {
                 <span className="font-bold"> Digital Marketing, Graphics Design, and Web Development</span>.
               </p>
 
-              {/* Newsletter Form */}
               {!isSubscribed ? (
                 <form onSubmit={handleSubmit} className="flex flex-col sm:flex-row gap-4">
                   <input
@@ -74,7 +91,7 @@ const NewsletterSection = () => {
               <div className="mt-8 flex flex-wrap items-center gap-6 text-sm text-white/80">
                 <div className="flex items-center gap-2">
                   <span className="text-2xl">✉️</span>
-                  <span className="font-bold">Weekly Updates</span>
+                  <span className="font-bold">{frequency.charAt(0).toUpperCase() + frequency.slice(1)} Updates</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="text-2xl">🔒</span>

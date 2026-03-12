@@ -1,4 +1,4 @@
-# 🎓 SmartLMS Pro - AI-Powered Learning Management System
+# 🎓 CareerCanvas - AI-Powered Learning Management System
 
 <div align="center">
 
