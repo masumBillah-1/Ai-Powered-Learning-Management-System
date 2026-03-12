@@ -6,7 +6,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   FaPlay, FaCheckCircle, FaChevronDown, FaChevronUp,
   FaBook, FaClock, FaArrowLeft, FaFileAlt,
-  FaTrophy, FaBars, FaTimes
+  FaTrophy, FaBars, FaTimes, FaLock
 } from "react-icons/fa";
 import { HiSparkles } from "react-icons/hi2";
 import Link from "next/link";
@@ -35,23 +35,17 @@ interface Enrollment {
   progress: {
     completedLessons: string[];
     progressPercentage: number;
-    currentLesson?: string;     // ← API returns "currentLesson" not "currentLessonId"
-    currentLessonId?: string;
+    currentLesson?: string;
     totalTimeSpent: number;
   };
   status: string;
   certificate?: { issued: boolean };
 }
 
-// ── YouTube embed — rel=0 stops related videos ────────────────────────────────
 function getYouTubeEmbedUrl(url: string) {
   if (!url) return "";
   const match = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([^&?\s]+)/);
   if (match) {
-    // rel=0 → no related videos after end
-    // modestbranding=1 → minimal YouTube branding
-    // NOTE: "More videos" mid-video popup cannot be fully blocked via URL params —
-    // it is triggered by YouTube internally. Use rel=0 to minimize it.
     return `https://www.youtube.com/embed/${match[1]}?autoplay=1&rel=0&modestbranding=1&showinfo=0&iv_load_policy=3&playsinline=1`;
   }
   return url;
@@ -75,21 +69,25 @@ export default function LearnPage() {
   const [course, setCourse] = useState<Course | null>(null);
   const [enrollment, setEnrollment] = useState<Enrollment | null>(null);
   const [activeLesson, setActiveLesson] = useState<Lesson | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [initialLoading, setInitialLoading] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [expandedModules, setExpandedModules] = useState<string[]>([]);
   const [completingLesson, setCompletingLesson] = useState(false);
-  // Local completed lessons — so UI updates instantly without waiting for API
+  const [lockedToast, setLockedToast] = useState(false); // locked toast message
+
   const [localCompleted, setLocalCompleted] = useState<string[]>([]);
+  const localCompletedRef = useRef<string[]>([]);
+
   const startTime = useRef<number>(Date.now());
   const activeLessonRef = useRef<Lesson | null>(null);
+  const isFirstLoad = useRef(true);
 
-  useEffect(() => { if (courseId) fetchData(); }, [courseId]);
+  useEffect(() => { if (courseId) initialFetch(); }, [courseId]);
 
-  // ── Fetch ────────────────────────────────────────────────────────────────────
-  const fetchData = async () => {
+  // ── Initial fetch ─────────────────────────────────────────────────────────
+  const initialFetch = async () => {
     try {
-      setLoading(true);
+      setInitialLoading(true);
       const [courseRes, enrollRes] = await Promise.all([
         fetch(`/api/courses/${courseId}`),
         fetch(`/api/enrollments?courseId=${courseId}`),
@@ -100,10 +98,8 @@ export default function LearnPage() {
       if (courseData.success) {
         setCourse(courseData.course);
         setExpandedModules(courseData.course.modules.map((m: Module) => m._id));
-
-        // Set first lesson only on first load
         const firstLesson = courseData.course.modules?.[0]?.lessons?.[0];
-        if (firstLesson && !activeLessonRef.current) {
+        if (firstLesson) {
           setActiveLesson(firstLesson);
           activeLessonRef.current = firstLesson;
         }
@@ -113,90 +109,184 @@ export default function LearnPage() {
         const enroll = enrollData.enrollments[0];
         setEnrollment(enroll);
 
-        // Sync local completed with server state
         const serverCompleted: string[] = enroll.progress?.completedLessons ?? [];
         setLocalCompleted(serverCompleted);
+        localCompletedRef.current = serverCompleted;
 
-        // Resume from last lesson — API uses "currentLesson" field
-        const lastLessonId = enroll.progress?.currentLesson || enroll.progress?.currentLessonId;
-        if (lastLessonId && courseData.success) {
-          const allLessons = courseData.course.modules.flatMap((m: Module) => m.lessons);
+        // Resume from last lesson, or first incomplete lesson if course was rebuilt
+        const lastLessonId = enroll.progress?.currentLesson;
+        const allLessons = courseData.course.modules.flatMap((m: Module) => m.lessons);
+        const serverCompleted2: string[] = enroll.progress?.completedLessons ?? [];
+        const validIds = new Set(allLessons.map((l: Lesson) => l._id));
+
+        // Find first lesson not yet completed in the current course
+        const firstIncomplete = allLessons.find((l: Lesson) => !serverCompleted2.includes(l._id));
+
+        if (lastLessonId && validIds.has(lastLessonId)) {
+          // Last lesson is still valid in current course → resume there
           const lastLesson = allLessons.find((l: Lesson) => l._id === lastLessonId);
-          if (lastLesson) {
-            setActiveLesson(lastLesson);
-            activeLessonRef.current = lastLesson;
-          }
+          if (lastLesson) { setActiveLesson(lastLesson); activeLessonRef.current = lastLesson; }
+        } else if (firstIncomplete) {
+          // Last lesson is stale (old ID) → go to first incomplete lesson
+          setActiveLesson(firstIncomplete);
+          activeLessonRef.current = firstIncomplete;
         }
       }
     } catch (err) {
       console.error("Failed to load:", err);
     } finally {
-      setLoading(false);
+      setInitialLoading(false);
+      isFirstLoad.current = false;
     }
   };
 
-  // ── Lesson select ─────────────────────────────────────────────────────────────
+  // ── Silent refresh ─────────────────────────────────────────────────────────
+  const silentRefreshEnrollment = async () => {
+    try {
+      const res = await fetch(`/api/enrollments?courseId=${courseId}`);
+      const data = await res.json();
+      if (data.success && data.enrollments?.length > 0) {
+        const enroll = data.enrollments[0];
+        setEnrollment(enroll);
+        const serverCompleted: string[] = enroll.progress?.completedLessons ?? [];
+        const merged = Array.from(new Set([...localCompletedRef.current, ...serverCompleted]));
+        if (merged.length !== localCompletedRef.current.length) {
+          setLocalCompleted(merged);
+          localCompletedRef.current = merged;
+        }
+      }
+    } catch (err) {
+      console.error("Silent refresh error:", err);
+    }
+  };
+
+  // ── Get flat list of all lessons in order ──────────────────────────────────
+  const getAllLessons = (): Lesson[] => {
+    if (!course) return [];
+    return course.modules.flatMap(m => m.lessons);
+  };
+
+  // Valid lesson IDs in current course (used for stale ID filtering)
+  const validLessonIds = new Set(course?.modules?.flatMap(m => m.lessons.map(l => l._id)) ?? []);
+
+  // ── Lock logic ────────────────────────────────────────────────────────────
+  // A lesson is unlocked if:
+  //   1. First lesson always unlocked
+  //   2. Previous lesson is completed
+  //   3. Course was previously completed (status=completed) → all lessons unlocked
+  //      so student can continue new lessons added by instructor
+  //   4. All preceding valid lessons completed (handles stale IDs from course rebuild)
+  const courseWasCompleted = enrollment?.status === "completed";
+
+  const isUnlocked = (lessonId: string): boolean => {
+    // If course was previously fully completed → unlock everything
+    // (instructor may have added new lessons, student should continue freely)
+    if (courseWasCompleted) return true;
+
+    const all = getAllLessons();
+    const idx = all.findIndex(l => l._id === lessonId);
+    if (idx === 0) return true;
+
+    const prevLesson = all[idx - 1];
+    if (localCompletedRef.current.includes(prevLesson._id)) return true;
+
+    // Stale ID handling: if all preceding valid lessons are completed → unlock
+    const validCompleted = new Set(localCompletedRef.current.filter(id => validLessonIds.has(id)));
+    const precedingValid = all.slice(0, idx).filter(l => validLessonIds.has(l._id));
+    if (precedingValid.length > 0 && precedingValid.every(l => validCompleted.has(l._id))) return true;
+    if (precedingValid.length === 0) return true;
+
+    return false;
+  };
+
+  // ── Lesson select — respect lock ──────────────────────────────────────────
   const handleLessonSelect = async (lesson: Lesson) => {
+    // Check if locked
+    if (!isUnlocked(lesson._id)) {
+      // Show locked toast
+      setLockedToast(true);
+      setTimeout(() => setLockedToast(false), 2500);
+      return;
+    }
+
     if (activeLessonRef.current && enrollment) {
       const timeSpent = Math.round((Date.now() - startTime.current) / 60000);
-      if (timeSpent > 0) await updateProgress(activeLessonRef.current._id, timeSpent, false);
+      if (timeSpent > 0) {
+        updateProgress(activeLessonRef.current._id, timeSpent, false);
+      }
     }
     startTime.current = Date.now();
     setActiveLesson(lesson);
     activeLessonRef.current = lesson;
   };
 
-  // ── Mark complete ─────────────────────────────────────────────────────────────
+  // ── Mark complete ──────────────────────────────────────────────────────────
   const handleMarkComplete = async () => {
     if (!activeLesson || completingLesson) return;
-    if (localCompleted.includes(activeLesson._id)) return;
+    if (localCompletedRef.current.includes(activeLesson._id)) return;
 
     setCompletingLesson(true);
 
-    // ── Optimistic update: immediately show progress ─────────────────────────
-    const newCompleted = [...localCompleted, activeLesson._id];
+    // Optimistic update
+    const newCompleted = [...localCompletedRef.current, activeLesson._id];
+    localCompletedRef.current = newCompleted;
     setLocalCompleted(newCompleted);
 
     const timeSpent = Math.round((Date.now() - startTime.current) / 60000);
-    await updateProgress(activeLesson._id, timeSpent, true);
+    const success = await updateProgress(activeLesson._id, timeSpent, true);
 
-    // Refresh from server to get accurate progressPercentage
-    await fetchData();
+    if (!success) {
+      const reverted = localCompletedRef.current.filter(id => id !== activeLesson._id);
+      localCompletedRef.current = reverted;
+      setLocalCompleted(reverted);
+    } else {
+      await silentRefreshEnrollment();
+    }
+
     startTime.current = Date.now();
     setCompletingLesson(false);
   };
 
-  const updateProgress = async (lessonId: string, timeSpent: number, completed: boolean) => {
+  const updateProgress = async (lessonId: string, timeSpent: number, completed: boolean): Promise<boolean> => {
     try {
       const res = await fetch("/api/enrollments", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ courseId, lessonId, timeSpent, completed }),
       });
-      if (!res.ok) console.error("Progress update failed:", await res.text());
-    } catch (err) { console.error("Progress update error:", err); }
+      if (!res.ok) {
+        console.error("Progress update failed:", await res.text());
+        return false;
+      }
+      return true;
+    } catch (err) {
+      console.error("Progress update error:", err);
+      return false;
+    }
   };
 
   const toggleModule = (id: string) =>
     setExpandedModules(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
 
-  // ── Use localCompleted for instant UI, fallback to server ────────────────────
-  const isCompleted = (id: string) => localCompleted.includes(id);
+  const isCompleted = (id: string) => localCompleted.includes(id) && validLessonIds.has(id);
 
   const totalLessons = course?.modules?.reduce((a, m) => a + m.lessons.length, 0) ?? 0;
-  const completedCount = localCompleted.length;
-  // Calculate progress locally so it updates instantly after Mark Complete
-  const progressPct = totalLessons > 0 ? Math.round((completedCount / totalLessons) * 100) : 0;
+  const completedCount = localCompleted.filter(id => validLessonIds.has(id)).length;
+  const progressPct = totalLessons > 0 ? Math.min(Math.round((completedCount / totalLessons) * 100), 100) : 0;
 
   const getNextLesson = (): Lesson | null => {
     if (!course || !activeLesson) return null;
-    const all = course.modules.flatMap(m => m.lessons);
+    const all = getAllLessons();
     const idx = all.findIndex(l => l._id === activeLesson._id);
     return idx >= 0 && idx < all.length - 1 ? all[idx + 1] : null;
   };
 
-  // ── Loading ──────────────────────────────────────────────────────────────────
-  if (loading) {
+  // Next button only shows if current lesson is completed
+  const nextLesson = getNextLesson();
+  const canGoNext = activeLesson ? isCompleted(activeLesson._id) : false;
+
+  // ── Loading ────────────────────────────────────────────────────────────────
+  if (initialLoading) {
     return (
       <div className="min-h-screen bg-[#0b1120] flex items-center justify-center">
         <motion.div initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} className="text-center">
@@ -226,12 +316,25 @@ export default function LearnPage() {
     );
   }
 
-  const nextLesson = getNextLesson();
-
   return (
     <div className="min-h-screen bg-[#0d1117] flex flex-col" style={{ fontFamily: "'DM Sans', sans-serif" }}>
 
-      {/* ── Top Nav ─────────────────────────────────────────────────────────── */}
+      {/* ── Locked Toast ──────────────────────────────────────────────────────── */}
+      <AnimatePresence>
+        {lockedToast && (
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            className="fixed top-16 left-1/2 -translate-x-1/2 z-[100] flex items-center gap-2 px-4 py-2.5 rounded-xl border border-orange-500/30 bg-[#1a1200] text-orange-300 text-sm font-semibold shadow-xl"
+          >
+            <FaLock size={11} />
+            আগের lesson complete করুন, তারপর এটা unlock হবে
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* ── Top Nav ───────────────────────────────────────────────────────────── */}
       <header className="h-14 bg-[#161b22] border-b border-white/10 flex items-center justify-between px-4 z-50 sticky top-0">
         <div className="flex items-center gap-3">
           <button onClick={() => router.push("/dashboard/student/courses")}
@@ -244,7 +347,6 @@ export default function LearnPage() {
         </div>
 
         <div className="flex items-center gap-3">
-          {/* Progress pill */}
           <div className="hidden sm:flex items-center gap-2 bg-white/5 rounded-full px-3 py-1.5 border border-white/10">
             <div className="w-24 h-1.5 bg-white/10 rounded-full overflow-hidden">
               <motion.div
@@ -263,17 +365,13 @@ export default function LearnPage() {
         </div>
       </header>
 
-      {/* ── Body ─────────────────────────────────────────────────────────────── */}
+      {/* ── Body ──────────────────────────────────────────────────────────────── */}
       <div className="flex flex-1 overflow-hidden">
         <main className="flex-1 flex flex-col overflow-y-auto">
 
-          {/* ════ VIDEO PLAYER ════ */}
-          <div className="bg-black w-full relative" style={{ aspectRatio: "16/9", maxHeight: "65vh" }}>
+          {/* VIDEO PLAYER */}
+          <div className="bg-black w-full relative" style={{ aspectRatio: "16/9", maxHeight: "80vh" }}>
             {activeLesson?.type === "video" && activeLesson.url ? (
-              // NOTE: "More videos" mid-video popup is controlled by YouTube —
-              // rel=0 ensures no related videos AFTER the video ends.
-              // The mid-video popup cannot be removed via embed params (YouTube policy).
-              // To fully remove it, host videos on Cloudflare Stream / Bunny.net / Vimeo.
               <iframe
                 key={activeLesson._id}
                 src={getYouTubeEmbedUrl(activeLesson.url)}
@@ -302,7 +400,7 @@ export default function LearnPage() {
             )}
           </div>
 
-          {/* ════ LESSON INFO ════ */}
+          {/* LESSON INFO */}
           <div className="p-5 border-b border-white/5">
             <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
               <div className="flex-1">
@@ -327,13 +425,15 @@ export default function LearnPage() {
               </div>
 
               <div className="flex items-center gap-2 flex-shrink-0">
-                {nextLesson && (
+                {/* Next button — only shows after current lesson is completed */}
+                {nextLesson && canGoNext && (
                   <button onClick={() => handleLessonSelect(nextLesson)}
                     className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-white font-semibold text-sm border border-white/10 bg-white/5 hover:bg-white/10 transition-all whitespace-nowrap cursor-pointer">
                     Next →
                   </button>
                 )}
-                {activeLesson && !isCompleted(activeLesson._id) && (
+
+                {activeLesson && !isCompleted(activeLesson._id) ? (
                   <motion.button whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
                     onClick={handleMarkComplete} disabled={completingLesson}
                     className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-white font-bold text-sm shadow-lg disabled:opacity-60 whitespace-nowrap cursor-pointer"
@@ -341,12 +441,16 @@ export default function LearnPage() {
                     <FaCheckCircle size={13} />
                     {completingLesson ? "Saving..." : "Mark Complete"}
                   </motion.button>
-                )}
+                ) : activeLesson && isCompleted(activeLesson._id) ? (
+                  <div className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-emerald-400 font-bold text-sm border border-emerald-500/30 bg-emerald-500/10">
+                    <FaCheckCircle size={13} /> Completed
+                  </div>
+                ) : null}
               </div>
             </div>
           </div>
 
-          {/* ════ TEXT CONTENT ════ */}
+          {/* TEXT CONTENT */}
           {activeLesson?.type === "text" && activeLesson.textContent && (
             <div className="mx-5 my-4 p-6 rounded-2xl bg-[#161b22] border border-white/10">
               <div className="flex items-center gap-2 mb-4">
@@ -365,7 +469,7 @@ export default function LearnPage() {
             </div>
           )}
 
-          {/* ════ ASSIGNMENT ════ */}
+          {/* ASSIGNMENT */}
           {activeLesson?.type === "assignment" && activeLesson.assignmentDesc && (
             <div className="mx-5 my-4 p-6 rounded-2xl bg-[#161b22] border border-white/10">
               <div className="flex items-center gap-2 mb-4">
@@ -382,7 +486,7 @@ export default function LearnPage() {
             </div>
           )}
 
-          {/* ════ QUIZ ════ */}
+          {/* QUIZ */}
           {activeLesson?.type === "quiz" && (
             <div className="mx-5 my-4 p-6 rounded-2xl bg-[#161b22] border border-white/10 text-center">
               <div className="w-14 h-14 rounded-2xl mx-auto mb-3 flex items-center justify-center"
@@ -394,8 +498,8 @@ export default function LearnPage() {
             </div>
           )}
 
-          {/* ════ STATS ════ */}
-          <div className="px-5 py-4 grid grid-cols-3 gap-4 border-b border-white/5 border-t border-t-white/5 mt-2">
+          {/* STATS */}
+          <div className="px-5 py-4 grid grid-cols-3 gap-4 border-t border-white/5 mt-2">
             {[
               { label: "Completed", value: `${completedCount}/${totalLessons}`, icon: <FaCheckCircle className="text-emerald-400" /> },
               { label: "Progress", value: `${progressPct}%`, icon: <HiSparkles className="text-yellow-400" /> },
@@ -411,7 +515,7 @@ export default function LearnPage() {
             ))}
           </div>
 
-          {/* ════ CERTIFICATE ════ */}
+          {/* CERTIFICATE */}
           {enrollment?.certificate?.issued && (
             <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
               className="mx-5 my-4 p-4 rounded-2xl border border-yellow-500/30 bg-yellow-500/5 flex items-center gap-4">
@@ -426,7 +530,7 @@ export default function LearnPage() {
             </motion.div>
           )}
 
-          {/* ════ MOBILE LESSONS LIST ════ */}
+          {/* MOBILE LESSON LIST */}
           <div className="md:hidden px-5 py-4">
             <h3 className="text-white font-bold text-sm mb-3">Course Content</h3>
             <div className="space-y-2">
@@ -446,13 +550,17 @@ export default function LearnPage() {
                         {module.lessons.map((lesson, lIdx) => {
                           const done = isCompleted(lesson._id);
                           const current = activeLesson?._id === lesson._id;
+                          const unlocked = isUnlocked(lesson._id);
                           return (
                             <button key={lesson._id} onClick={() => handleLessonSelect(lesson)}
-                              className={`w-full flex items-center gap-3 px-4 py-2.5 text-left transition-all ${current ? "bg-[#C81D77]/10" : "hover:bg-white/5"}`}>
-                              <div className={`w-6 h-6 rounded-lg flex items-center justify-center flex-shrink-0 ${done ? "bg-emerald-500/20 text-emerald-400" : current ? "bg-[#C81D77]/20 text-[#C81D77]" : "bg-white/5 text-gray-500"}`}>
-                                {done ? <FaCheckCircle size={10} /> : getLessonIcon(lesson.type)}
+                              className={`w-full flex items-center gap-3 px-4 py-2.5 text-left transition-all ${current ? "bg-[#C81D77]/10" : unlocked ? "hover:bg-white/5" : "opacity-50 cursor-not-allowed"}`}>
+                              <div className={`w-6 h-6 rounded-lg flex items-center justify-center flex-shrink-0 ${done ? "bg-emerald-500/20 text-emerald-400"
+                                  : !unlocked ? "bg-white/5 text-gray-600"
+                                    : current ? "bg-[#C81D77]/20 text-[#C81D77]"
+                                      : "bg-white/5 text-gray-500"}`}>
+                                {done ? <FaCheckCircle size={10} /> : !unlocked ? <FaLock size={9} /> : getLessonIcon(lesson.type)}
                               </div>
-                              <span className={`text-xs font-medium ${current ? "text-white" : done ? "text-gray-400" : "text-gray-300"}`}>
+                              <span className={`text-xs font-medium ${current ? "text-white" : done ? "text-gray-400" : !unlocked ? "text-gray-600" : "text-gray-300"}`}>
                                 {lIdx + 1}. {lesson.title}
                               </span>
                             </button>
@@ -467,7 +575,7 @@ export default function LearnPage() {
           </div>
         </main>
 
-        {/* ════ DESKTOP SIDEBAR ════ */}
+        {/* DESKTOP SIDEBAR */}
         <AnimatePresence>
           {sidebarOpen && (
             <motion.aside
@@ -478,21 +586,30 @@ export default function LearnPage() {
               className="bg-[#161b22] border-l border-white/10 overflow-y-auto flex-shrink-0 hidden md:block"
               style={{ maxHeight: "calc(100vh - 56px)" }}
             >
-              {/* Header */}
+              {/* Sidebar Header */}
               <div className="p-4 border-b border-white/10 sticky top-0 bg-[#161b22] z-10">
-                <h3 className="text-white font-black text-sm">Course Content</h3>
-                <p className="text-gray-500 text-xs mt-0.5">{completedCount}/{totalLessons} lessons completed</p>
-                <div className="mt-2 w-full h-1.5 bg-white/10 rounded-full overflow-hidden">
+                <div className="flex items-center justify-between mb-1">
+                  <h3 className="text-white font-black text-sm">Course Content</h3>
+                  <span className="text-xs font-bold tabular-nums"
+                    style={{ background: "linear-gradient(90deg, #C81D77, #6710C2)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
+                    {progressPct}%
+                  </span>
+                </div>
+                <p className="text-gray-500 text-xs mb-3">
+                  {completedCount}/{totalLessons} lessons completed
+                </p>
+
+                {/* Single smooth progress bar */}
+                <div className="w-full rounded-full overflow-hidden" style={{ height: "6px", background: "rgba(255,255,255,0.08)" }}>
                   <motion.div
                     className="h-full rounded-full"
                     animate={{ width: `${progressPct}%` }}
-                    transition={{ duration: 0.5 }}
+                    transition={{ duration: 0.5, ease: "easeOut" }}
                     style={{ background: "linear-gradient(90deg, #C81D77, #6710C2)" }}
                   />
                 </div>
               </div>
 
-              {/* Modules */}
               <div className="p-2">
                 {course.modules.map((module, mIdx) => (
                   <div key={module._id} className="mb-1">
@@ -525,19 +642,41 @@ export default function LearnPage() {
                           {module.lessons.map((lesson, lIdx) => {
                             const done = isCompleted(lesson._id);
                             const current = activeLesson?._id === lesson._id;
+                            const unlocked = isUnlocked(lesson._id);
+
                             return (
-                              <button key={lesson._id} onClick={() => handleLessonSelect(lesson)}
-                                className={`w-full flex items-center gap-3 px-3 py-2.5 mx-1 rounded-lg transition-all text-left mb-0.5 cursor-pointer ${current ? "bg-[#C81D77]/15 border border-[#C81D77]/30" : "hover:bg-white/5"
+                              <button
+                                key={lesson._id}
+                                onClick={() => handleLessonSelect(lesson)}
+                                className={`w-full flex items-center gap-3 px-3 py-2.5 mx-1 rounded-lg transition-all text-left mb-0.5 ${current
+                                    ? "bg-[#C81D77]/15 border border-[#C81D77]/30 cursor-pointer"
+                                    : unlocked
+                                      ? "hover:bg-white/5 cursor-pointer"
+                                      : "opacity-40 cursor-not-allowed"
+                                  }`}
+                              >
+                                {/* Icon */}
+                                <div className={`w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 ${done
+                                    ? "bg-emerald-500/20 text-emerald-400"
+                                    : !unlocked
+                                      ? "bg-white/5 text-gray-600"
+                                      : current
+                                        ? "bg-[#C81D77]/20 text-[#C81D77]"
+                                        : "bg-white/5 text-gray-500"
                                   }`}>
-                                <div className={`w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 ${done ? "bg-emerald-500/20 text-emerald-400"
-                                    : current ? "bg-[#C81D77]/20 text-[#C81D77]"
-                                      : "bg-white/5 text-gray-500"
-                                  }`}>
-                                  {done ? <FaCheckCircle size={12} /> : getLessonIcon(lesson.type, 11)}
+                                  {done
+                                    ? <FaCheckCircle size={12} />
+                                    : !unlocked
+                                      ? <FaLock size={11} />
+                                      : getLessonIcon(lesson.type, 11)}
                                 </div>
 
+                                {/* Text — NO strikethrough */}
                                 <div className="flex-1 min-w-0">
-                                  <p className={`text-xs font-medium truncate ${current ? "text-white" : done ? "text-gray-400 line-through" : "text-gray-300"
+                                  <p className={`text-xs font-medium truncate ${current ? "text-white"
+                                      : done ? "text-gray-300"       // ✅ removed line-through
+                                        : !unlocked ? "text-gray-600"
+                                          : "text-gray-300"
                                     }`}>
                                     {lIdx + 1}. {lesson.title}
                                   </p>
@@ -551,9 +690,13 @@ export default function LearnPage() {
                                   </div>
                                 </div>
 
+                                {/* Right side indicator */}
                                 {current && (
                                   <div className="w-1.5 h-1.5 rounded-full flex-shrink-0 animate-pulse"
                                     style={{ background: "#C81D77" }} />
+                                )}
+                                {!unlocked && !done && (
+                                  <span className="text-[10px] text-gray-600 flex-shrink-0">🔒</span>
                                 )}
                               </button>
                             );

@@ -170,8 +170,6 @@ export async function PUT(req: NextRequest) {
       return NextResponse.json({ error: "Enrollment not found" }, { status: 404 });
 
     // ── Step 2: Build ONE combined update object ──────────────────────────────
-    // IMPORTANT: $set, $inc, $addToSet must all be in ONE findOneAndUpdate call
-    // Splitting them into separate objects causes MongoDB to silently ignore some ops
     const updateOps: any = {
       $set: {
         "progress.lastAccessedAt": new Date(),
@@ -179,30 +177,28 @@ export async function PUT(req: NextRequest) {
       },
     };
 
-    // Add $inc only if timeSpent > 0
     if (timeSpent > 0) {
       updateOps.$inc = { "progress.totalTimeSpent": timeSpent };
     }
 
-    // Add $addToSet only if marking complete AND not already done
     if (completed && lessonId) {
       const alreadyDone = enrollment.progress.completedLessons
         .some((id: any) => id.toString() === lessonId.toString());
 
       if (!alreadyDone) {
-        // completedLessons is [String] in schema — store as plain string
         updateOps.$addToSet = { "progress.completedLessons": String(lessonId) };
       }
     }
 
     // ── Step 3: Apply update ──────────────────────────────────────────────────
+    // ✅ returnDocument: "after"  replaces deprecated { new: true }
     let updated = await Enrollment.findOneAndUpdate(
       {
         studentId: new mongoose.Types.ObjectId(decoded.userId),
         courseId:  new mongoose.Types.ObjectId(courseId),
       },
       updateOps,
-      { new: true }
+      { returnDocument: "after" }
     );
 
     if (!updated) return NextResponse.json({ error: "Update failed" }, { status: 500 });
@@ -224,18 +220,26 @@ export async function PUT(req: NextRequest) {
             courseId:  new mongoose.Types.ObjectId(courseId),
           },
           { $set: { "progress.progressPercentage": percentage } },
-          { new: true }
+          { returnDocument: "after" }  // ✅ fixed
         );
 
-        // ── Step 5: Auto-certificate at 100% ─────────────────────────────────
+        // ── Step 5: If course was previously completed but instructor added new lessons,
+        //    reset status to "active" so student can continue earning progress
+        if (updated?.status === "completed" && percentage < 100) {
+          await Enrollment.findByIdAndUpdate(updated._id, {
+            $set: { status: "active", completedAt: null },
+          });
+        }
+
+        // ── Step 5b: Auto-certificate at 100% ────────────────────────────────
         if (percentage === 100 && updated && !updated.certificate?.issued) {
           const certId = `CERT-${Date.now()}-${decoded.userId.slice(-6).toUpperCase()}`;
           await Enrollment.findByIdAndUpdate(updated._id, {
             $set: {
-              status:                      "completed",
-              completedAt:                 new Date(),
-              "certificate.issued":        true,
-              "certificate.issuedAt":      new Date(),
+              status:                         "completed",
+              completedAt:                    new Date(),
+              "certificate.issued":           true,
+              "certificate.issuedAt":         new Date(),
               "certificate.verificationCode": certId,
             },
           });
