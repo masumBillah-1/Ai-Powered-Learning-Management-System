@@ -43,6 +43,7 @@ const I = {
   Moon: () => (<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" /></svg>),
   Chevron: () => (<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="9 18 15 12 9 6" /></svg>),
   Menu: () => (<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="3" y1="6" x2="21" y2="6" /><line x1="3" y1="12" x2="21" y2="12" /><line x1="3" y1="18" x2="21" y2="18" /></svg>),
+  Close: () => (<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>),
 };
 
 // ── Mock Data ──────────────────────────────────────────────────────────────
@@ -86,6 +87,35 @@ const Ring = ({ v, size = 88, stroke = 7 }: { v: number; size?: number; stroke?:
         <stop offset="0%" stopColor="#832388" /><stop offset="100%" stopColor="#F0772F" />
       </linearGradient></defs>
     </svg>
+  );
+};
+
+// ── Video Modal ────────────────────────────────────────────────────────────
+const VideoModal = ({
+  isOpen, onClose, videoUrl, title,
+}: {
+  isOpen: boolean; onClose: () => void; videoUrl: string; title: string;
+}) => {
+  if (!isOpen) return null;
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+      <div className="relative w-full max-w-5xl bg-[#0D0818] rounded-2xl overflow-hidden border border-white/10">
+        <div className="flex items-center justify-between p-4 border-b border-white/10">
+          <h3 className="text-lg font-bold text-white">{title}</h3>
+          <button onClick={onClose} className="text-white/60 hover:text-white transition-colors">
+            <I.Close />
+          </button>
+        </div>
+        <div className="relative w-full" style={{ paddingBottom: "56.25%" }}>
+          <iframe
+            src={videoUrl}
+            className="absolute inset-0 w-full h-full"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+            allowFullScreen
+          />
+        </div>
+      </div>
+    </div>
   );
 };
 
@@ -167,48 +197,48 @@ const HomePage = ({ firstName, overallProgress, dark }: any) => {
                       <span>{c.completedLessons}/{c.totalLessons}</span>
                     </div>
                     <button className={`flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg transition-colors ${dark ? "text-white bg-white/10 hover:bg-white/15" : "text-gray-700 bg-gray-100 hover:bg-gray-200"}`}>
-      <I.Play /> Continue
-    </button>
-  </div>
-                </div >
-              </div >
-            </div >
+                      <I.Play /> Continue
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
           ))}
-        </div >
+        </div>
 
-  <div className="space-y-5">
-    <div>
-      <h2 className={`text-lg font-bold mb-4 ${heading}`}>Upcoming Deadlines</h2>
-      <div className="space-y-3">
-        {deadlines.map(d => (
-          <div key={d.id} className={`rounded-xl border p-4 ${d.urgent ? "bg-red-500/10 border-red-500/20" : dark ? "bg-white/[0.03] border-white/5" : "bg-white border-gray-200"}`}>
-            <div className="flex items-start justify-between gap-2 mb-1">
-              <p className={`text-sm font-medium leading-tight ${heading}`}>{d.title}</p>
-              <span className={`text-xs px-2 py-0.5 rounded-full flex-shrink-0 ${d.urgent ? "bg-red-500/20 text-red-400" : dark ? "bg-white/10 text-white/50" : "bg-gray-100 text-gray-500"}`}>{d.daysLeft}d</span>
-            </div>
-            <p className={`text-xs ${sub}`}>{d.course} · {d.dueDate}</p>
-          </div>
-        ))}
-      </div>
-    </div>
-    <div>
-      <h2 className={`text-lg font-bold mb-4 ${heading}`}>Recent Activity</h2>
-      <div className="space-y-3">
-        {activity.map(a => (
-          <div key={a.id} className="flex items-start gap-3">
-            <span className="text-lg flex-shrink-0">{a.icon}</span>
-            <div className="min-w-0">
-              <p className={`text-sm font-medium ${heading}`}>{a.action}</p>
-              <p className={`text-xs truncate ${sub}`}>{a.detail}</p>
-              <p className={`text-[11px] mt-0.5 ${muted}`}>{a.time}</p>
+        <div className="space-y-5">
+          <div>
+            <h2 className={`text-lg font-bold mb-4 ${heading}`}>Upcoming Deadlines</h2>
+            <div className="space-y-3">
+              {deadlines.map(d => (
+                <div key={d.id} className={`rounded-xl border p-4 ${d.urgent ? "bg-red-500/10 border-red-500/20" : dark ? "bg-white/[0.03] border-white/5" : "bg-white border-gray-200"}`}>
+                  <div className="flex items-start justify-between gap-2 mb-1">
+                    <p className={`text-sm font-medium leading-tight ${heading}`}>{d.title}</p>
+                    <span className={`text-xs px-2 py-0.5 rounded-full flex-shrink-0 ${d.urgent ? "bg-red-500/20 text-red-400" : dark ? "bg-white/10 text-white/50" : "bg-gray-100 text-gray-500"}`}>{d.daysLeft}d</span>
+                  </div>
+                  <p className={`text-xs ${sub}`}>{d.course} · {d.dueDate}</p>
+                </div>
+              ))}
             </div>
           </div>
-        ))}
+          <div>
+            <h2 className={`text-lg font-bold mb-4 ${heading}`}>Recent Activity</h2>
+            <div className="space-y-3">
+              {activity.map(a => (
+                <div key={a.id} className="flex items-start gap-3">
+                  <span className="text-lg flex-shrink-0">{a.icon}</span>
+                  <div className="min-w-0">
+                    <p className={`text-sm font-medium ${heading}`}>{a.action}</p>
+                    <p className={`text-xs truncate ${sub}`}>{a.detail}</p>
+                    <p className={`text-[11px] mt-0.5 ${muted}`}>{a.time}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
       </div>
     </div>
-  </div>
-      </div >
-    </div >
   );
 };
 
@@ -232,8 +262,7 @@ const CoursesPage = ({ dark }: any) => {
         <div className="flex gap-2">
           {["all", "in-progress", "completed"].map(f => (
             <button key={f} onClick={() => setFilter(f)}
-              className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${filter === f ? "bg-gradient-to-r from-[#832388] to-[#F0772F] text-white" : th(dark, "bg-white/5 text-white/50 hover:text-white hover:bg-white/10", "bg-gray-100 text-gray-500 hover:bg-gray-200 hover:text-gray-800")
-                }`}>
+              className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${filter === f ? "bg-gradient-to-r from-[#832388] to-[#F0772F] text-white" : th(dark, "bg-white/5 text-white/50 hover:text-white hover:bg-white/10", "bg-gray-100 text-gray-500 hover:bg-gray-200 hover:text-gray-800")}`}>
               {f === "in-progress" ? "In Progress" : f.charAt(0).toUpperCase() + f.slice(1)}
             </button>
           ))}
@@ -270,8 +299,7 @@ const CoursesPage = ({ dark }: any) => {
                 <span className="flex items-center gap-1 text-yellow-400"><I.Star />{c.rating}</span>
                 <span>{c.enrolled}</span>
               </div>
-              <button className={`w-full py-2.5 rounded-xl text-sm font-medium transition flex items-center justify-center gap-2 ${c.progress === 100 ? "bg-green-500/20 text-green-400 hover:bg-green-500/30" : "bg-gradient-to-r from-[#832388] to-[#F0772F] text-white hover:opacity-90"
-                }`}>
+              <button className={`w-full py-2.5 rounded-xl text-sm font-medium transition flex items-center justify-center gap-2 ${c.progress === 100 ? "bg-green-500/20 text-green-400 hover:bg-green-500/30" : "bg-gradient-to-r from-[#832388] to-[#F0772F] text-white hover:opacity-90"}`}>
                 {c.progress === 100 ? <><I.Check />Completed</> : <><I.Play />Continue</>}
               </button>
             </div>
@@ -356,40 +384,19 @@ const ProgressPage = ({ dark }: any) => {
 
       {/* Streak */}
       <div className={`rounded-2xl border p-6 ${box}`}>
-        <h3 className={`font-bold mb-2 ${heading}`}>
-          Learning Streak — February 2025
-        </h3>
-
-        <div className="grid grid-cols-20 gap-1 w-150">
+        <h3 className={`font-bold mb-2 ${heading}`}>Learning Streak — February 2025</h3>
+        <div className="grid grid-cols-10 gap-1">
           {Array.from({ length: 30 }, (_, i) => {
             const day = i + 1;
-            const on = [
-              1, 2, 4, 5, 6, 8, 9, 10, 11, 14, 15, 17, 18, 19, 22, 23, 24, 25
-            ].includes(day);
-
+            const on = [1, 2, 4, 5, 6, 8, 9, 10, 11, 14, 15, 17, 18, 19, 22, 23, 24, 25].includes(day);
             return (
-              <div
-                key={day}
-                className={`aspect-square w-5 rounded-md flex items-center justify-center text-[10px] font-medium transition-all
-            ${on
-                    ? "bg-gradient-to-br from-[#832388] to-[#F0772F] text-white"
-                    : dark
-                      ? "bg-white/5 text-white/20"
-                      : "bg-gray-100 text-gray-400"
-                  }`}
-              >
+              <div key={day} className={`aspect-square w-5 rounded-md flex items-center justify-center text-[10px] font-medium transition-all ${on ? "bg-gradient-to-br from-[#832388] to-[#F0772F] text-white" : dark ? "bg-white/5 text-white/20" : "bg-gray-100 text-gray-400"}`}>
                 {day}
               </div>
             );
           })}
         </div>
-
-        <p className={`text-xs mt-3 ${sub}`}>
-          🔥 Current streak:
-          <span className="text-orange-400 font-bold ml-1">
-            7 days
-          </span>
-        </p>
+        <p className={`text-xs mt-3 ${sub}`}>🔥 Current streak: <span className="text-orange-400 font-bold ml-1">7 days</span></p>
       </div>
     </div>
   );
@@ -717,22 +724,21 @@ export default function StudentDashboard() {
         </header>
 
         <main className="flex-1 p-6 lg:p-8 overflow-y-auto">
-  { activeNav === "home" && <HomePage firstName={firstName} overallProgress={overallProgress} dark={dark} onPlayVideo={handlePlayVideo} /> }
-  { activeNav === "courses" && <CoursesPage dark={dark} /> }
-  { activeNav === "progress" && <ProgressPage dark={dark} /> }
-  { activeNav === "certificates" && <CertificatesPage dark={dark} /> }
-  { activeNav === "settings" && <SettingsPage user={user} dark={dark} /> }
-        </main >
-      </div >
+          {activeNav === "home" && <HomePage firstName={firstName} overallProgress={overallProgress} dark={dark} onPlayVideo={handlePlayVideo} />}
+          {activeNav === "courses" && <CoursesPage dark={dark} />}
+          {activeNav === "progress" && <ProgressPage dark={dark} />}
+          {activeNav === "certificates" && <CertificatesPage dark={dark} />}
+          {activeNav === "settings" && <SettingsPage user={user} dark={dark} />}
+        </main>
+      </div>
 
-    {/* Video Modal */ }
-    < VideoModal
-  isOpen = {!!selectedVideo
-}
-onClose = {() => setSelectedVideo(null)}
-videoUrl = { selectedVideo?.url || ""}
-title = { selectedVideo?.title || ""}
+      {/* ── Video Modal ── */}
+      <VideoModal
+        isOpen={!!selectedVideo}
+        onClose={() => setSelectedVideo(null)}
+        videoUrl={selectedVideo?.url || ""}
+        title={selectedVideo?.title || ""}
       />
-    </div >
+    </div>
   );
 }
