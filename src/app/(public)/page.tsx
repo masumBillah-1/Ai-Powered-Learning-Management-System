@@ -21,15 +21,17 @@ export default function Home() {
       <HeroSectionNew />
       <HeroSections /> 
       <HeroSection />
-      <ImpactSection />
-      <ProblemSolution />
-      <BootcampFeatures />
-      <SuccessSection />
-      <Timeline/>
-      <StepSection />
-      <LearnSection />
-      <FAQ />
-      <JoinNow />
+
+        <ImpactSection />
+        <ProblemSolution />
+        <BootcampFeatures />
+        <SuccessSection />
+        <Timeline />
+        <StepSection />
+        <LearnSection />
+        <FAQ />
+        <JoinNow />
+
     </div>
   );
 }

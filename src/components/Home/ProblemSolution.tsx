@@ -9,8 +9,7 @@ const ProblemSolution = () => {
     {
       problem: "কী শিখব, কতটুকু শিখব, কোথা থেকে শুরু করব কিছুই বুঝি না।",
       problemEmoji: "😒",
-      solution:
-        "আমরা পুরো আউটলাইন, গাইডলাইন, কনটেন্ট রেডি করেই তোমার সাথে আছি।",
+      solution: "আমরা পুরো আউটলাইন, গাইডলাইন, কনটেন্ট রেডি করেই তোমার সাথে আছি।",
       solutionEmoji: "😊",
       color: "from-orange-500 via-rose-500 to-purple-600",
       icon: <FiTarget className="text-orange-500" />,

@@ -1,13 +1,25 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono, Hind_Siliguri } from "next/font/google";
 import { Toaster } from "react-hot-toast";
-import SplashWrapper from "@/components/SplashWrapper";
+
 import FloatingChat from "@/components/chat/FloatingChat";
 import { cookies } from "next/headers";
 import "./globals.css";
+import Navbar from "@/components/layout/Navbar";
+import Footer from "@/components/layout/Footer";
 
-const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
-const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
+const geistSans = Geist({ 
+  variable: "--font-geist-sans", 
+  subsets: ["latin"],
+  display: "swap",
+  preload: true
+});
+const geistMono = Geist_Mono({ 
+  variable: "--font-geist-mono", 
+  subsets: ["latin"],
+  display: "swap",
+  preload: true
+});
 const hindSiliguri = Hind_Siliguri({
   weight: ["300", "400", "500", "600", "700"],
   subsets: ["bengali", "latin"],
@@ -20,9 +32,7 @@ export const metadata: Metadata = {
   description: "SmartLMS Pro learning management system designed to deliver smart, personalized, and interactive online education experiences.",
   icons: {
     icon: [{ url: "/favicon.svg", type: "image/svg+xml" }, { url: "/favicon.ico", sizes: "32x32" }],
-    apple: "/apple-touch-icon.png",
   },
-  manifest: "/site.webmanifest",
 };
 
 // ─────────────────────────────────────────────────────────
@@ -62,22 +72,42 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       <head>
         <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
         <link rel="icon" type="image/x-icon" href="/favicon.ico" />
-        <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
-        <link rel="manifest" href="/site.webmanifest" />
         <meta name="theme-color" content="#FF0F7B" />
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              (function() {
+                try {
+                  const theme = localStorage.getItem('theme') || 'light';
+                  document.documentElement.setAttribute('data-theme', theme);
+                  if (theme === 'dark') {
+                    document.documentElement.classList.add('dark');
+                  }
+                } catch (e) {}
+              })();
+            `,
+          }}
+        />
       </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} ${hindSiliguri.variable} antialiased`}
         style={{ fontFamily: "var(--font-hind-siliguri), var(--font-geist-sans), sans-serif" }}
         suppressHydrationWarning
       >
-        <SplashWrapper>
           <Toaster
-            position="top-center"
+            position="top-left"
             reverseOrder={false}
             toastOptions={{
               duration: 3000,
-              style: { background: "#1f2937", color: "#fff", borderRadius: "8px", padding: "12px 20px", fontSize: "14px" },
+              style: { 
+                background: "#1f2937", 
+                color: "#fff", 
+                borderRadius: "8px", 
+                padding: "12px 20px", 
+                fontSize: "14px",
+                marginTop: "80px", // navbar এর নিচে দেখানোর জন্য
+                marginLeft: "20px" // একটু left থেকে margin
+              },
               success: { iconTheme: { primary: "#10b981", secondary: "#fff" } },
               error: { iconTheme: { primary: "#ef4444", secondary: "#fff" } },
             }}
@@ -94,7 +124,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
               userAvatar={user.image}
             />
           )}
-        </SplashWrapper>
+  
       </body>
     </html>
   );

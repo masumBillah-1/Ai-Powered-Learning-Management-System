@@ -15,9 +15,9 @@
     "moduleResolution": "bundler",
     "resolveJsonModule": true,
     "isolatedModules": true,
-    "jsx": "react-jsx",
+    "jsx": "preserve",
     "incremental": true,
-    "baseUrl": ".", // 👈 এটা add করো
+    "baseUrl": ".",
     "paths": {
       "@/*": [
         "./src/*"
@@ -36,7 +36,7 @@
     "**/*.mts",
     "**/*.ts",
     "**/*.tsx"
-, "src/components/ui/Title.tsx", "src/app/help/release"  ],
+  ],
   "exclude": [
     "node_modules"
   ]

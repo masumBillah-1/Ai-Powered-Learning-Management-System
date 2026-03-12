@@ -34,29 +34,14 @@ export async function GET(
 
   // Code নেই → GitHub এ পাঠাও
   if (!code) {
-    console.log("🔄 Redirecting to GitHub authorization...");
-    console.log("📍 APP_URL:", APP_URL);
-    console.log("🔑 CLIENT_ID:", process.env.GITHUB_CLIENT_ID?.substring(0, 10) + "...");
-    
     const url = `https://github.com/login/oauth/authorize?client_id=${process.env.GITHUB_CLIENT_ID}&scope=user:email&redirect_uri=${APP_URL}/api/auth/github`;
     return NextResponse.redirect(url);
   }
 
   try {
-    console.log("\n🔄 GitHub OAuth Flow Started");
-    console.log("=" .repeat(50));
-    console.log("📍 APP_URL:", APP_URL);
-    console.log("🔑 CLIENT_ID:", process.env.GITHUB_CLIENT_ID?.substring(0, 10) + "...");
-    console.log("🔐 Has CLIENT_SECRET:", !!process.env.GITHUB_CLIENT_SECRET);
-    console.log("📝 Authorization Code:", code.substring(0, 10) + "...");
-
-    // MongoDB Connect
-    console.log("\n🔌 Connecting to MongoDB...");
     await connectDB();
-    console.log("✅ MongoDB connected successfully");
 
     // Access token নাও
-    console.log("\n🔄 Fetching GitHub access token...");
     const tokenRes = await fetch("https://github.com/login/oauth/access_token", {
       method: "POST",
       headers: { "Content-Type": "application/json", Accept: "application/json" },
@@ -68,28 +53,17 @@ export async function GET(
     });
 
     const tokenData = await tokenRes.json();
-    console.log("📦 Token Response:", {
-      hasAccessToken: !!tokenData.access_token,
-      tokenType: tokenData.token_type,
-      scope: tokenData.scope,
-    });
-
     const { access_token, error, error_description } = tokenData;
     
     if (error) {
-      console.error("❌ GitHub Token Error:", error, error_description);
       return NextResponse.redirect(`${APP_URL}/login?error=${encodeURIComponent(error_description || error)}`);
     }
     
     if (!access_token) {
-      console.error("❌ No access token received from GitHub");
       return NextResponse.redirect(`${APP_URL}/login?error=github_no_token`);
     }
 
-    console.log("✅ Access token received:", access_token.substring(0, 10) + "...");
-
     // User info নাও
-    console.log("\n🔄 Fetching GitHub user info...");
     const [userRes, emailRes] = await Promise.all([
       fetch("https://api.github.com/user", { 
         headers: { Authorization: `Bearer ${access_token}` } 
@@ -102,82 +76,39 @@ export async function GET(
     const githubUser = await userRes.json();
     const emails: any[] = await emailRes.json();
 
-    console.log("👤 GitHub User Info:");
-    console.log("  - Login:", githubUser.login);
-    console.log("  - Name:", githubUser.name);
-    console.log("  - ID:", githubUser.id);
-    console.log("  - Avatar:", githubUser.avatar_url?.substring(0, 50) + "...");
-    
-    console.log("📧 GitHub Emails:", emails.map(e => ({
-      email: e.email,
-      primary: e.primary,
-      verified: e.verified
-    })));
-
     const primaryEmail = emails.find((e) => e.primary)?.email || githubUser.email;
 
     if (!primaryEmail) {
-      console.error("❌ No email found in GitHub response");
       return NextResponse.redirect(`${APP_URL}/login?error=no_email`);
     }
 
-    console.log("✅ Primary email identified:", primaryEmail);
-
-    // Database operations
-    console.log("\n🔍 Checking database for existing user...");
+    // User খুঁজো বা তৈরি করো
     let user = await User.findOne({ email: primaryEmail });
     
     if (!user) {
-      console.log("👤 User not found. Creating new user...");
-      
-      const userData = {
+      user = await User.create({
         name: githubUser.name || githubUser.login,
         email: primaryEmail,
         photoURL: githubUser.avatar_url || "",
         provider: "github",
         role: "student",
-      };
-      
-      console.log("📝 User data to create:", userData);
-      
-      user = await User.create(userData);
-      
-      console.log("✅ New user created successfully:");
-      console.log("  - ID:", user._id);
-      console.log("  - Name:", user.name);
-      console.log("  - Email:", user.email);
-      console.log("  - Provider:", user.provider);
-      console.log("  - Role:", user.role);
+      });
     } else {
-      console.log("✅ Existing user found:");
-      console.log("  - ID:", user._id);
-      console.log("  - Name:", user.name);
-      console.log("  - Email:", user.email);
-      console.log("  - Provider:", user.provider);
-      
       // Update photo if changed
       if (githubUser.avatar_url && githubUser.avatar_url !== user.photoURL) {
-        const oldPhoto = user.photoURL;
         user.photoURL = githubUser.avatar_url;
         await user.save();
-        console.log("📸 Photo updated:");
-        console.log("  - Old:", oldPhoto?.substring(0, 50) + "...");
-        console.log("  - New:", user.photoURL?.substring(0, 50) + "...");
-      } else {
-        console.log("ℹ️  Photo unchanged");
       }
     }
 
     // JWT token তৈরি করো
-    console.log("\n🔑 Generating JWT token...");
     const token = jwt.sign(
       { userId: user._id, email: user.email, role: user.role },
       JWT_SECRET,
       { expiresIn: "7d" }
     );
-    console.log("✅ JWT token generated:", token.substring(0, 20) + "...");
 
-    // User data for redirect
+    // Redirect with user data
     const userParam = encodeURIComponent(
       JSON.stringify({
         _id: user._id,
@@ -189,9 +120,6 @@ export async function GET(
     );
 
     const callbackUrl = `${APP_URL}/api/auth/callback?user=${userParam}&token=${token}`;
-    console.log("\n🔄 Redirecting to callback URL...");
-    console.log("📍 Callback:", callbackUrl.substring(0, 100) + "...");
-
     const response = NextResponse.redirect(callbackUrl);
 
     // Set cookie
@@ -233,10 +161,6 @@ export async function POST(
     // FORGOT PASSWORD — email link পাঠাও
     // ══════════════════════════════════════
     if (action === "forgot-password") {
-      console.log("\n🔥 Forgot Password Request");
-      console.log("=" .repeat(50));
-      console.log("📧 Email:", body.email);
-      
       const { email } = body;
       if (!email) {
         return NextResponse.json({ error: "Email required" }, { status: 400 });
@@ -244,7 +168,6 @@ export async function POST(
 
       const user = await User.findOne({ email });
       if (!user) {
-        console.log("❌ User not found in database");
         // Security: Don't reveal if email exists
         return NextResponse.json(
           { success: true, message: "If this email exists, a reset link has been sent." },
@@ -252,21 +175,14 @@ export async function POST(
         );
       }
 
-      console.log("✅ User found:", user._id);
-
       const resetToken = crypto.randomBytes(32).toString("hex");
       user.resetToken = resetToken;
       user.resetTokenExpiry = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
       await user.save();
-      
-      console.log("🔑 Reset token generated:", resetToken.substring(0, 10) + "...");
-      console.log("⏰ Token expires at:", user.resetTokenExpiry);
 
       const resetLink = `${APP_URL}/reset-password?token=${resetToken}`;
-      console.log("🔗 Reset link:", resetLink);
 
       try {
-        console.log("📧 Sending email...");
         await transporter.sendMail({
           from: `"Smartlms Pro" <${process.env.GMAIL_USER}>`,
           to: email,
@@ -361,11 +277,7 @@ export async function POST(
             </html>
           `,
         });
-        console.log("✅ Email sent successfully");
-        console.log("=" .repeat(50) + "\n");
       } catch (emailError: any) {
-        console.error("❌ Email send failed:", emailError.message);
-        console.error("=" .repeat(50) + "\n");
         return NextResponse.json(
           { error: "Failed to send email. Please try again." },
           { status: 500 }
@@ -382,19 +294,13 @@ export async function POST(
     // RESET PASSWORD — নতুন password set করো
     // ══════════════════════════════════════
     if (action === "reset-password") {
-      console.log("\n🔐 Password Reset Request");
-      console.log("=" .repeat(50));
-      
       const { token, password } = body;
       if (!token || !password) {
-        console.log("❌ Missing token or password");
         return NextResponse.json(
           { error: "Token and password required" },
           { status: 400 }
         );
       }
-
-      console.log("🔑 Token:", token.substring(0, 10) + "...");
 
       const user = await User.findOne({
         resetToken: token,
@@ -402,23 +308,16 @@ export async function POST(
       });
 
       if (!user) {
-        console.log("❌ Invalid or expired token");
-        console.log("=" .repeat(50) + "\n");
         return NextResponse.json(
           { error: "Invalid or expired token" },
           { status: 400 }
         );
       }
 
-      console.log("✅ Valid token for user:", user.email);
-
       user.password = await bcrypt.hash(password, 10);
       user.resetToken = undefined;
       user.resetTokenExpiry = undefined;
       await user.save();
-
-      console.log("✅ Password updated successfully");
-      console.log("=" .repeat(50) + "\n");
 
       return NextResponse.json(
         { success: true, message: "Password reset successful!" },
@@ -430,32 +329,20 @@ export async function POST(
     // SEND OTP
     // ══════════════════════════════════════
     if (action === "send-otp") {
-      console.log("\n📱 Send OTP Request");
-      console.log("=" .repeat(50));
-      
       const { email } = body;
       if (!email) {
         return NextResponse.json({ error: "Email required" }, { status: 400 });
       }
 
-      console.log("📧 Email:", email);
-
       const user = await User.findOne({ email });
       if (!user) {
-        console.log("❌ User not found");
-        console.log("=" .repeat(50) + "\n");
         return NextResponse.json({ error: "Email not found" }, { status: 404 });
       }
-
-      console.log("✅ User found:", user._id);
 
       const otp = Math.floor(100000 + Math.random() * 900000).toString();
       user.resetToken = otp;
       user.resetTokenExpiry = new Date(Date.now() + 10 * 60 * 1000); // 10 min
       await user.save();
-
-      console.log("🔢 OTP generated:", otp);
-      console.log("⏰ Expires at:", user.resetTokenExpiry);
 
       await transporter.sendMail({
         from: `"Smartlms Pro" <${process.env.GMAIL_USER}>`,
@@ -536,9 +423,6 @@ export async function POST(
         `,
       });
 
-      console.log("✅ OTP email sent");
-      console.log("=" .repeat(50) + "\n");
-
       return NextResponse.json({ success: true, message: "OTP sent!" });
     }
 
@@ -546,9 +430,6 @@ export async function POST(
     // VERIFY OTP
     // ══════════════════════════════════════
     if (action === "verify-otp") {
-      console.log("\n✅ Verify OTP Request");
-      console.log("=" .repeat(50));
-      
       const { email, otp } = body;
       if (!email || !otp) {
         return NextResponse.json(
@@ -557,9 +438,6 @@ export async function POST(
         );
       }
 
-      console.log("📧 Email:", email);
-      console.log("🔢 OTP:", otp);
-
       const user = await User.findOne({
         email,
         resetToken: otp,
@@ -567,34 +445,21 @@ export async function POST(
       });
 
       if (!user) {
-        console.log("❌ Invalid or expired OTP");
-        console.log("=" .repeat(50) + "\n");
         return NextResponse.json(
           { error: "Invalid or expired OTP!" },
           { status: 400 }
         );
       }
 
-      console.log("✅ OTP verified for user:", user._id);
-
       user.resetToken = undefined;
       user.resetTokenExpiry = undefined;
       await user.save();
-
-      console.log("✅ OTP cleared from database");
-      console.log("=" .repeat(50) + "\n");
 
       return NextResponse.json({ success: true, message: "OTP verified!" });
     }
 
     return NextResponse.json({ error: "Invalid action" }, { status: 400 });
   } catch (error: any) {
-    console.error("\n❌ Action Route Error:");
-    console.error("=" .repeat(50));
-    console.error("Error:", error.message);
-    console.error("Stack:", error.stack);
-    console.error("=" .repeat(50) + "\n");
-    
     return NextResponse.json(
       { error: error.message || "Something went wrong" },
       { status: 500 }
