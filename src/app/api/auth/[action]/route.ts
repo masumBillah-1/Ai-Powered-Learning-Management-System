@@ -127,14 +127,6 @@ export async function GET(
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "lax",
-      maxAge: 60 * 60 * 24 * 7,
-      path: "/",
-    });
-
-    return response;
-  } catch (err: any) {
-    return NextResponse.redirect(`${APP_URL}/login?error=${encodeURIComponent(err.message)}`);
-=======
       maxAge: 60 * 60 * 24 * 7, // 7 days
       path: "/",
     });
@@ -153,7 +145,6 @@ export async function GET(
     console.error("=" .repeat(50) + "\n");
     
     return NextResponse.redirect(`${APP_URL}/login?error=${encodeURIComponent(err.message)}`);
->>>>>>> e5ced0ed5788abe0c2211e1dc67a7c791796484f
   }
 }
 

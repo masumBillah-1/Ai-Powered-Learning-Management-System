@@ -35,9 +35,7 @@
     ".next/dev/types/**/*.ts",
     "**/*.mts",
     "**/*.ts",
-    "**/*.tsx",
-    "src/components/ui/Title.tsx",
-    "src/app/help/release"
+    "**/*.tsx"
   ],
   "exclude": [
     "node_modules"

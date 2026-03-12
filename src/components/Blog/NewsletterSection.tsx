@@ -38,7 +38,7 @@ const NewsletterSection = () => {
   return (
     <section className="py-16 px-4 md:px-8">
       <div className="max-w-[1200px] mx-auto">
-        <div 
+        <div
           className="relative rounded-[40px] overflow-hidden p-8 md:p-16 shadow-2xl"
           style={{ background: "linear-gradient(90deg, #6710C2, #C81D77)" }}
         >
@@ -56,79 +56,33 @@ const NewsletterSection = () => {
                 Stay Up To Date
               </h2>
               <p className="text-lg md:text-xl leading-relaxed mb-8 text-white/90 font-medium">
-                Get exclusive insights, industry trends, and expert analysis delivered straight to your inbox. 
-                Join thousands of professionals who trust our curated content to stay ahead in 
+                Get exclusive insights, industry trends, and expert analysis delivered straight to your inbox.
+                Join thousands of professionals who trust our curated content to stay ahead in
                 <span className="font-bold"> Digital Marketing, Graphics Design, and Web Development</span>.
               </p>
 
               {!isSubscribed ? (
-                <>
-                  {/* Topic Selection */}
-                  <div className="mb-6">
-                    <p className="text-sm font-bold mb-3">Select Topics You're Interested In:</p>
-                    <div className="flex flex-wrap gap-2">
-                      {topics.map(topic => (
-                        <button
-                          key={topic}
-                          type="button"
-                          onClick={() => toggleTopic(topic)}
-                          className={`px-4 py-2 rounded-xl text-sm font-bold transition-all ${
-                            selectedTopics.includes(topic)
-                              ? 'bg-white text-[#C81D77]'
-                              : 'bg-white/20 text-white hover:bg-white/30'
-                          }`}
-                        >
-                          {topic}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Frequency Selection */}
-                  <div className="mb-6">
-                    <p className="text-sm font-bold mb-3">How Often?</p>
-                    <div className="flex gap-2">
-                      {frequencies.map(freq => (
-                        <button
-                          key={freq.value}
-                          type="button"
-                          onClick={() => setFrequency(freq.value)}
-                          className={`px-4 py-2 rounded-xl text-sm font-bold transition-all ${
-                            frequency === freq.value
-                              ? 'bg-white text-[#C81D77]'
-                              : 'bg-white/20 text-white hover:bg-white/30'
-                          }`}
-                        >
-                          {freq.label}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Newsletter Form */}
-                  <form onSubmit={handleSubmit} className="flex flex-col sm:flex-row gap-4">
-                    <input
-                      type="email"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      placeholder="Enter your email address"
-                      required
-                      className="flex-1 px-6 py-4 rounded-2xl text-gray-800 font-medium text-base outline-none focus:ring-4 focus:ring-white/30 transition-all"
-                    />
-                    <button
-                      type="submit"
-                      disabled={selectedTopics.length === 0}
-                      className="px-8 py-4 rounded-2xl font-black text-lg flex items-center justify-center gap-2 transition-all hover:scale-105 active:scale-95 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
-                      style={{ background: "linear-gradient(90deg, #FF0F7B, #F89B29)" }}
-                    >
-                      Join Our Newsletter
-                      <FaPaperPlane className="text-sm" />
-                    </button>
-                  </form>
-                </>
+                <form onSubmit={handleSubmit} className="flex flex-col sm:flex-row gap-4">
+                  <input
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="Enter your email address"
+                    required
+                    className="flex-1 px-6 py-4 rounded-2xl text-gray-800 font-medium text-base outline-none focus:ring-4 focus:ring-white/30 transition-all"
+                  />
+                  <button
+                    type="submit"
+                    className="px-8 py-4 rounded-2xl font-black text-lg flex items-center justify-center gap-2 transition-all hover:scale-105 active:scale-95 shadow-lg"
+                    style={{ background: "linear-gradient(90deg, #FF0F7B, #F89B29)" }}
+                  >
+                    Join Our Newsletter
+                    <FaPaperPlane size={14} />
+                  </button>
+                </form>
               ) : (
                 <div className="flex items-center gap-3 bg-white/20 backdrop-blur-sm px-6 py-4 rounded-2xl border-2 border-white/40">
-                  <FaCheckCircle className="text-3xl text-green-300" />
+                  <FaCheckCircle size={24} color="#86efac" />
                   <span className="text-lg font-bold">Successfully subscribed! Check your inbox.</span>
                 </div>
               )}
@@ -185,7 +139,7 @@ const NewsletterSection = () => {
                   </div>
 
                   <div className="absolute top-1/2 -right-8 w-16 h-16 bg-gradient-to-br from-orange-400 to-yellow-500 rounded-full flex items-center justify-center shadow-xl z-10">
-                    <FaPaperPlane className="text-white text-xl" />
+                    <FaPaperPlane size={20} color="white" />
                   </div>
 
                   {/* Decorative Dashed Lines */}
