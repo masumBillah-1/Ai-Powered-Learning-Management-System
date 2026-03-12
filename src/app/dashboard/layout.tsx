@@ -13,7 +13,7 @@ import { FaSun, FaMoon } from "react-icons/fa";
 type Role = "student" | "instructor" | "admin";
 interface UserData { name: string; email: string; photoURL?: string; role: Role; }
 
-// ✅ 30 seconds — performance friendly
+// ✅ 5 seconds — performance friendly
 const POLL_INTERVAL = 5_000;
 
 // ✅ Always start with "light" for SSR — real theme applied after mount
