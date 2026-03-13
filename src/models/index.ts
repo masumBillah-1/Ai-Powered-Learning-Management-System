@@ -5,6 +5,7 @@ import mongoose from "mongoose";
 
 // Import all models to ensure they're registered
 import User from "./User";
+// import Course from "./Course";
 import Course from "./Course";
 import Enrollment from "./Enrollment";
 import Transaction from "./Transaction";

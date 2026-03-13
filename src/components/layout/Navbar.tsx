@@ -35,15 +35,10 @@ function getStoredTheme(): string {
   return localStorage.getItem("theme") || "light";
 }
 
-// ✅ document.cookie থেকে token cookie আছে কিনা check করে
-function hasTokenCookie(): boolean {
-  if (typeof document === "undefined") return false;
-  return document.cookie.split(";").some((c) => c.trim().startsWith("token="));
-}
-
 const Navbar = () => {
-  const [user, setUser] = useState<UserData | null>(getStoredUser);
-  const [theme, setTheme] = useState<string>(getStoredTheme);
+  // ✅ null দিয়ে শুরু — server/client hydration mismatch এড়াতে
+  const [user, setUser] = useState<UserData | null>(null);
+  const [theme, setTheme] = useState<string>("light");
   const [mounted, setMounted] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
@@ -51,46 +46,40 @@ const Navbar = () => {
   const [scrolled, setScrolled] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
+  // ✅ Mount এ সব client-side data একবার load করো
   useEffect(() => {
     setMounted(true);
-    document.documentElement.setAttribute("data-theme", theme);
-    if (theme === "dark") {
+
+    // Theme set করো
+    const savedTheme = getStoredTheme();
+    setTheme(savedTheme);
+    document.documentElement.setAttribute("data-theme", savedTheme);
+    if (savedTheme === "dark") {
       document.documentElement.classList.add("dark");
     } else {
       document.documentElement.classList.remove("dark");
     }
-  }, []);
 
-  // ✅ FIX: Page load এ cookie check করো
-  // Cookie নেই মানে logged out — localStorage clear করো
-  // এতে net reconnect বা browser restart এ inconsistent state থাকবে না
-  useEffect(() => {
-    if (!hasTokenCookie()) {
-      localStorage.removeItem("user");
-      localStorage.removeItem("token");
-      setUser(null);
+    // ✅ KEY FIX: httpOnly cookie JS দিয়ে read হয় না — তাই আগের
+    // hasTokenCookie() সবসময় false return করত এবং localStorage clear করত।
+    // Solution: শুধু localStorage token check করো।
+    // Real security guard = middleware (server-side httpOnly cookie check)।
+    const token = localStorage.getItem("token");
+    if (token) {
+      setUser(getStoredUser());
     }
   }, []);
 
-  // ✅ Tab focus হলে re-check করো
-  // অন্য tab এ logout করলে বা net reconnect এ এই tab ও sync হবে
-  useEffect(() => {
-    const onFocus = () => {
-      if (!hasTokenCookie()) {
-        localStorage.removeItem("user");
-        localStorage.removeItem("token");
-        setUser(null);
-      } else {
-        setUser(getStoredUser());
-      }
-    };
-    window.addEventListener("focus", onFocus);
-    return () => window.removeEventListener("focus", onFocus);
-  }, []);
-
-  // ✅ একই browser এর অন্য tab এ login/logout sync
+  // ✅ অন্য tab এ logout/login হলে sync করো
   useEffect(() => {
     const onStorage = (e: StorageEvent) => {
+      if (e.key === "token") {
+        if (!e.newValue) {
+          setUser(null);
+        } else {
+          setUser(getStoredUser());
+        }
+      }
       if (e.key === "user") {
         try {
           setUser(e.newValue ? JSON.parse(e.newValue) : null);
@@ -102,6 +91,21 @@ const Navbar = () => {
     window.addEventListener("storage", onStorage);
     return () => window.removeEventListener("storage", onStorage);
   }, []);
+
+  // ✅ Tab focus এ token check — অন্য tab logout হলে এই tab ও sync
+  useEffect(() => {
+    if (!mounted) return;
+    const onFocus = () => {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        setUser(null);
+      } else {
+        setUser(getStoredUser());
+      }
+    };
+    window.addEventListener("focus", onFocus);
+    return () => window.removeEventListener("focus", onFocus);
+  }, [mounted]);
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 10);
@@ -165,6 +169,19 @@ const Navbar = () => {
     { name: "Blog", href: "/blog" },
     { name: "About", href: "/about" },
   ];
+
+  // ✅ Hydration fix: mounted হওয়ার আগে minimal navbar দেখাও
+  if (!mounted) {
+    return (
+      <nav className="bg-[var(--nav-bg)] border-b border-[var(--border-color)] sticky top-0 z-[100] shadow-sm">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-10">
+          <div className="flex justify-between items-center h-20">
+            <Logo />
+          </div>
+        </div>
+      </nav>
+    );
+  }
 
   return (
     <>
@@ -267,10 +284,7 @@ const Navbar = () => {
                   className="p-3 rounded-xl bg-gray-100 dark:bg-gray-800 text-purple-500 dark:text-sky-400 hover:scale-110 hover:rotate-12 transition-all duration-200"
                   aria-label="Toggle theme"
                 >
-                  {mounted
-                    ? theme === "dark" ? <FaSun size={18} /> : <FaMoon size={18} />
-                    : <FaMoon size={18} />
-                  }
+                  {theme === "dark" ? <FaSun size={18} /> : <FaMoon size={18} />}
                 </button>
 
                 {!user ? (
@@ -322,6 +336,7 @@ const Navbar = () => {
                               {user.role}
                             </span>
                           </div>
+                          {/* My Profile */}
                           <Link
                             href="/dashboard/profile"
                             className="flex items-center gap-2.5 px-4 py-2.5 text-[13.5px] text-gray-700 dark:text-gray-200 border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors no-underline"
@@ -329,6 +344,26 @@ const Navbar = () => {
                           >
                             <FaUser size={13} className="text-[#6710C2] opacity-70" /> My Profile
                           </Link>
+                          {/* Dashboard — role অনুযায়ী link */}
+                          <Link
+                            href={
+                              user.role === "admin"
+                                ? "/dashboard/admin"
+                                : user.role === "instructor"
+                                ? "/dashboard/instructor"
+                                : "/dashboard/student"
+                            }
+                            className="flex items-center gap-2.5 px-4 py-2.5 text-[13.5px] text-gray-700 dark:text-gray-200 border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors no-underline"
+                            onClick={() => setShowMenu(false)}
+                          >
+                            <FaThLarge size={13} className="text-[#6710C2] opacity-70" />
+                            {user.role === "admin"
+                              ? "Admin Dashboard"
+                              : user.role === "instructor"
+                              ? "Instructor Dashboard"
+                              : "Student Dashboard"}
+                          </Link>
+                          {/* Settings */}
                           <Link
                             href="/dashboard/settings"
                             className="flex items-center gap-2.5 px-4 py-2.5 text-[13.5px] text-gray-700 dark:text-gray-200 border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors no-underline"
@@ -336,6 +371,7 @@ const Navbar = () => {
                           >
                             <FaThLarge size={13} className="text-[#6710C2] opacity-70" /> Settings
                           </Link>
+                          {/* Logout */}
                           <button
                             onClick={handleLogout}
                             className="flex items-center gap-2.5 w-full px-4 py-2.5 text-[13.5px] font-semibold text-[#FF0F7B] bg-transparent border-none cursor-pointer hover:bg-red-50 dark:hover:bg-red-900/10 transition-colors"
@@ -357,10 +393,8 @@ const Navbar = () => {
                 className="p-2 rounded-lg bg-gray-100 dark:bg-gray-800 hover:scale-110 transition-transform"
                 aria-label="Toggle theme"
               >
-                {mounted
-                  ? theme === "dark"
-                    ? <FaSun size={20} className="text-yellow-500" />
-                    : <FaMoon size={20} className="text-gray-600" />
+                {theme === "dark"
+                  ? <FaSun size={20} className="text-yellow-500" />
                   : <FaMoon size={20} className="text-gray-600" />
                 }
               </button>

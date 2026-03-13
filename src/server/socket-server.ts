@@ -25,6 +25,7 @@ async function connectDB() {
     serverSelectionTimeoutMS: 10000,
     socketTimeoutMS: 45000,
     family: 4, // ✅ Force IPv4
+    dbName: "learning-management", // ✅ Database name specify
   });
 
   isConnected = true;
