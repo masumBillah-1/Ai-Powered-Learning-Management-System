@@ -435,7 +435,7 @@ export default function BlogEditorPage() {
                 </div>
 
                 {/* Right Sidebar */}
-                <div className="space-y-4 lg:sticky lg:top-[76px]">
+                <div className="space-y-4 lg:sticky lg:top-[76px] mb-30">
                     {/* Cover Image */}
                     <div className="bg-base-100 rounded-2xl border border-base-300 p-4 space-y-3">
                         <p className="text-[12px] font-bold text-base-content/50 uppercase tracking-wider m-0">Cover Image</p>
