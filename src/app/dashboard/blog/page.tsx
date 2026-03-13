@@ -646,7 +646,10 @@ export default function BlogPage() {
                 <form method="dialog" className="modal-backdrop">
                     <button onClick={() => setDeleteItem(null)}>close</button>
                 </form>
+
+                
             </dialog>
+        
         </div>
     );
 }
