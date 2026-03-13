@@ -560,7 +560,7 @@ module.exports = { connectDB };
 {
   "name": "smartlms-backend",
   "version": "1.0.0",
-  "description": "SmartLMS Pro Backend API Server",
+  "description": "CareerCanvas Backend API Server",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
