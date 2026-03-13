@@ -81,10 +81,10 @@ const LoginPage = () => {
       if (!res.ok) throw new Error(data.error);
       localStorage.setItem("token", data.token);
       localStorage.setItem("user", JSON.stringify(data.user));
-      toast.success("Google login successful!");
+      toast.success("🎉 Google login successful!");
       setTimeout(() => doRedirect(data.user.role), 500);
     } catch (err: any) {
-      toast.error(err.message || "Google login failed");
+      toast.error("🚫 " + (err.message || "Google login failed"));
     } finally {
       setGoogleLoading(false);
     }
@@ -102,17 +102,24 @@ const LoginPage = () => {
       const result = await res.json();
 
       if (!res.ok) {
-        if (result.locked) { toast.error(result.error); return; }
-        if (result.error === "Invalid email or password") {
-          toast.error("Email বা Password ভুল! আবার চেষ্টা করুন।"); return;
+        if (result.locked) {
+          toast.error("🔒 " + result.error);
+          return;
         }
-        if (result.error?.includes("social login")) { toast.error(result.error); return; }
-        toast.error(result.error || "Login failed");
+        if (result.error === "Invalid email or password") {
+          toast.error("❌ Email বা Password ভুল! আবার চেষ্টা করুন।");
+          return;
+        }
+        if (result.error?.includes("social login")) {
+          toast.error("🔗 " + result.error);
+          return;
+        }
+        toast.error("❌ " + (result.error || "Login failed"));
         return;
       }
 
       if (result.requireOtp) {
-        toast.success("OTP পাঠানো হয়েছে! Email চেক করুন।");
+        toast.success("📧 OTP পাঠানো হয়েছে! Email চেক করুন।");
         setTimeout(() => {
           router.push(`/verify-otp?email=${encodeURIComponent(data.email)}&mode=login${redirectUrl ? `&redirect=${encodeURIComponent(redirectUrl)}` : ""}`);
         }, 600);
@@ -120,7 +127,7 @@ const LoginPage = () => {
       }
 
     } catch (err: any) {
-      toast.error(err.message || "Something went wrong");
+      toast.error("⚠️ " + (err.message || "Something went wrong"));
     } finally {
       setLoading(false);
     }

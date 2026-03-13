@@ -7,7 +7,7 @@ export default function BanglaTest() {
         </h1>
         
         <h2 className="text-3xl font-semibold text-gray-700 dark:text-gray-200">
-          SmartLMS Pro - স্মার্ট অনলাইন শিক্ষা প্ল্যাটফর্ম
+          CareerCanvas - স্মার্ট অনলাইন শিক্ষা প্ল্যাটফর্ম
         </h2>
         
         <p className="text-xl text-gray-600 dark:text-gray-300 max-w-3xl mx-auto leading-relaxed">

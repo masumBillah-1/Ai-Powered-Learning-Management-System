@@ -49,7 +49,7 @@ const StudentFeedbackPage = () => {
       image: "/public/image.png",
       rating: 5,
       feedback:
-        "SmartLMS Pro এর AI-পাওয়ারড লার্নিং সিস্টেম আমার ক্যারিয়ারে বিপ্লব এনেছে। প্রতিটি কোর্স ছিল অত্যন্ত ইন্টারঅ্যাক্টিভ এবং প্র্যাক্টিক্যাল। ইন্সট্রাক্টররা সবসময় সাপোর্ট দিয়েছেন।",
+        "CareerCanvas এর AI-পাওয়ারড লার্নিং সিস্টেম আমার ক্যারিয়ারে বিপ্লব এনেছে। প্রতিটি কোর্স ছিল অত্যন্ত ইন্টারঅ্যাক্টিভ এবং প্র্যাক্টিক্যাল। ইন্সট্রাক্টররা সবসময় সাপোর্ট দিয়েছেন।",
       badge: "টপ পারফরমার",
       badgeColor: "bg-orange-500",
     },
@@ -85,7 +85,7 @@ const StudentFeedbackPage = () => {
       image: "/public/image copy 3.png",
       rating: 5,
       feedback:
-        "SmartLMS Pro শুধু একটি লার্নিং প্ল্যাটফর্ম নয়, এটি একটি সম্পূর্ণ ক্যারিয়ার ট্রান্সফরমেশন জার্নি। মেন্টরশিপ এবং ক্যারিয়ার গাইডেন্স অসাধারণ ছিল।",
+        "CareerCanvas শুধু একটি লার্নিং প্ল্যাটফর্ম নয়, এটি একটি সম্পূর্ণ ক্যারিয়ার ট্রান্সফরমেশন জার্নি। মেন্টরশিপ এবং ক্যারিয়ার গাইডেন্স অসাধারণ ছিল।",
       badge: "স্টার স্টুডেন্ট",
       badgeColor: "bg-purple-500",
     },
@@ -148,7 +148,7 @@ const StudentFeedbackPage = () => {
           </h1>
 
           <p className="text-gray-600 dark:text-gray-400 text-lg md:text-xl max-w-3xl mx-auto leading-relaxed">
-            হাজারো শিক্ষার্থী SmartLMS Pro এর মাধ্যমে তাদের ক্যারিয়ার গড়েছে এবং
+            হাজারো শিক্ষার্থী CareerCanvas এর মাধ্যমে তাদের ক্যারিয়ার গড়েছে এবং
             স্বপ্নের চাকরি পেয়েছে। তাদের সাফল্যের গল্প শুনুন।
           </p>
         </motion.div>
@@ -304,7 +304,7 @@ const StudentFeedbackPage = () => {
             তুমিও হতে পারো পরবর্তী সাফল্যের গল্প
           </h2>
           <p className="text-white/90 text-lg md:text-xl mb-8 max-w-2xl mx-auto">
-            আজই যুক্ত হও SmartLMS Pro এর সাথে এবং তোমার ক্যারিয়ারকে নিয়ে যাও
+            আজই যুক্ত হও CareerCanvas এর সাথে এবং তোমার ক্যারিয়ারকে নিয়ে যাও
             নতুন উচ্চতায়
           </p>
           <button className="bg-white text-[#832388] px-10 py-4 rounded-2xl font-black text-lg hover:scale-105 transition-transform shadow-xl">

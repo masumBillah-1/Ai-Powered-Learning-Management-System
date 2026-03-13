@@ -453,7 +453,7 @@ export default function CreateCoursePage() {
                   </div>
                   <div className="space-y-3">
                     {faqFields.map((field, i) => (
-                      <div key={field.id} className="card card-compact bg-base-200 border border-base-300 relative group hover:border-purple-400/50 transition-all">
+                      <div key={field.id} className="card card-compact bg-base-200 border border-base-300 relative group hover:border-purple-400/50 transition-all py-5 text-green">
                         <div className="card-body p-4">
                           <button type="button" onClick={() => removeFaq(i)}
                             className="btn btn-xs btn-circle absolute top-3 right-3 bg-base-300/50 border-0 opacity-0 group-hover:opacity-100 hover:bg-error hover:text-white transition-all cursor-pointer">

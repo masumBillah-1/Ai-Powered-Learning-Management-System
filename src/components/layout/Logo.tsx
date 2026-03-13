@@ -10,9 +10,11 @@ const Logo = () => {
         {/* Icon */}
         <div className="relative">
           <div className="absolute -inset-1 bg-gradient-to-r from-[#FF0F7B] to-[#F89B29] rounded-2xl blur-lg opacity-40 group-hover:opacity-70 transition-all duration-500" />
-          <div className="relative text-5xl select-none group-hover:scale-110 group-hover:rotate-6 transition-transform duration-300 inline-block">
-            🎓
-          </div>
+          <img
+            src="/mortarboard.png"
+            alt="CareerCanvas Logo"
+            className="relative w-12 h-12 select-none group-hover:scale-110 group-hover:rotate-6 transition-transform duration-300"
+          />
         </div>
 
         {/* Text */}
@@ -21,10 +23,10 @@ const Logo = () => {
             <span
               className="text-2xl font-[1000] tracking-tighter transition-colors duration-300 text-gray-900 dark:text-white"
             >
-              Smartlms-
+              Career
             </span>
             <span className="text-2xl font-[1000] tracking-tighter bg-gradient-to-r from-[#FF0F7B] to-[#F89B29] bg-clip-text text-transparent">
-              Pro
+              Canvas
             </span>
           </div>
 

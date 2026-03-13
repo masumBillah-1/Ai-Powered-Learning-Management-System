@@ -1,488 +1,220 @@
 "use client";
-
-import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
-import { useState, useEffect, useRef, useCallback } from "react";
+import React, { useState } from 'react';
 import {
-  LayoutDashboard, User, BookOpen, FileText, HelpCircle, Award,
-  MessageSquare, Settings, Bell, ChevronLeft, ChevronRight,
-  Menu, X, LogOut, Users, DollarSign, BarChart2, Megaphone,
-} from "lucide-react";
-import { FaSun, FaMoon } from "react-icons/fa";
+  BookOpen, PlayCircle, CheckCircle, Star, Download,
+  ChevronRight, Heart, Clock, TrendingUp, Award, Calendar
+} from 'lucide-react';
 
-type Role = "student" | "instructor" | "admin";
-interface UserData { name: string; email: string; photoURL?: string; role: Role; }
+// ✅ theme state নেই — DashboardLayout data-theme set করে
+// CSS variables (bg-base-100, text-base-content ইত্যাদি) auto কাজ করে
 
-// ✅ 5 seconds — performance friendly
-const POLL_INTERVAL = 5_000;
+const StudentDashboard = () => {
+  const [likedCourses, setLikedCourses] = useState<number[]>([]);
 
-// ✅ Always start with "light" for SSR — real theme applied after mount
-function getInitialTheme(): "dark" | "light" {
-  return "light";
-}
+  const stats = [
+    { label: 'Enrolled Courses', value: '12', icon: BookOpen, color: '#832388', bg: 'bg-purple-100 dark:bg-purple-950/40' },
+    { label: 'Active Courses', value: '03', icon: PlayCircle, color: '#FF0F7B', bg: 'bg-pink-100   dark:bg-pink-950/40' },
+    { label: 'Completed Courses', value: '10', icon: CheckCircle, color: '#00C48C', bg: 'bg-green-100  dark:bg-green-950/40' },
+  ];
 
-const menus: Record<Role, { label: string; href: string; icon: React.ReactNode }[]> = {
-  student: [
-    { label: "Dashboard", href: "/dashboard/student", icon: <LayoutDashboard size={18} /> },
-    { label: "Profile", href: "/dashboard/profile", icon: <User size={18} /> },
-    { label: "Courses", href: "/dashboard/student/courses", icon: <BookOpen size={18} /> },
-    { label: "Assignments", href: "/dashboard/student/assignments", icon: <FileText size={18} /> },
-    { label: "Quiz", href: "/dashboard/student/quiz", icon: <HelpCircle size={18} /> },
-    { label: "Certificates", href: "/dashboard/student/certificates", icon: <Award size={18} /> },
-    { label: "Messages", href: "/dashboard/messages", icon: <MessageSquare size={18} /> },
-    { label: "Settings", href: "/dashboard/settings", icon: <Settings size={18} /> },
-  ],
-  instructor: [
-    { label: "Dashboard", href: "/dashboard/instructor", icon: <LayoutDashboard size={18} /> },
-    { label: "Profile", href: "/dashboard/profile", icon: <User size={18} /> },
-    { label: "Courses", href: "/dashboard/instructor/courses", icon: <BookOpen size={18} /> },
-    { label: "Announcements", href: "/dashboard/instructor/announcements", icon: <Megaphone size={18} /> },
-    { label: "Assignments", href: "/dashboard/instructor/assignments", icon: <FileText size={18} /> },
-    { label: "Students", href: "/dashboard/instructor/students", icon: <Users size={18} /> },
-    { label: "Quiz", href: "/dashboard/instructor/quiz", icon: <HelpCircle size={18} /> },
-    { label: "Quiz Results", href: "/dashboard/instructor/quiz-results", icon: <BarChart2 size={18} /> },
-    { label: "Earnings", href: "/dashboard/instructor/earnings", icon: <DollarSign size={18} /> },
-    { label: "Messages", href: "/dashboard/messages", icon: <MessageSquare size={18} /> },
-    { label: "Settings", href: "/dashboard/settings", icon: <Settings size={18} /> },
-  ],
-  admin: [
-    { label: "Dashboard", href: "/dashboard/admin", icon: <LayoutDashboard size={18} /> },
-    { label: "Profile", href: "/dashboard/profile", icon: <User size={18} /> },
-    { label: "Courses", href: "/dashboard/admin/courses", icon: <BookOpen size={18} /> },
-    { label: "Users", href: "/dashboard/admin/users", icon: <Users size={18} /> },
-    { label: "Announcements", href: "/dashboard/admin/announcements", icon: <Megaphone size={18} /> },
-    { label: "Earnings", href: "/dashboard/admin/earnings", icon: <DollarSign size={18} /> },
-    { label: "Messages", href: "/dashboard/messages", icon: <MessageSquare size={18} /> },
-    { label: "Settings", href: "/dashboard/settings", icon: <Settings size={18} /> },
-  ],
-};
+  const courses = [
+    { id: 1, title: 'Information About UI/UX Design Degree', instructor: 'Brenda Staton', category: 'Design', rating: '4.9', reviews: '200', price: '$120', progress: 65, img: 'https://images.unsplash.com/photo-1586717791821-3f44a563de4c?w=400&h=250&fit=crop' },
+    { id: 2, title: 'Wordpress for Beginners - Master Wordpress Quickly', instructor: 'Ana Reyes', category: 'Development', rating: '4.4', reviews: '180', price: '$140', progress: 45, img: 'https://images.unsplash.com/photo-1461742308919-0146b73e00f7?w=400&h=250&fit=crop' },
+    { id: 3, title: 'Sketch from A to Z (2024): Become an app designer', instructor: 'Andrew Pirte', category: 'Design', rating: '4.4', reviews: '180', price: '$140', progress: 30, img: 'https://images.unsplash.com/photo-1581291518633-83b4ebd1d83e?w=400&h=250&fit=crop' },
+  ];
 
-const roleDashboard: Record<Role, string> = {
-  student: "/dashboard/student",
-  instructor: "/dashboard/instructor",
-  admin: "/dashboard/admin",
-};
+  const invoices = [
+    { id: '#INV001', title: 'Build Responsive Real World Websites...', amount: '$200', date: 'Jan 15, 2024' },
+    { id: '#INV002', title: 'Wordpress for Beginners', amount: '$310', date: 'Jan 12, 2024' },
+    { id: '#INV003', title: 'Information About UI/UX Design Degree', amount: '$270', date: 'Jan 10, 2024' },
+    { id: '#INV004', title: 'Sketch from A to Z (2024)', amount: '$180', date: 'Jan 08, 2024' },
+    { id: '#INV005', title: 'Become an app designer', amount: '$220', date: 'Jan 05, 2024' },
+  ];
 
-const roleProtectedPrefixes: Record<Role, string[]> = {
-  student: ["/dashboard/student"],
-  instructor: ["/dashboard/instructor"],
-  admin: ["/dashboard/admin"],
-};
+  const quizzes = [
+    { title: 'Sketch from A to Z (2024)', score: '15/22', percentage: 68, color: '#00C48C' },
+    { title: 'Build Responsive Real World', score: '18/22', percentage: 82, color: '#832388' },
+    { title: 'UI/UX Design Degree', score: '25/30', percentage: 83, color: '#FF0F7B' },
+    { title: 'Become an app designer', score: '12/20', percentage: 60, color: '#F89B29' },
+  ];
 
-const sharedPaths = ["/dashboard/profile", "/dashboard/messages", "/dashboard/settings"];
+  const toggleLike = (id: number) =>
+    setLikedCourses(prev => prev.includes(id) ? prev.filter(c => c !== id) : [...prev, id]);
 
-function isUnauthorizedPath(path: string, userRole: Role): boolean {
-  if (sharedPaths.some(p => path.startsWith(p))) return false;
-  for (const [role, prefixes] of Object.entries(roleProtectedPrefixes) as [Role, string[]][]) {
-    if (role === userRole) continue;
-    if (prefixes.some(prefix => path.startsWith(prefix))) return true;
-  }
-  return false;
-}
-
-const roleMeta: Record<Role, { color: string; label: string }> = {
-  student: { color: "#00C48C", label: "Student" },
-  instructor: { color: "#F89B29", label: "Instructor" },
-  admin: { color: "#FF0F7B", label: "Admin" },
-};
-
-const rootHrefs = ["/dashboard/instructor", "/dashboard/student", "/dashboard/admin"];
-
-// ── Avatar ────────────────────────────────────────────────
-function Avatar({ user, sm }: { user: UserData | null; sm?: boolean }) {
-  const letter = user?.name?.charAt(0).toUpperCase() || "?";
-  const cls = sm ? "w-7 h-7" : "w-9 h-9";
-  return user?.photoURL
-    ? <img src={user.photoURL} alt="" className={`${cls} rounded-lg object-cover flex-shrink-0`} />
-    : <div className={`${cls} rounded-lg flex items-center justify-center font-bold text-sm text-white bg-gradient-to-br from-[#832388] to-[#FF0F7B] flex-shrink-0`}>{letter}</div>;
-}
-
-// ── Sidebar ───────────────────────────────────────────────
-function Sidebar({ items, collapsed, onToggle, mobileOpen, onMobileClose }: {
-  items: { label: string; href: string; icon: React.ReactNode }[];
-  collapsed: boolean; onToggle: () => void;
-  mobileOpen: boolean; onMobileClose: () => void;
-}) {
-  const pathname = usePathname();
-  const wide = !collapsed;
-
-  const NavContent = ({ forceWide = false }: { forceWide?: boolean }) => {
-    const w = forceWide || wide;
-    return (
-      <div className={`flex flex-col h-full overflow-hidden bg-gradient-to-b from-[#1a1a2e] via-[#16213e] to-[#0f3460] transition-all duration-300 ${w ? "w-60" : "w-[68px]"}`}>
-        <div className={`h-16 flex items-center flex-shrink-0 border-b border-white/[0.07] ${w ? "px-3.5 justify-between" : "justify-center"}`}>
-          <Link href="/" className="flex items-center gap-2.5 no-underline">
-            <div className="w-8 h-8 rounded-lg flex-shrink-0 flex items-center justify-center text-[15px] font-black text-white bg-gradient-to-br from-[#832388] to-[#FF0F7B]">S</div>
-            {w && <span className="text-[15px] font-black text-white whitespace-nowrap tracking-tight">SmartLMS<span className="text-[#FF0F7B]">Pro</span></span>}
-          </Link>
-          {!forceWide ? (
-            <button onClick={onToggle} className="w-7 h-7 rounded-md flex items-center justify-center bg-white/[0.08] text-white/55 hover:bg-white/15 transition-colors border-0 cursor-pointer flex-shrink-0">
-              {w ? <ChevronLeft size={15} /> : <ChevronRight size={15} />}
-            </button>
-          ) : (
-            <button onClick={onMobileClose} className="w-7 h-7 rounded-md flex items-center justify-center bg-white/[0.08] text-white/60 hover:bg-white/15 border-0 cursor-pointer flex-shrink-0">
-              <X size={15} />
-            </button>
-          )}
-        </div>
-
-        <nav className="flex-1 overflow-y-auto py-1.5 [scrollbar-width:none]">
-          {items.map(item => {
-            const active = pathname === item.href || (!rootHrefs.includes(item.href) && pathname.startsWith(item.href));
-            return (
-              <Link key={item.href} href={item.href} title={!w ? item.label : undefined}
-                className={`relative flex items-center mx-2 my-0.5 rounded-lg no-underline transition-colors duration-150
-                  ${w ? "gap-3 px-3.5 py-2.5 justify-start" : "justify-center py-3"}
-                  ${active ? "bg-gradient-to-r from-[#83238888] to-[#FF0F7B44] text-white" : "text-white/50 hover:text-white/80 hover:bg-white/[0.05]"}`}>
-                {active && <span className="absolute left-0 top-[18%] h-[64%] w-[3px] rounded-r-sm bg-gradient-to-b from-[#832388] to-[#FF0F7B]" />}
-                <span className={active ? "text-white" : "text-white/40"}>{item.icon}</span>
-                {w && <span className={`text-[13.5px] whitespace-nowrap ${active ? "font-semibold" : "font-normal"}`}>{item.label}</span>}
-              </Link>
-            );
-          })}
-        </nav>
-        {w && <div className="px-3.5 py-3 border-t border-white/[0.07] text-[11px] text-white/20 flex-shrink-0">SmartLMS Pro v2.0</div>}
-      </div>
-    );
-  };
+  const getProgressColor = (p: number) => p >= 80 ? '#00C48C' : p >= 50 ? '#F89B29' : '#FF0F7B';
 
   return (
-    <>
-      <aside className={`fixed top-0 left-0 bottom-0 z-60 overflow-hidden transition-all duration-300 hidden md:block ${collapsed ? "w-[68px]" : "w-60"}`}>
-        <NavContent />
-      </aside>
-      {mobileOpen && (
-        <>
-          <div onClick={onMobileClose} className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[100] md:hidden" />
-          <aside className="fixed top-0 left-0 bottom-0 z-[101] shadow-2xl md:hidden">
-            <NavContent forceWide />
-          </aside>
-        </>
-      )}
-    </>
-  );
-}
+    <div className="min-h-screen space-y-6">
 
-// ── TopNavbar ─────────────────────────────────────────────
-function TopNavbar({ role, items, theme, toggleTheme, user, onLogout, onMobileMenu, collapsed, unreadCount }: {
-  role: Role;
-  items: { label: string; href: string; icon: React.ReactNode }[];
-  theme: "dark" | "light"; toggleTheme: () => void;
-  user: UserData | null; onLogout: () => void;
-  onMobileMenu: () => void; collapsed: boolean;
-  unreadCount: number;
-}) {
-  const pathname = usePathname();
-  const [showUser, setShowUser] = useState(false);
-  const [showNotif, setShowNotif] = useState(false);
-  const [notifications, setNotifications] = useState<any[]>([]);
-  const userRef = useRef<HTMLDivElement>(null);
-  const notifRef = useRef<HTMLDivElement>(null);
-  const rm = roleMeta[role];
-
-  const currentPage = items.find(i =>
-    i.href === pathname || (!rootHrefs.includes(i.href) && pathname.startsWith(i.href))
-  )?.label || "Dashboard";
-
-  const handleNotifOpen = async () => {
-    setShowNotif(v => !v);
-    setShowUser(false);
-    if (notifications.length === 0) {
-      try {
-        const token = localStorage.getItem("token");
-        const res = await fetch("/api/notifications", { headers: { Authorization: `Bearer ${token}` } });
-        const data = await res.json();
-        if (data.notifications) setNotifications(data.notifications);
-      } catch { }
-    }
-  };
-
-  useEffect(() => {
-    const h = (e: MouseEvent) => {
-      if (userRef.current && !userRef.current.contains(e.target as Node)) setShowUser(false);
-      if (notifRef.current && !notifRef.current.contains(e.target as Node)) setShowNotif(false);
-    };
-    document.addEventListener("mousedown", h);
-    return () => document.removeEventListener("mousedown", h);
-  }, []);
-
-  return (
-    <header className={`fixed top-0 right-0 h-16 z-50 flex items-center justify-between px-4 bg-base-100 border-b border-base-300 shadow-sm transition-all duration-300 max-md:left-0 ${collapsed ? "md:left-[68px]" : "md:left-60"}`}>
-      <div className="flex items-center gap-2">
-        <button onClick={onMobileMenu} className="btn btn-ghost btn-sm btn-square cursor-pointer md:hidden">
-          <Menu size={20} />
-        </button>
-        <div>
-          <p className="m-0 text-[17px] font-bold text-base-content leading-tight">{currentPage}</p>
-          <p className="m-0 text-[11px] text-base-content/40 leading-none capitalize">{role} Dashboard</p>
-        </div>
-      </div>
-
-      <div className="flex items-center gap-1 flex-shrink-0">
-        {/* Theme toggle */}
-        <button onClick={toggleTheme} className="btn btn-ghost btn-sm btn-square cursor-pointer"
-          style={{ color: theme === "dark" ? "#facc15" : "#6b7280" }}>
-          {theme === "dark" ? <FaSun size={16} /> : <FaMoon size={16} />}
-        </button>
-
-        {/* Bell */}
-        <div ref={notifRef} className="relative">
-          <button onClick={handleNotifOpen} className="btn btn-ghost btn-sm btn-square cursor-pointer relative">
-            <Bell size={18} />
-            {unreadCount > 0 && (
-              <span className="absolute top-1 right-1 w-3.5 h-3.5 rounded-full text-white font-bold flex items-center justify-center text-[9px] bg-[#FF0F7B]">
-                {unreadCount > 9 ? "9+" : unreadCount}
-              </span>
-            )}
-          </button>
-          {showNotif && (
-            <div className="absolute right-0 top-[calc(100%+6px)] w-72 bg-base-100 border border-base-300 rounded-xl shadow-2xl z-[200] overflow-hidden">
-              <div className="flex items-center justify-between px-4 py-3 border-b border-base-300">
-                <span className="text-sm font-bold text-base-content">Notifications</span>
-                <span className="text-xs font-semibold cursor-pointer text-[#832388]">Mark all read</span>
+      {/* Quiz Banner */}
+      <div className="card bg-base-100 shadow-lg border border-base-300 overflow-hidden">
+        <div className="card-body p-6">
+          <div className="flex flex-col lg:flex-row gap-4 items-start lg:items-center justify-between">
+            <div className="flex-1 w-full">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-12 h-12 rounded-xl flex items-center justify-center bg-purple-100 dark:bg-purple-950/40">
+                  <Award className="w-6 h-6" style={{ color: '#832388' }} />
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold">Quiz: Build Responsive Real World</h3>
+                  <p className="text-sm opacity-60">Answered: 15/22</p>
+                </div>
               </div>
-              {notifications.length === 0 ? (
-                <div className="px-4 py-6 text-center text-sm text-base-content/40">কোনো notification নেই</div>
-              ) : notifications.slice(0, 5).map((n, i) => (
-                <div key={i} className={`flex gap-3 px-4 py-3 border-b border-base-300 cursor-pointer items-start hover:bg-base-200 transition-colors ${!n.isRead ? "bg-base-200/50" : ""}`}>
-                  <div className={`w-2 h-2 rounded-full flex-shrink-0 mt-1.5 ${n.isRead ? "bg-base-content/20" : "bg-[#FF0F7B]"}`} />
-                  <div>
-                    <p className={`text-[13px] leading-snug m-0 ${n.isRead ? "text-base-content/60" : "text-base-content font-semibold"}`}>{n.title}</p>
-                    <p className="text-[11px] text-base-content/40 mt-0.5 m-0">{n.message}</p>
+              <div className="w-full bg-base-300 rounded-full h-2.5 overflow-hidden">
+                <div className="h-full rounded-full transition-all duration-500"
+                  style={{ width: '68%', background: 'linear-gradient(90deg, #832388, #E3436B)' }} />
+              </div>
+            </div>
+            <button className="btn btn-md px-6 border-0 text-white whitespace-nowrap hover:opacity-90 transition-opacity"
+              style={{ background: '#832388' }}>
+              Continue Quiz
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Stats */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+        {stats.map((s, i) => (
+          <div key={i} className="card bg-base-100 shadow-lg border border-base-300 hover:shadow-xl transition-all duration-300">
+            <div className="card-body p-6">
+              <div className="flex items-start justify-between">
+                <div className="flex-1">
+                  <p className="text-xs font-bold uppercase tracking-wider mb-2 opacity-60">{s.label}</p>
+                  <h2 className="text-4xl font-bold mb-2">{s.value}</h2>
+                  <div className="flex items-center gap-1.5 text-xs opacity-60">
+                    <TrendingUp className="w-3.5 h-3.5" />
+                    <span className="font-semibold">+12% from last month</span>
+                  </div>
+                </div>
+                <div className={`w-14 h-14 rounded-xl flex items-center justify-center ${s.bg}`}>
+                  <s.icon className="w-7 h-7" style={{ color: s.color }} />
+                </div>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Courses */}
+      <section>
+        <div className="flex justify-between items-center mb-6">
+          <h2 className="text-2xl font-bold">Recently Enrolled Courses</h2>
+          <button className="btn btn-ghost btn-sm gap-1.5 hover:bg-transparent font-semibold" style={{ color: '#832388' }}>
+            View All <ChevronRight className="w-4 h-4" />
+          </button>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {courses.map((course) => (
+            <div key={course.id} className="card bg-base-100 shadow-lg border border-base-300 hover:shadow-2xl transition-all duration-300 group overflow-hidden">
+              <figure className="relative overflow-hidden h-48">
+                <img src={course.img} alt={course.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
+                <button onClick={() => toggleLike(course.id)}
+                  className="absolute top-3 right-3 w-9 h-9 rounded-full flex items-center justify-center backdrop-blur-md border-0 bg-white/95 hover:scale-110 transition-transform">
+                  <Heart className={`w-4 h-4 transition-all ${likedCourses.includes(course.id) ? 'fill-[#FF0F7B] text-[#FF0F7B]' : 'text-gray-400'}`} />
+                </button>
+                <div className="absolute top-3 left-3 px-3 py-1.5 rounded-full text-xs font-bold bg-white/95" style={{ color: '#832388' }}>
+                  {course.category}
+                </div>
+              </figure>
+              <div className="card-body p-5">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-1.5">
+                    <Star className="w-4 h-4 fill-[#FDE047] text-[#FDE047]" />
+                    <span className="text-sm font-bold">{course.rating}</span>
+                    <span className="text-xs opacity-60">({course.reviews})</span>
+                  </div>
+                  <div className="flex items-center gap-1 text-xs opacity-60">
+                    <Clock className="w-3.5 h-3.5" />
+                    <span className="font-semibold">12h 30m</span>
+                  </div>
+                </div>
+                <h3 className="text-base font-bold leading-snug mb-3 line-clamp-2 group-hover:text-[#832388] transition-colors">{course.title}</h3>
+                <p className="text-sm opacity-60 mb-4 font-medium">by {course.instructor}</p>
+                <div className="mb-4">
+                  <div className="flex justify-between items-center mb-2">
+                    <span className="text-xs font-bold opacity-60">Progress</span>
+                    <span className="text-xs font-bold">{course.progress}%</span>
+                  </div>
+                  <div className="w-full bg-base-300 rounded-full h-2 overflow-hidden">
+                    <div className="h-full rounded-full transition-all duration-500"
+                      style={{ width: `${course.progress}%`, backgroundColor: getProgressColor(course.progress) }} />
+                  </div>
+                </div>
+                <div className="flex items-center justify-between pt-4 border-t border-base-300">
+                  <span className="text-2xl font-bold" style={{ color: '#832388' }}>{course.price}</span>
+                  <button className="btn btn-sm px-4 text-white border-0 gap-1.5 hover:opacity-90" style={{ backgroundColor: '#1a1a1a' }}>
+                    Continue <ChevronRight className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* Invoices & Quizzes */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="card bg-base-100 shadow-lg border border-base-300">
+          <div className="card-body p-6">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="w-1.5 h-7 rounded-full" style={{ backgroundColor: '#FF0F7B' }} />
+              <h2 className="text-xl font-bold">Recent Invoices</h2>
+            </div>
+            <div className="space-y-3">
+              {invoices.map((inv, i) => (
+                <div key={i} className="flex items-center justify-between p-4 rounded-xl hover:bg-base-200 transition-all duration-200 border border-transparent hover:border-base-300 cursor-pointer">
+                  <div className="flex-1 min-w-0">
+                    <h4 className="text-sm font-bold truncate mb-1.5">{inv.title}</h4>
+                    <div className="flex items-center gap-3 text-xs opacity-70">
+                      <span className="font-bold" style={{ color: '#832388' }}>{inv.id}</span>
+                      <span>•</span>
+                      <span className="flex items-center gap-1.5 font-semibold"><Calendar className="w-3 h-3" />{inv.date}</span>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-4 ml-4">
+                    <span className="text-base font-bold">{inv.amount}</span>
+                    <div className="flex items-center gap-2">
+                      <span className="px-3 py-1 rounded-lg text-xs font-bold bg-green-100 dark:bg-green-950/40 text-[#00C48C]">PAID</span>
+                      <button className="btn btn-ghost btn-xs hover:bg-transparent hover:opacity-70">
+                        <Download className="w-4 h-4" style={{ color: '#832388' }} />
+                      </button>
+                    </div>
                   </div>
                 </div>
               ))}
-              <div className="py-2.5 text-center">
-                <Link href="/dashboard/settings" className="text-xs font-semibold text-[#832388]">View all →</Link>
-              </div>
             </div>
-          )}
+          </div>
         </div>
 
-        <div className="w-px h-6 bg-base-300 mx-1" />
-
-        {/* User menu */}
-        <div ref={userRef} className="relative">
-          <button onClick={() => { setShowUser(v => !v); setShowNotif(false); }}
-            className="btn btn-ghost btn-sm h-auto py-1.5 px-2 rounded-xl cursor-pointer flex items-center gap-2">
-            <Avatar user={user} sm />
-            <div className="text-left hidden sm:block">
-              <p className="m-0 text-[13px] font-semibold text-base-content leading-tight max-w-[80px] truncate">{user?.name?.split(" ")[0] || "User"}</p>
-              <p className="m-0 text-[10px] font-bold uppercase tracking-wide" style={{ color: rm.color }}>{role}</p>
+        <div className="card bg-base-100 shadow-lg border border-base-300">
+          <div className="card-body p-6">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="w-1.5 h-7 rounded-full" style={{ backgroundColor: '#F89B29' }} />
+              <h2 className="text-xl font-bold">Latest Quizzes</h2>
             </div>
-            <ChevronRight size={11} className="opacity-40 rotate-90 hidden sm:block" />
-          </button>
-
-          {showUser && (
-            <div className="absolute right-0 top-[calc(100%+6px)] w-56 bg-base-100 border border-base-300 rounded-xl shadow-2xl z-[200] overflow-hidden">
-              <div className="flex items-center gap-2.5 px-4 py-3.5 border-b border-base-300">
-                <Avatar user={user} />
-                <div className="min-w-0">
-                  <p className="m-0 text-sm font-bold text-base-content truncate">{user?.name || "User"}</p>
-                  <p className="m-0 text-[11px] text-base-content/40 truncate">{user?.email}</p>
+            <div className="space-y-4">
+              {quizzes.map((quiz, i) => (
+                <div key={i} className="flex items-center justify-between p-4 rounded-xl border border-base-300 hover:border-base-content/30 hover:shadow-md transition-all duration-200 cursor-pointer">
+                  <div className="flex-1">
+                    <h4 className="text-sm font-bold mb-1.5">{quiz.title}</h4>
+                    <p className="text-xs opacity-60 font-semibold">Correct: {quiz.score}</p>
+                  </div>
+                  <div className="relative ml-4">
+                    <div className="radial-progress font-bold"
+                      style={{ "--value": quiz.percentage, "--size": "4rem", "--thickness": "5px", color: quiz.color } as React.CSSProperties}
+                      role="progressbar">
+                      <span className="text-sm">{quiz.percentage}%</span>
+                    </div>
+                  </div>
                 </div>
-              </div>
-              <div className="px-4 py-2.5 border-b border-base-300">
-                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-bold uppercase tracking-wide"
-                  style={{ color: rm.color, background: `${rm.color}22`, border: `1px solid ${rm.color}33` }}>
-                  <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ background: rm.color }} />
-                  {rm.label}
-                </span>
-              </div>
-              <Link href="/dashboard/profile" onClick={() => setShowUser(false)}
-                className="flex items-center gap-2.5 px-4 py-2.5 text-[13.5px] text-base-content border-b border-base-300 hover:bg-base-200 transition-colors no-underline">
-                <User size={14} className="opacity-50" /> My Profile
-              </Link>
-              <Link href="/dashboard/settings" onClick={() => setShowUser(false)}
-                className="flex items-center gap-2.5 px-4 py-2.5 text-[13.5px] text-base-content border-b border-base-300 hover:bg-base-200 transition-colors no-underline">
-                <Settings size={14} className="opacity-50" /> Settings
-              </Link>
-              <button onClick={() => { setShowUser(false); onLogout(); }}
-                className="flex items-center gap-2.5 w-full px-4 py-2.5 text-[13.5px] font-semibold bg-transparent border-none cursor-pointer hover:bg-base-200 transition-colors text-[#FF0F7B]">
-                <LogOut size={14} /> Logout
-              </button>
+              ))}
             </div>
-          )}
+          </div>
         </div>
       </div>
-    </header>
-  );
-}
-
-// ── PageLoader ────────────────────────────────────────────
-function PageLoader({ children }: { children: React.ReactNode }) {
-  const [loading, setLoading] = useState(true);
-  const pathname = usePathname();
-  useEffect(() => {
-    setLoading(true);
-    const t = setTimeout(() => setLoading(false), 350);
-    return () => clearTimeout(t);
-  }, [pathname]);
-
-  if (loading) return (
-    <div className="flex flex-col items-center justify-center min-h-[400px] gap-4">
-      <span className="loading loading-spinner loading-lg text-[#832388]" />
-      <p className="text-sm text-base-content/40 font-medium m-0">Loading...</p>
     </div>
   );
-  return <>{children}</>;
-}
+};
 
-// ── Root Layout ───────────────────────────────────────────
-export default function DashboardLayout({ children }: { children: React.ReactNode }) {
-  const router = useRouter();
-  const pathname = usePathname();
-
-  // ✅ Read theme immediately from localStorage — no flash
-  const [theme, setTheme] = useState<"dark" | "light">(getInitialTheme);
-  const [role, setRole] = useState<Role>("student");
-  const [user, setUser] = useState<UserData | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [collapsed, setCollapsed] = useState(false);
-  const [mobileOpen, setMobileOpen] = useState(false);
-  const [unreadCount, setUnreadCount] = useState(0);
-
-  const currentRoleRef = useRef<Role>("student");
-
-  // ✅ Load real theme from localStorage AFTER mount — fixes SSR hydration mismatch
-  useEffect(() => {
-    const saved = (localStorage.getItem("theme") as "dark" | "light") || "light";
-    setTheme(saved);
-    document.documentElement.setAttribute("data-theme", saved);
-  }, []);
-
-  // Apply theme changes to <html>
-  useEffect(() => {
-    document.documentElement.setAttribute("data-theme", theme);
-  }, [theme]);
-
-  // ── Fetch user from DB ────────────────────────────────
-  const fetchUser = useCallback(async (isInitial = false) => {
-    const token = localStorage.getItem("token");
-    if (!token) { router.replace("/login"); return; }
-
-    try {
-      const res = await fetch("/api/dashboard", { headers: { Authorization: `Bearer ${token}` } });
-      const data = await res.json();
-
-      if (!data.user) {
-        localStorage.removeItem("user");
-        localStorage.removeItem("token");
-        router.replace("/login");
-        return;
-      }
-
-      const freshUser: UserData = data.user;
-      const newRole = (["student", "instructor", "admin"].includes(freshUser.role)
-        ? freshUser.role : "student") as Role;
-
-      localStorage.setItem("user", JSON.stringify(freshUser));
-
-      // Silent role change detection
-      if (!isInitial && newRole !== currentRoleRef.current) {
-        currentRoleRef.current = newRole;
-        setUser(freshUser);
-        setRole(newRole);
-        router.replace(roleDashboard[newRole]);
-        return;
-      }
-
-      currentRoleRef.current = newRole;
-      setUser(freshUser);
-      setRole(newRole);
-      setUnreadCount(data.unreadNotifications || 0);
-
-      if (isInitial) {
-        setIsLoading(false);
-        if (isUnauthorizedPath(pathname, newRole)) {
-          router.replace(roleDashboard[newRole]);
-        }
-      }
-    } catch {
-      if (isInitial) {
-        const raw = localStorage.getItem("user");
-        if (raw) {
-          try {
-            const parsed: UserData = JSON.parse(raw);
-            const fallbackRole = (["student", "instructor", "admin"].includes(parsed.role)
-              ? parsed.role : "student") as Role;
-            currentRoleRef.current = fallbackRole;
-            setUser(parsed);
-            setRole(fallbackRole);
-            setIsLoading(false);
-            if (isUnauthorizedPath(pathname, fallbackRole)) {
-              router.replace(roleDashboard[fallbackRole]);
-            }
-          } catch { router.replace("/login"); }
-        } else {
-          router.replace("/login");
-        }
-      }
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  useEffect(() => { fetchUser(true); }, [fetchUser]);
-
-  // ✅ Poll every 30s — not every 3s
-  useEffect(() => {
-    const interval = setInterval(() => {
-      if (!isLoading) fetchUser(false);
-    }, POLL_INTERVAL);
-    return () => clearInterval(interval);
-  }, [isLoading, fetchUser]);
-
-  // URL guard on navigation
-  useEffect(() => {
-    if (isLoading) return;
-    if (isUnauthorizedPath(pathname, role)) {
-      router.replace(roleDashboard[role]);
-    }
-  }, [pathname, role, isLoading, router]);
-
-  const toggleTheme = () => {
-    const next = theme === "light" ? "dark" : "light";
-    setTheme(next);
-    localStorage.setItem("theme", next);
-  };
-
-  const handleLogout = async () => {
-    await fetch("/api/auth/logout", { method: "POST" });
-    localStorage.removeItem("user");
-    localStorage.removeItem("token");
-    router.replace("/login");
-  };
-
-  if (isLoading) return (
-    <div className="flex items-center justify-center h-screen bg-base-200" data-theme={theme} suppressHydrationWarning>
-      <span className="loading loading-spinner loading-lg text-[#832388]" />
-    </div>
-  );
-
-  const items = menus[role];
-
-  return (
-    <div className="bg-base-200 min-h-screen" data-theme={theme} suppressHydrationWarning>
-      <Sidebar
-        items={items}
-        collapsed={collapsed}
-        onToggle={() => setCollapsed(v => !v)}
-        mobileOpen={mobileOpen}
-        onMobileClose={() => setMobileOpen(false)}
-      />
-      <TopNavbar
-        role={role} items={items}
-        theme={theme} toggleTheme={toggleTheme}
-        user={user} onLogout={handleLogout}
-        onMobileMenu={() => setMobileOpen(true)}
-        collapsed={collapsed}
-        unreadCount={unreadCount}
-      />
-      <main className={`bg-base-200 min-h-screen pt-16 transition-all duration-300 ${collapsed ? "md:pl-[68px]" : "md:pl-60"}`}>
-        <div className="p-6">
-          <PageLoader>{children}</PageLoader>
-        </div>
-      </main>
-    </div>
-  );
-}
+export default StudentDashboard;
