@@ -7,12 +7,24 @@ import jwt from "jsonwebtoken";
 import Stripe from "stripe";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY as string, {
-  apiVersion: "2024-12-18.acacia",
+  apiVersion: "2026-02-25.clover",
 });
 
+// ✅ Cookie OR Authorization header — দুটো থেকেই token নাও
 function getDecoded(req: NextRequest) {
-  const token = req.cookies.get("token")?.value;
+  // 1. Cookie থেকে চেষ্টা করো (social login)
+  let token = req.cookies.get("token")?.value;
+
+  // 2. Authorization header থেকে চেষ্টা করো (email/password login)
+  if (!token) {
+    const authHeader = req.headers.get("authorization");
+    if (authHeader?.startsWith("Bearer ")) {
+      token = authHeader.slice(7);
+    }
+  }
+
   if (!token) return null;
+
   try {
     return jwt.verify(token, process.env.JWT_SECRET as string) as {
       userId: string;
@@ -23,7 +35,7 @@ function getDecoded(req: NextRequest) {
   }
 }
 
-// ─── POST — PaymentIntent──────────────────────────────────────────
+// ─── POST — PaymentIntent ──────────────────────────────────────────────────
 export async function POST(req: NextRequest) {
   try {
     await connectDB();
@@ -40,7 +52,6 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Valid courseId required" }, { status: 400 });
     }
 
-    // Course খোঁজো
     const course = await Course.findById(courseId)
       .populate("instructorId", "name")
       .lean() as any;
@@ -71,25 +82,21 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: true, free: true });
     }
 
-   
     const alreadyEnrolled = await Enrollment.findOne({ studentId: decoded.userId, courseId });
     if (alreadyEnrolled) {
       return NextResponse.json({ error: "Already enrolled in this course" }, { status: 409 });
     }
 
-    // Price calculate
     const priceInBDT = course.pricing?.discountPrice || course.pricing?.price || 0;
     if (priceInBDT <= 0) {
       return NextResponse.json({ error: "Invalid course price" }, { status: 400 });
     }
 
-    // BDT → USD convert (1 USD ≈ 110 BDT)
-    const priceInUSD   = parseFloat((priceInBDT / 110).toFixed(2));
+    const priceInUSD    = parseFloat((priceInBDT / 110).toFixed(2));
     const amountInCents = Math.max(Math.round(priceInUSD * 100), 50);
     const platformFee   = Math.round(priceInBDT * 0.3);
     const netAmount     = priceInBDT - platformFee;
 
-    // Stripe PaymentIntent 
     const paymentIntent = await stripe.paymentIntents.create({
       amount:   amountInCents,
       currency: "usd",
@@ -101,7 +108,6 @@ export async function POST(req: NextRequest) {
       automatic_payment_methods: { enabled: true },
     });
 
-    // Transaction DB তে save (pending)
     const transaction = await Transaction.create({
       type:           "payment",
       amount:         priceInBDT,
@@ -132,7 +138,7 @@ export async function POST(req: NextRequest) {
   }
 }
 
-// ─── GET — Payment verify ────────────────────────────────────────────────
+// ─── GET — Payment verify ──────────────────────────────────────────────────
 export async function GET(req: NextRequest) {
   try {
     await connectDB();
@@ -150,20 +156,17 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: "payment_intent and courseId required" }, { status: 400 });
     }
 
-  
     const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
 
     if (paymentIntent.status !== "succeeded") {
       return NextResponse.json({ success: false, status: paymentIntent.status });
     }
 
-    // Transaction completed mark 
     await Transaction.findOneAndUpdate(
       { paymentId: paymentIntentId },
       { status: "completed", processedAt: new Date() }
     );
 
-    // Enrollment  (duplicate safe)
     const alreadyEnrolled = await Enrollment.findOne({ studentId: decoded.userId, courseId });
     if (!alreadyEnrolled) {
       const course = await Course.findById(courseId).populate("instructorId", "name").lean() as any;

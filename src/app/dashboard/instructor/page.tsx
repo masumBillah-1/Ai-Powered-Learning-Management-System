@@ -1,7 +1,10 @@
 "use client";
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { Users, BookOpen, CheckCircle, GraduationCap, Layers, DollarSign } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+
+// ✅ theme state ও interval সম্পূর্ণ বাদ — DashboardLayout handle করে
+// dark mode: Tailwind dark: class + DaisyUI data-theme দিয়ে auto কাজ করে
 
 const chartData = [
   { name: 'Jan', v: 45 }, { name: 'Feb', v: 52 }, { name: 'Mar', v: 48 },
@@ -44,46 +47,28 @@ const CourseRow = ({ title, enrolled, status, price }: {
     <td className="px-6 py-4 text-center text-sm opacity-50 font-semibold">{enrolled}</td>
     <td className="px-6 py-4 text-center text-sm font-black" style={{ color: '#00C48C' }}>{price}</td>
     <td className="px-6 py-4 text-right">
-      <span className={`text-[10px] font-black uppercase tracking-widest px-2.5 py-1 rounded-full ${
-        status === 'Live' ? 'bg-success/10 text-success' : 'bg-warning/10 text-warning'
-      }`}>{status}</span>
+      <span className={`text-[10px] font-black uppercase tracking-widest px-2.5 py-1 rounded-full ${status === 'Live' ? 'bg-success/10 text-success' : 'bg-warning/10 text-warning'
+        }`}>{status}</span>
     </td>
   </tr>
 );
 
 export default function Indashboard() {
-  const [theme, setTheme] = useState("light");
-
-  useEffect(() => {
-    const t = localStorage.getItem("theme") || "light";
-    setTheme(t);
-    document.documentElement.setAttribute("data-theme", t);
-    const iv = setInterval(() => {
-      const cur = localStorage.getItem("theme") || "light";
-      if (cur !== theme) { setTheme(cur); document.documentElement.setAttribute("data-theme", cur); }
-    }, 100);
-    return () => clearInterval(iv);
-  }, [theme]);
-
-  const isDark = theme === "dark";
-
   return (
     <div className="min-h-screen space-y-5">
 
       {/* Stats */}
       <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
-        <StatCard icon={<GraduationCap />} label="Students"   value="1,248"      color="purple" trend="+12%" />
-        <StatCard icon={<BookOpen />}      label="Courses"    value="08"          color="pink"   trend="Stable" />
-        <StatCard icon={<CheckCircle />}   label="Completion" value="86%"         color="green"  trend="+5%" />
-        <StatCard icon={<Users />}         label="Followers"  value="542"         color="indigo" trend="+18%" />
-        <StatCard icon={<Layers />}        label="Lessons"    value="156"         color="cyan"   trend="+24" />
-        <StatCard icon={<DollarSign />}    label="Earnings"   value="৳1,12,486"  color="orange" trend="+15%" />
+        <StatCard icon={<GraduationCap />} label="Students" value="1,248" color="purple" trend="+12%" />
+        <StatCard icon={<BookOpen />} label="Courses" value="08" color="pink" trend="Stable" />
+        <StatCard icon={<CheckCircle />} label="Completion" value="86%" color="green" trend="+5%" />
+        <StatCard icon={<Users />} label="Followers" value="542" color="indigo" trend="+18%" />
+        <StatCard icon={<Layers />} label="Lessons" value="156" color="cyan" trend="+24" />
+        <StatCard icon={<DollarSign />} label="Earnings" value="৳1,12,486" color="orange" trend="+15%" />
       </div>
 
       {/* Chart + Recent */}
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-5">
-
-        {/* Chart */}
         <div className="xl:col-span-2 bg-base-100 border border-base-300 rounded-2xl p-6">
           <div className="flex justify-between items-center mb-5">
             <div>
@@ -103,18 +88,20 @@ export default function Indashboard() {
                     <stop offset="100%" stopColor="#FF0F7B" stopOpacity={0.7} />
                   </linearGradient>
                 </defs>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={isDark ? "#2a2a2a" : "#f0f0f0"} />
-                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: isDark ? "#555" : "#aaa" }} dy={6} />
-                <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: isDark ? "#555" : "#aaa" }} />
-                <Tooltip cursor={{ fill: isDark ? "#1a1a1a" : "#f8f8f8" }}
-                  contentStyle={{ borderRadius: 12, border: "none", backgroundColor: isDark ? "#1a1a1a" : "#fff", boxShadow: "0 8px 24px rgba(0,0,0,0.1)", fontSize: 12 }} />
+                {/* ✅ CSS variable দিয়ে grid color — dark/light auto */}
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="oklch(var(--b3))" />
+                <XAxis dataKey="name" axisLine={false} tickLine={false}
+                  tick={{ fontSize: 10, fill: "oklch(var(--bc) / 0.4)" }} dy={6} />
+                <YAxis axisLine={false} tickLine={false}
+                  tick={{ fontSize: 10, fill: "oklch(var(--bc) / 0.4)" }} />
+                <Tooltip cursor={{ fill: "oklch(var(--b2))" }}
+                  contentStyle={{ borderRadius: 12, border: "none", backgroundColor: "oklch(var(--b1))", boxShadow: "0 8px 24px rgba(0,0,0,0.1)", fontSize: 12 }} />
                 <Bar dataKey="v" fill="url(#bg)" radius={[6, 6, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>
         </div>
 
-        {/* Recent Enrolled */}
         <div className="bg-base-100 border border-base-300 rounded-2xl p-5">
           <p className="font-black text-sm mb-4">Recent Enrolled</p>
           <div className="space-y-0">
@@ -159,9 +146,9 @@ export default function Indashboard() {
               </tr>
             </thead>
             <tbody>
-              <CourseRow title="Next.js 14 Ultimate Guide" enrolled="420" status="Live"  price="৳7,800" />
-              <CourseRow title="UI/UX Mastery with Figma"  enrolled="128" status="Live"  price="৳3,950" />
-              <CourseRow title="Backend with Node.js"      enrolled="85"  status="Draft" price="৳4,800" />
+              <CourseRow title="Next.js 14 Ultimate Guide" enrolled="420" status="Live" price="৳7,800" />
+              <CourseRow title="UI/UX Mastery with Figma" enrolled="128" status="Live" price="৳3,950" />
+              <CourseRow title="Backend with Node.js" enrolled="85" status="Draft" price="৳4,800" />
             </tbody>
           </table>
         </div>

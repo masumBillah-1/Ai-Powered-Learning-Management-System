@@ -2,10 +2,6 @@ import { createServer } from "http";
 import { Server } from "socket.io";
 import mongoose from "mongoose";
 import dns from "dns";
-import * as dotenv from "dotenv";
-
-// Load .env.local
-dotenv.config({ path: ".env.local" });
 
 // ✅ Force IPv4 — connect.ts এর মতোই
 dns.setDefaultResultOrder("ipv4first");
@@ -29,6 +25,7 @@ async function connectDB() {
     serverSelectionTimeoutMS: 10000,
     socketTimeoutMS: 45000,
     family: 4, // ✅ Force IPv4
+    dbName: "learning-management", // ✅ Database name specify
   });
 
   isConnected = true;

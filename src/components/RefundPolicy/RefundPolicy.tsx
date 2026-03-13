@@ -47,7 +47,7 @@ const RefundPolicy = () => {
             Refund Policy
           </h1>
           <p className="text-gray-500 dark:text-gray-400 max-w-lg mx-auto">
-            We want you to love learning on SmartLMS Pro. If a course is not the
+            We want you to love learning on CareerCanvas. If a course is not the
             right fit, here is how we handle returns.
           </p>
         </motion.div>

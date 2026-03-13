@@ -58,7 +58,7 @@ export async function POST(req: NextRequest) {
 
     // ✅ OTP email পাঠাও (background এ, await করবো না)
     transporter.sendMail({
-      from: `"Smartlms Pro" <${process.env.GMAIL_USER}>`,
+      from: `"CareerCanvas" <${process.env.GMAIL_USER}>`,
       to: email,
       subject: "🔐 Your Login Verification Code",
       html: `
@@ -78,7 +78,7 @@ export async function POST(req: NextRequest) {
                   <tr>
                     <td style="background:linear-gradient(135deg,#832388 0%,#E3436B 50%,#F0772F 100%);padding:30px 20px;text-align:center">
                       <h1 style="margin:0;color:#ffffff;font-size:28px;font-weight:700;letter-spacing:-0.5px">
-                        Smartlms Pro
+                        CareerCanvas
                       </h1>
                       <p style="margin:8px 0 0;color:rgba(255,255,255,0.9);font-size:14px;font-weight:500">
                         Learning Management System
@@ -130,7 +130,7 @@ export async function POST(req: NextRequest) {
                   <tr>
                     <td style="background:#f9fafb;padding:25px 30px;text-align:center;border-top:1px solid #e5e7eb">
                       <p style="margin:0 0 8px;color:#6b7280;font-size:13px">
-                        © 2025 Smartlms Pro. All rights reserved.
+                        © 2025 CareerCanvas. All rights reserved.
                       </p>
                       <p style="margin:0;color:#9ca3af;font-size:12px">
                         This is an automated message, please do not reply.
