@@ -22,7 +22,7 @@ const TermsAndConditions = () => {
       title: "Content & Licensing",
       icon: <BookOpen className="w-6 h-6 text-[#F89B29]" />,
       content:
-        "All course materials are the intellectual property of SmartLMS Pro or its instructors. You are granted a limited, personal, non-exclusive license to view content for educational purposes.",
+        "All course materials are the intellectual property of CareerCanvas or its instructors. You are granted a limited, personal, non-exclusive license to view content for educational purposes.",
     },
     {
       title: "Prohibited Conduct",
@@ -34,7 +34,7 @@ const TermsAndConditions = () => {
       title: "AI Usage",
       icon: <Zap className="w-6 h-6 text-[#FDE047]" />,
       content:
-        "Our AI-powered features are tools to assist learning. While we strive for accuracy, SmartLMS Pro is not responsible for errors in AI-generated summaries or automated grading.",
+        "Our AI-powered features are tools to assist learning. While we strive for accuracy, CareerCanvas is not responsible for errors in AI-generated summaries or automated grading.",
     },
   ];
 
@@ -75,7 +75,7 @@ const TermsAndConditions = () => {
             Terms & Conditions
           </h1>
           <p className="text-gray-500 dark:text-gray-400">
-            Please read these terms carefully before using the SmartLMS Pro
+            Please read these terms carefully before using the CareerCanvas
             platform.
           </p>
         </motion.div>
@@ -112,7 +112,7 @@ const TermsAndConditions = () => {
               <ShieldCheck className="text-[#00C48C]" /> 1. Acceptance of Terms
             </h2>
             <p className="text-sm leading-7 opacity-80">
-              By accessing or using SmartLMS Pro, you agree to be bound by these
+              By accessing or using CareerCanvas, you agree to be bound by these
               Terms and Conditions and our Privacy Policy. If you do not agree
               with any part of these terms, you must not use our services. We
               reserve the right to update these terms at any time, and continued
@@ -130,7 +130,7 @@ const TermsAndConditions = () => {
             <div className="space-y-4 text-sm leading-7 opacity-80">
               <p>
                 <strong>Instructors:</strong> Are responsible for the accuracy
-                and legality of the courses they upload. SmartLMS Pro takes a
+                and legality of the courses they upload. CareerCanvas takes a
                 commission on course sales as defined in the Instructor
                 Agreement.
               </p>

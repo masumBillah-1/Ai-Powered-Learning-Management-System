@@ -8,14 +8,14 @@ import "./globals.css";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 
-const geistSans = Geist({ 
-  variable: "--font-geist-sans", 
+const geistSans = Geist({
+  variable: "--font-geist-sans",
   subsets: ["latin"],
   display: "swap",
   preload: true
 });
-const geistMono = Geist_Mono({ 
-  variable: "--font-geist-mono", 
+const geistMono = Geist_Mono({
+  variable: "--font-geist-mono",
   subsets: ["latin"],
   display: "swap",
   preload: true
@@ -28,8 +28,8 @@ const hindSiliguri = Hind_Siliguri({
 });
 
 export const metadata: Metadata = {
-  title: "SmartLMS Pro : Smart Online LMS Platform",
-  description: "SmartLMS Pro learning management system designed to deliver smart, personalized, and interactive online education experiences.",
+  title: "CareerCanvas : Smart Online LMS Platform",
+  description: "CareerCanvas learning management system designed to deliver smart, personalized, and interactive online education experiences.",
   icons: {
     icon: [{ url: "/favicon.svg", type: "image/svg+xml" }, { url: "/favicon.ico", sizes: "32x32" }],
   },
@@ -94,37 +94,58 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         style={{ fontFamily: "var(--font-hind-siliguri), var(--font-geist-sans), sans-serif" }}
         suppressHydrationWarning
       >
-          <Toaster
-            position="top-left"
-            reverseOrder={false}
-            toastOptions={{
-              duration: 3000,
-              style: { 
-                background: "#1f2937", 
-                color: "#fff", 
-                borderRadius: "8px", 
-                padding: "12px 20px", 
-                fontSize: "14px",
-                marginTop: "80px", // navbar এর নিচে দেখানোর জন্য
-                marginLeft: "20px" // একটু left থেকে margin
-              },
-              success: { iconTheme: { primary: "#10b981", secondary: "#fff" } },
-              error: { iconTheme: { primary: "#ef4444", secondary: "#fff" } },
-            }}
+        <Toaster
+          position="top-right"
+          reverseOrder={false}
+          toastOptions={{
+            duration: 4000,
+            style: {
+              background: "#1f2937",
+              color: "#fff",
+              borderRadius: "12px",
+              padding: "12px 20px",
+              fontSize: "14px",
+              marginTop: "80px", // navbar এর নিচে দেখানোর জন্য
+              marginRight: "20px", // right থেকে margin
+              boxShadow: "0 10px 25px rgba(0, 0, 0, 0.2)",
+              border: "1px solid rgba(255, 255, 255, 0.1)"
+            },
+            success: {
+              iconTheme: { primary: "#10b981", secondary: "#fff" },
+              style: {
+                background: "#065f46",
+                color: "#fff"
+              }
+            },
+            error: {
+              iconTheme: { primary: "#ef4444", secondary: "#fff" },
+              style: {
+                background: "#7f1d1d",
+                color: "#fff"
+              }
+            },
+            loading: {
+              iconTheme: { primary: "#3b82f6", secondary: "#fff" },
+              style: {
+                background: "#1e40af",
+                color: "#fff"
+              }
+            }
+          }}
+        />
+
+        {children}
+
+        {/* FloatingChat — Login হলে সব page এ দেখাবে */}
+        {user && (
+          <FloatingChat
+            userId={user.id}
+            userName={user.name}
+            userRole={user.role}
+            userAvatar={user.image}
           />
+        )}
 
-          {children}
-
-          {/* FloatingChat — Login হলে সব page এ দেখাবে */}
-          {user && (
-            <FloatingChat
-              userId={user.id}
-              userName={user.name}
-              userRole={user.role}
-              userAvatar={user.image}
-            />
-          )}
-  
       </body>
     </html>
   );

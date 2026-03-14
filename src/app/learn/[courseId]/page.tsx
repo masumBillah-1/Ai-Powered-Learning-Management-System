@@ -1,15 +1,16 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   FaPlay, FaCheckCircle, FaChevronDown, FaChevronUp,
   FaBook, FaClock, FaArrowLeft, FaFileAlt,
-  FaTrophy, FaBars, FaTimes, FaLock
+  FaTrophy, FaBars, FaTimes, FaLock, FaLink, FaPaperPlane
 } from "react-icons/fa";
 import { HiSparkles } from "react-icons/hi2";
 import Link from "next/link";
+import toast, { Toaster } from "react-hot-toast";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 interface Lesson {
@@ -20,6 +21,8 @@ interface Lesson {
   url?: string;
   textContent?: string;
   assignmentDesc?: string;
+  marks?: number;
+  dueDate?: string;
   order: number;
 }
 interface Module { _id: string; title: string; order: number; lessons: Lesson[] }
@@ -38,6 +41,13 @@ interface Enrollment {
     currentLesson?: string;
     totalTimeSpent: number;
   };
+  submissions?: {
+    lessonId: string;
+    status: "submitted" | "graded" | "late";
+    marks?: number;
+    feedback?: string;
+    submittedAt?: string;
+  }[];
   status: string;
   certificate?: { issued: boolean };
 }
@@ -45,9 +55,7 @@ interface Enrollment {
 function getYouTubeEmbedUrl(url: string) {
   if (!url) return "";
   const match = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([^&?\s]+)/);
-  if (match) {
-    return `https://www.youtube.com/embed/${match[1]}?autoplay=1&rel=0&modestbranding=1&showinfo=0&iv_load_policy=3&playsinline=1`;
-  }
+  if (match) return `https://www.youtube.com/embed/${match[1]}?autoplay=1&rel=0&modestbranding=1&showinfo=0&iv_load_policy=3&playsinline=1`;
   return url;
 }
 
@@ -59,6 +67,9 @@ function getLessonIcon(type: string, size = 10) {
     default: return <FaFileAlt style={{ fontSize: size }} />;
   }
 }
+
+const toastOk = { style: { borderRadius: "12px", background: "#1e1e2e", color: "#fff", fontWeight: "600" }, duration: 3500 };
+const toastErr = { style: { borderRadius: "12px", background: "#dc2626", color: "#fff", fontWeight: "600" }, duration: 4000 };
 
 // ═══════════════════════════════════════════════════════════════════════════════
 export default function LearnPage() {
@@ -73,14 +84,19 @@ export default function LearnPage() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [expandedModules, setExpandedModules] = useState<string[]>([]);
   const [completingLesson, setCompletingLesson] = useState(false);
-  const [lockedToast, setLockedToast] = useState(false); // locked toast message
-
+  const [lockedToast, setLockedToast] = useState(false);
   const [localCompleted, setLocalCompleted] = useState<string[]>([]);
   const localCompletedRef = useRef<string[]>([]);
 
+  // ── Assignment submit state ───────────────────────────────────────────────
+  const [submitTab, setSubmitTab] = useState<"text" | "file" | "link">("text");
+  const [textAnswer, setTextAnswer] = useState("");
+  const [linkUrl, setLinkUrl] = useState("");
+  const [submitFile, setSubmitFile] = useState<File | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+
   const startTime = useRef<number>(Date.now());
   const activeLessonRef = useRef<Lesson | null>(null);
-  const isFirstLoad = useRef(true);
 
   useEffect(() => { if (courseId) initialFetch(); }, [courseId]);
 
@@ -99,48 +115,32 @@ export default function LearnPage() {
         setCourse(courseData.course);
         setExpandedModules(courseData.course.modules.map((m: Module) => m._id));
         const firstLesson = courseData.course.modules?.[0]?.lessons?.[0];
-        if (firstLesson) {
-          setActiveLesson(firstLesson);
-          activeLessonRef.current = firstLesson;
-        }
+        if (firstLesson) { setActiveLesson(firstLesson); activeLessonRef.current = firstLesson; }
       }
 
       if (enrollData.success && enrollData.enrollments?.length > 0) {
         const enroll = enrollData.enrollments[0];
         setEnrollment(enroll);
-
         const serverCompleted: string[] = enroll.progress?.completedLessons ?? [];
         setLocalCompleted(serverCompleted);
         localCompletedRef.current = serverCompleted;
 
-        // Resume from last lesson, or first incomplete lesson if course was rebuilt
         const lastLessonId = enroll.progress?.currentLesson;
         const allLessons = courseData.course.modules.flatMap((m: Module) => m.lessons);
-        const serverCompleted2: string[] = enroll.progress?.completedLessons ?? [];
         const validIds = new Set(allLessons.map((l: Lesson) => l._id));
-
-        // Find first lesson not yet completed in the current course
-        const firstIncomplete = allLessons.find((l: Lesson) => !serverCompleted2.includes(l._id));
+        const firstIncomplete = allLessons.find((l: Lesson) => !serverCompleted.includes(l._id));
 
         if (lastLessonId && validIds.has(lastLessonId)) {
-          // Last lesson is still valid in current course → resume there
-          const lastLesson = allLessons.find((l: Lesson) => l._id === lastLessonId);
-          if (lastLesson) { setActiveLesson(lastLesson); activeLessonRef.current = lastLesson; }
+          const last = allLessons.find((l: Lesson) => l._id === lastLessonId);
+          if (last) { setActiveLesson(last); activeLessonRef.current = last; }
         } else if (firstIncomplete) {
-          // Last lesson is stale (old ID) → go to first incomplete lesson
-          setActiveLesson(firstIncomplete);
-          activeLessonRef.current = firstIncomplete;
+          setActiveLesson(firstIncomplete); activeLessonRef.current = firstIncomplete;
         }
       }
-    } catch (err) {
-      console.error("Failed to load:", err);
-    } finally {
-      setInitialLoading(false);
-      isFirstLoad.current = false;
-    }
+    } catch (err) { console.error("Failed to load:", err); }
+    finally { setInitialLoading(false); }
   };
 
-  // ── Silent refresh ─────────────────────────────────────────────────────────
   const silentRefreshEnrollment = async () => {
     try {
       const res = await fetch(`/api/enrollments?courseId=${courseId}`);
@@ -151,118 +151,116 @@ export default function LearnPage() {
         const serverCompleted: string[] = enroll.progress?.completedLessons ?? [];
         const merged = Array.from(new Set([...localCompletedRef.current, ...serverCompleted]));
         if (merged.length !== localCompletedRef.current.length) {
-          setLocalCompleted(merged);
-          localCompletedRef.current = merged;
+          setLocalCompleted(merged); localCompletedRef.current = merged;
         }
       }
-    } catch (err) {
-      console.error("Silent refresh error:", err);
-    }
+    } catch (err) { console.error("Silent refresh:", err); }
   };
 
-  // ── Get flat list of all lessons in order ──────────────────────────────────
-  const getAllLessons = (): Lesson[] => {
-    if (!course) return [];
-    return course.modules.flatMap(m => m.lessons);
-  };
-
-  // Valid lesson IDs in current course (used for stale ID filtering)
+  const getAllLessons = (): Lesson[] => course?.modules.flatMap(m => m.lessons) ?? [];
   const validLessonIds = new Set(course?.modules?.flatMap(m => m.lessons.map(l => l._id)) ?? []);
-
-  // ── Lock logic ────────────────────────────────────────────────────────────
-  // A lesson is unlocked if:
-  //   1. First lesson always unlocked
-  //   2. Previous lesson is completed
-  //   3. Course was previously completed (status=completed) → all lessons unlocked
-  //      so student can continue new lessons added by instructor
-  //   4. All preceding valid lessons completed (handles stale IDs from course rebuild)
   const courseWasCompleted = enrollment?.status === "completed";
 
   const isUnlocked = (lessonId: string): boolean => {
-    // If course was previously fully completed → unlock everything
-    // (instructor may have added new lessons, student should continue freely)
     if (courseWasCompleted) return true;
-
     const all = getAllLessons();
     const idx = all.findIndex(l => l._id === lessonId);
     if (idx === 0) return true;
-
     const prevLesson = all[idx - 1];
     if (localCompletedRef.current.includes(prevLesson._id)) return true;
-
-    // Stale ID handling: if all preceding valid lessons are completed → unlock
     const validCompleted = new Set(localCompletedRef.current.filter(id => validLessonIds.has(id)));
     const precedingValid = all.slice(0, idx).filter(l => validLessonIds.has(l._id));
     if (precedingValid.length > 0 && precedingValid.every(l => validCompleted.has(l._id))) return true;
     if (precedingValid.length === 0) return true;
-
     return false;
   };
 
-  // ── Lesson select — respect lock ──────────────────────────────────────────
   const handleLessonSelect = async (lesson: Lesson) => {
-    // Check if locked
     if (!isUnlocked(lesson._id)) {
-      // Show locked toast
-      setLockedToast(true);
-      setTimeout(() => setLockedToast(false), 2500);
-      return;
+      setLockedToast(true); setTimeout(() => setLockedToast(false), 2500); return;
     }
-
     if (activeLessonRef.current && enrollment) {
       const timeSpent = Math.round((Date.now() - startTime.current) / 60000);
-      if (timeSpent > 0) {
-        updateProgress(activeLessonRef.current._id, timeSpent, false);
-      }
+      if (timeSpent > 0) updateProgress(activeLessonRef.current._id, timeSpent, false);
     }
     startTime.current = Date.now();
     setActiveLesson(lesson);
     activeLessonRef.current = lesson;
+    // reset submit form
+    setTextAnswer(""); setLinkUrl(""); setSubmitFile(null); setSubmitTab("text");
   };
 
-  // ── Mark complete ──────────────────────────────────────────────────────────
   const handleMarkComplete = async () => {
     if (!activeLesson || completingLesson) return;
     if (localCompletedRef.current.includes(activeLesson._id)) return;
-
     setCompletingLesson(true);
-
-    // Optimistic update
     const newCompleted = [...localCompletedRef.current, activeLesson._id];
-    localCompletedRef.current = newCompleted;
-    setLocalCompleted(newCompleted);
-
+    localCompletedRef.current = newCompleted; setLocalCompleted(newCompleted);
     const timeSpent = Math.round((Date.now() - startTime.current) / 60000);
     const success = await updateProgress(activeLesson._id, timeSpent, true);
-
     if (!success) {
       const reverted = localCompletedRef.current.filter(id => id !== activeLesson._id);
-      localCompletedRef.current = reverted;
-      setLocalCompleted(reverted);
-    } else {
-      await silentRefreshEnrollment();
-    }
-
-    startTime.current = Date.now();
-    setCompletingLesson(false);
+      localCompletedRef.current = reverted; setLocalCompleted(reverted);
+    } else { await silentRefreshEnrollment(); }
+    startTime.current = Date.now(); setCompletingLesson(false);
   };
 
   const updateProgress = async (lessonId: string, timeSpent: number, completed: boolean): Promise<boolean> => {
     try {
       const res = await fetch("/api/enrollments", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
+        method: "PUT", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ courseId, lessonId, timeSpent, completed }),
       });
-      if (!res.ok) {
-        console.error("Progress update failed:", await res.text());
-        return false;
-      }
-      return true;
-    } catch (err) {
-      console.error("Progress update error:", err);
-      return false;
+      return res.ok;
+    } catch { return false; }
+  };
+
+  // ── Assignment submit ─────────────────────────────────────────────────────
+  const getSubmission = (lessonId: string) =>
+    (enrollment?.submissions || []).find(s => String(s.lessonId) === String(lessonId));
+
+  const handleSubmitAssignment = async () => {
+    if (!activeLesson) return;
+    if (submitTab === "text" && !textAnswer.trim()) {
+      toast.error("Please write your answer first", toastErr); return;
     }
+    if (submitTab === "link" && !linkUrl.trim()) {
+      toast.error("Please enter a link", toastErr); return;
+    }
+    if (submitTab === "file" && !submitFile) {
+      toast.error("Please select a file", toastErr); return;
+    }
+
+    setSubmitting(true);
+    const tid = toast.loading("Submitting assignment...", {
+      style: { borderRadius: "12px", background: "#1e1e2e", color: "#fff", fontWeight: "600" },
+    });
+
+    try {
+      let fileUrl = "";
+      if (submitFile) fileUrl = submitFile.name; // TODO: cloudinary upload
+
+      const res = await fetch("/api/enrollments", {
+        method: "PUT", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "submit",
+          courseId,
+          lessonId: activeLesson._id,
+          textAnswer: submitTab === "text" ? textAnswer : "",
+          linkUrl: submitTab === "link" ? linkUrl : "",
+          fileUrl: submitTab === "file" ? fileUrl : "",
+        }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        toast.success(data.isLate ? "⚠️ Submitted (late)" : "✅ Assignment submitted!", { id: tid, ...toastOk });
+        setTextAnswer(""); setLinkUrl(""); setSubmitFile(null);
+        await silentRefreshEnrollment();
+      } else {
+        toast.error(`❌ ${data.error || "Submission failed"}`, { id: tid, ...toastErr });
+      }
+    } catch { toast.error("❌ Network error", { id: tid, ...toastErr }); }
+    finally { setSubmitting(false); }
   };
 
   const toggleModule = (id: string) =>
@@ -280,8 +278,6 @@ export default function LearnPage() {
     const idx = all.findIndex(l => l._id === activeLesson._id);
     return idx >= 0 && idx < all.length - 1 ? all[idx + 1] : null;
   };
-
-  // Next button only shows if current lesson is completed
   const nextLesson = getNextLesson();
   const canGoNext = activeLesson ? isCompleted(activeLesson._id) : false;
 
@@ -307,7 +303,7 @@ export default function LearnPage() {
           <div className="text-5xl mb-4">⚠️</div>
           <h2 className="text-xl font-bold mb-4">Course not found</h2>
           <button onClick={() => router.push("/dashboard/student/courses")}
-            className="px-6 py-3 rounded-xl text-white font-bold"
+            className="px-6 py-3 rounded-xl text-white font-bold cursor-pointer"
             style={{ background: "linear-gradient(90deg, #C81D77, #6710C2)" }}>
             Back to My Courses
           </button>
@@ -318,23 +314,20 @@ export default function LearnPage() {
 
   return (
     <div className="min-h-screen bg-[#0d1117] flex flex-col" style={{ fontFamily: "'DM Sans', sans-serif" }}>
+      <Toaster position="top-right" containerStyle={{ top: 70, right: 16 }} />
 
-      {/* ── Locked Toast ──────────────────────────────────────────────────────── */}
+      {/* Locked Toast */}
       <AnimatePresence>
         {lockedToast && (
-          <motion.div
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            className="fixed top-16 left-1/2 -translate-x-1/2 z-[100] flex items-center gap-2 px-4 py-2.5 rounded-xl border border-orange-500/30 bg-[#1a1200] text-orange-300 text-sm font-semibold shadow-xl"
-          >
+          <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }}
+            className="fixed top-16 left-1/2 -translate-x-1/2 z-[100] flex items-center gap-2 px-4 py-2.5 rounded-xl border border-orange-500/30 bg-[#1a1200] text-orange-300 text-sm font-semibold shadow-xl">
             <FaLock size={11} />
             আগের lesson complete করুন, তারপর এটা unlock হবে
           </motion.div>
         )}
       </AnimatePresence>
 
-      {/* ── Top Nav ───────────────────────────────────────────────────────────── */}
+      {/* Top Nav */}
       <header className="h-14 bg-[#161b22] border-b border-white/10 flex items-center justify-between px-4 z-50 sticky top-0">
         <div className="flex items-center gap-3">
           <button onClick={() => router.push("/dashboard/student/courses")}
@@ -345,16 +338,11 @@ export default function LearnPage() {
           <span className="text-white/20">|</span>
           <span className="text-white font-semibold text-sm truncate max-w-[180px] sm:max-w-xs">{course.title}</span>
         </div>
-
         <div className="flex items-center gap-3">
           <div className="hidden sm:flex items-center gap-2 bg-white/5 rounded-full px-3 py-1.5 border border-white/10">
             <div className="w-24 h-1.5 bg-white/10 rounded-full overflow-hidden">
-              <motion.div
-                className="h-full rounded-full"
-                animate={{ width: `${progressPct}%` }}
-                transition={{ duration: 0.5 }}
-                style={{ background: "linear-gradient(90deg, #C81D77, #6710C2)" }}
-              />
+              <motion.div className="h-full rounded-full" animate={{ width: `${progressPct}%` }}
+                transition={{ duration: 0.5 }} style={{ background: "linear-gradient(90deg, #C81D77, #6710C2)" }} />
             </div>
             <span className="text-xs text-gray-300 font-bold tabular-nums">{progressPct}%</span>
           </div>
@@ -365,33 +353,33 @@ export default function LearnPage() {
         </div>
       </header>
 
-      {/* ── Body ──────────────────────────────────────────────────────────────── */}
+      {/* Body */}
       <div className="flex flex-1 overflow-hidden">
         <main className="flex-1 flex flex-col overflow-y-auto">
 
           {/* VIDEO PLAYER */}
-          <div className="bg-black w-full relative" style={{ aspectRatio: "16/9", maxHeight: "80vh" }}>
+          <div className="bg-black w-full relative" style={{ aspectRatio: "16/9", maxHeight: "75vh" }}>
             {activeLesson?.type === "video" && activeLesson.url ? (
-              <iframe
-                key={activeLesson._id}
-                src={getYouTubeEmbedUrl(activeLesson.url)}
+              <iframe key={activeLesson._id} src={getYouTubeEmbedUrl(activeLesson.url)}
                 className="w-full h-full"
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
-                allowFullScreen
-                style={{ border: "none" }}
-              />
+                allowFullScreen style={{ border: "none" }} />
             ) : (
               <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-[#161b22] to-[#0d1117]">
                 <div className="text-center px-6">
                   <div className="w-20 h-20 rounded-2xl mx-auto mb-4 flex items-center justify-center"
-                    style={{ background: "linear-gradient(135deg, #C81D77, #6710C2)" }}>
+                    style={{
+                      background: activeLesson?.type === "assignment"
+                        ? "linear-gradient(135deg, #f59e0b, #d97706)"
+                        : "linear-gradient(135deg, #C81D77, #6710C2)"
+                    }}>
                     {activeLesson?.type === "quiz" ? <FaBook className="text-white text-2xl" />
                       : <FaFileAlt className="text-white text-2xl" />}
                   </div>
                   <h3 className="text-white text-lg font-bold mb-1">{activeLesson?.title || "Select a lesson"}</h3>
                   <p className="text-gray-500 text-sm">
                     {activeLesson?.type === "text" ? "📄 Scroll down to read"
-                      : activeLesson?.type === "assignment" ? "📋 Scroll down for instructions"
+                      : activeLesson?.type === "assignment" ? "📋 Scroll down to submit"
                         : activeLesson?.type === "quiz" ? "📝 Quiz — coming soon"
                           : "Sidebar থেকে lesson select করুন"}
                   </p>
@@ -400,7 +388,7 @@ export default function LearnPage() {
             )}
           </div>
 
-          {/* LESSON INFO */}
+          {/* LESSON INFO BAR */}
           <div className="p-5 border-b border-white/5">
             <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
               <div className="flex-1">
@@ -425,15 +413,13 @@ export default function LearnPage() {
               </div>
 
               <div className="flex items-center gap-2 flex-shrink-0">
-                {/* Next button — only shows after current lesson is completed */}
                 {nextLesson && canGoNext && (
                   <button onClick={() => handleLessonSelect(nextLesson)}
                     className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-white font-semibold text-sm border border-white/10 bg-white/5 hover:bg-white/10 transition-all whitespace-nowrap cursor-pointer">
                     Next →
                   </button>
                 )}
-
-                {activeLesson && !isCompleted(activeLesson._id) ? (
+                {activeLesson && !isCompleted(activeLesson._id) && activeLesson.type !== "assignment" ? (
                   <motion.button whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
                     onClick={handleMarkComplete} disabled={completingLesson}
                     className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-white font-bold text-sm shadow-lg disabled:opacity-60 whitespace-nowrap cursor-pointer"
@@ -469,20 +455,167 @@ export default function LearnPage() {
             </div>
           )}
 
-          {/* ASSIGNMENT */}
-          {activeLesson?.type === "assignment" && activeLesson.assignmentDesc && (
-            <div className="mx-5 my-4 p-6 rounded-2xl bg-[#161b22] border border-white/10">
-              <div className="flex items-center gap-2 mb-4">
-                <div className="w-8 h-8 rounded-lg flex items-center justify-center"
-                  style={{ background: "linear-gradient(135deg, #f59e0b, #d97706)" }}>
-                  <FaFileAlt className="text-white text-sm" />
+          {/* ── ASSIGNMENT SECTION ── */}
+          {activeLesson?.type === "assignment" && (
+            <div className="mx-5 my-4 space-y-4">
+
+              {/* Instructions */}
+              {activeLesson.assignmentDesc && (
+                <div className="p-5 rounded-2xl bg-[#161b22] border border-white/10">
+                  <div className="flex items-center gap-2 mb-3">
+                    <div className="w-8 h-8 rounded-lg flex items-center justify-center"
+                      style={{ background: "linear-gradient(135deg, #f59e0b, #d97706)" }}>
+                      <FaFileAlt className="text-white text-sm" />
+                    </div>
+                    <h3 className="text-white font-bold text-sm">Assignment Instructions</h3>
+                    {activeLesson.marks ? (
+                      <span className="ml-auto text-xs font-bold px-2 py-0.5 rounded-lg"
+                        style={{ background: "rgba(245,158,11,0.15)", color: "#f59e0b" }}>
+                        {activeLesson.marks} marks
+                      </span>
+                    ) : null}
+                  </div>
+                  <p className="text-gray-300 text-sm leading-relaxed whitespace-pre-wrap">{activeLesson.assignmentDesc}</p>
+                  {activeLesson.dueDate && (
+                    <p className="text-xs text-gray-500 mt-3 flex items-center gap-1">
+                      <FaClock size={10} /> Due: {new Date(activeLesson.dueDate).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}
+                    </p>
+                  )}
                 </div>
-                <h3 className="text-white font-bold text-sm">Assignment Instructions</h3>
-              </div>
-              <p className="text-gray-300 text-sm leading-relaxed whitespace-pre-wrap">{activeLesson.assignmentDesc}</p>
-              <div className="mt-5 p-4 rounded-xl border border-dashed border-white/20 text-center">
-                <p className="text-gray-500 text-xs">📎 Submission — coming soon</p>
-              </div>
+              )}
+
+              {/* Submission status — already submitted */}
+              {(() => {
+                const sub = getSubmission(activeLesson._id);
+                if (!sub) return null;
+                return (
+                  <div className="p-4 rounded-2xl border"
+                    style={{
+                      background: sub.status === "graded" ? "rgba(16,185,129,0.08)" : "rgba(245,158,11,0.08)",
+                      borderColor: sub.status === "graded" ? "rgba(16,185,129,0.3)" : "rgba(245,158,11,0.3)",
+                    }}>
+                    <div className="flex items-center gap-3 mb-2">
+                      <FaCheckCircle style={{ color: sub.status === "graded" ? "#10b981" : "#f59e0b" }} />
+                      <div className="flex-1">
+                        <p className="text-sm font-bold" style={{ color: sub.status === "graded" ? "#10b981" : "#f59e0b" }}>
+                          {sub.status === "graded" ? "✅ Graded" : sub.status === "late" ? "⚠️ Submitted (Late)" : "✅ Submitted — Pending Review"}
+                        </p>
+                        {sub.submittedAt && (
+                          <p className="text-xs text-gray-500 mt-0.5">
+                            {new Date(sub.submittedAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+                          </p>
+                        )}
+                      </div>
+                      {sub.status === "graded" && sub.marks !== undefined && (
+                        <div className="text-right">
+                          <p className="text-lg font-black" style={{ color: "#10b981" }}>
+                            {sub.marks}{activeLesson.marks ? `/${activeLesson.marks}` : ""}
+                          </p>
+                          <p className="text-xs text-gray-500">score</p>
+                        </div>
+                      )}
+                    </div>
+                    {sub.status === "graded" && sub.feedback && (
+                      <div className="mt-2 p-3 rounded-xl bg-white/5 text-xs text-gray-300 leading-relaxed">
+                        <p className="text-gray-500 font-bold uppercase tracking-wider text-[10px] mb-1">Feedback</p>
+                        {sub.feedback}
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
+
+              {/* Submit form */}
+              {(() => {
+                const sub = getSubmission(activeLesson._id);
+                const alreadySubmitted = sub && sub.status !== "graded";
+                const label = alreadySubmitted ? "Re-submit Assignment" : "Submit Assignment";
+
+                return (
+                  <div className="p-5 rounded-2xl bg-[#161b22] border border-white/10">
+                    <h3 className="text-white font-bold text-sm mb-4 flex items-center gap-2">
+                      <FaPaperPlane style={{ color: "#C81D77" }} size={13} />
+                      {label}
+                    </h3>
+
+                    {/* Type selector */}
+                    <div className="grid grid-cols-3 gap-2 mb-4">
+                      {(["text", "file", "link"] as const).map((t) => (
+                        <button key={t} onClick={() => setSubmitTab(t)}
+                          className="py-2 rounded-xl text-xs font-bold transition-all cursor-pointer border"
+                          style={{
+                            backgroundColor: submitTab === t ? "#C81D77" : "transparent",
+                            color: submitTab === t ? "white" : "#9ca3af",
+                            borderColor: submitTab === t ? "#C81D77" : "rgba(255,255,255,0.1)",
+                          }}>
+                          {t === "text" ? "✍️ Text" : t === "file" ? "📎 File" : "🔗 Link"}
+                        </button>
+                      ))}
+                    </div>
+
+                    {/* Text */}
+                    {submitTab === "text" && (
+                      <div className="mb-4">
+                        <textarea rows={5} placeholder="Write your answer here..."
+                          value={textAnswer} onChange={(e) => setTextAnswer(e.target.value)}
+                          className="w-full rounded-xl bg-white/5 border border-white/10 text-gray-200 text-sm p-3 resize-none focus:outline-none focus:border-[#C81D77] transition-colors"
+                          style={{ borderColor: textAnswer ? "#C81D77" : undefined }} />
+                        <p className="text-xs text-gray-600 text-right mt-1">{textAnswer.length} characters</p>
+                      </div>
+                    )}
+
+                    {/* File */}
+                    {submitTab === "file" && (
+                      <div className="mb-4">
+                        {submitFile ? (
+                          <div className="flex items-center gap-3 bg-white/5 rounded-xl p-3 border border-white/10">
+                            <div className="w-9 h-9 rounded-lg flex items-center justify-center text-white flex-shrink-0"
+                              style={{ background: "linear-gradient(135deg, #C81D77, #6710C2)" }}>📄</div>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-semibold text-white truncate">{submitFile.name}</p>
+                              <p className="text-xs text-gray-500">{(submitFile.size / 1024).toFixed(1)} KB</p>
+                            </div>
+                            <button onClick={() => setSubmitFile(null)}
+                              className="text-gray-500 hover:text-red-400 transition-colors cursor-pointer text-lg">×</button>
+                          </div>
+                        ) : (
+                          <label className="cursor-pointer block">
+                            <div className="border-2 border-dashed border-white/10 rounded-xl p-8 text-center hover:border-[#C81D77]/50 hover:bg-white/5 transition-all">
+                              <div className="text-3xl mb-2">📎</div>
+                              <p className="text-sm font-semibold text-gray-400">Click to upload file</p>
+                              <p className="text-xs text-gray-600 mt-1">PDF, DOC, ZIP up to 10MB</p>
+                            </div>
+                            <input type="file" className="hidden" onChange={(e) => setSubmitFile(e.target.files?.[0] || null)} />
+                          </label>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Link */}
+                    {submitTab === "link" && (
+                      <div className="mb-4">
+                        <div className="flex items-center gap-2 bg-white/5 border border-white/10 rounded-xl px-3 py-2.5 focus-within:border-[#C81D77] transition-colors"
+                          style={{ borderColor: linkUrl ? "#C81D77" : undefined }}>
+                          <FaLink size={12} className="text-gray-500 flex-shrink-0" />
+                          <input type="url" placeholder="https://github.com/... or Google Drive link"
+                            value={linkUrl} onChange={(e) => setLinkUrl(e.target.value)}
+                            className="grow bg-transparent text-gray-200 text-sm focus:outline-none" />
+                        </div>
+                        <p className="text-xs text-gray-600 mt-1.5">GitHub, Google Drive, Figma, or any public link</p>
+                      </div>
+                    )}
+
+                    <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
+                      onClick={handleSubmitAssignment} disabled={submitting}
+                      className="w-full flex items-center justify-center gap-2 py-3 rounded-xl text-white font-bold text-sm disabled:opacity-50 cursor-pointer"
+                      style={{ background: "linear-gradient(90deg, #C81D77, #6710C2)" }}>
+                      {submitting
+                        ? <><span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> Submitting...</>
+                        : <><FaPaperPlane size={13} /> {label}</>}
+                    </motion.button>
+                  </div>
+                );
+              })()}
             </div>
           )}
 
@@ -525,12 +658,12 @@ export default function LearnPage() {
                 <p className="text-yellow-400/60 text-xs mt-0.5">You have completed this course.</p>
               </div>
               <Link href="/dashboard/student/certificates">
-                <button className="px-4 py-2 rounded-lg bg-yellow-500 text-black font-bold text-xs hover:bg-yellow-400 transition-colors">View</button>
+                <button className="px-4 py-2 rounded-lg bg-yellow-500 text-black font-bold text-xs hover:bg-yellow-400 transition-colors cursor-pointer">View</button>
               </Link>
             </motion.div>
           )}
 
-          {/* MOBILE LESSON LIST */}
+          {/* MOBILE SIDEBAR */}
           <div className="md:hidden px-5 py-4">
             <h3 className="text-white font-bold text-sm mb-3">Course Content</h3>
             <div className="space-y-2">
@@ -554,10 +687,7 @@ export default function LearnPage() {
                           return (
                             <button key={lesson._id} onClick={() => handleLessonSelect(lesson)}
                               className={`w-full flex items-center gap-3 px-4 py-2.5 text-left transition-all ${current ? "bg-[#C81D77]/10" : unlocked ? "hover:bg-white/5" : "opacity-50 cursor-not-allowed"}`}>
-                              <div className={`w-6 h-6 rounded-lg flex items-center justify-center flex-shrink-0 ${done ? "bg-emerald-500/20 text-emerald-400"
-                                  : !unlocked ? "bg-white/5 text-gray-600"
-                                    : current ? "bg-[#C81D77]/20 text-[#C81D77]"
-                                      : "bg-white/5 text-gray-500"}`}>
+                              <div className={`w-6 h-6 rounded-lg flex items-center justify-center flex-shrink-0 ${done ? "bg-emerald-500/20 text-emerald-400" : !unlocked ? "bg-white/5 text-gray-600" : current ? "bg-[#C81D77]/20 text-[#C81D77]" : "bg-white/5 text-gray-500"}`}>
                                 {done ? <FaCheckCircle size={10} /> : !unlocked ? <FaLock size={9} /> : getLessonIcon(lesson.type)}
                               </div>
                               <span className={`text-xs font-medium ${current ? "text-white" : done ? "text-gray-400" : !unlocked ? "text-gray-600" : "text-gray-300"}`}>
@@ -578,14 +708,10 @@ export default function LearnPage() {
         {/* DESKTOP SIDEBAR */}
         <AnimatePresence>
           {sidebarOpen && (
-            <motion.aside
-              initial={{ width: 0, opacity: 0 }}
-              animate={{ width: 320, opacity: 1 }}
-              exit={{ width: 0, opacity: 0 }}
-              transition={{ duration: 0.22 }}
+            <motion.aside initial={{ width: 0, opacity: 0 }} animate={{ width: 320, opacity: 1 }}
+              exit={{ width: 0, opacity: 0 }} transition={{ duration: 0.22 }}
               className="bg-[#161b22] border-l border-white/10 overflow-y-auto flex-shrink-0 hidden md:block"
-              style={{ maxHeight: "calc(100vh - 56px)" }}
-            >
+              style={{ maxHeight: "calc(100vh - 56px)" }}>
               {/* Sidebar Header */}
               <div className="p-4 border-b border-white/10 sticky top-0 bg-[#161b22] z-10">
                 <div className="flex items-center justify-between mb-1">
@@ -595,18 +721,11 @@ export default function LearnPage() {
                     {progressPct}%
                   </span>
                 </div>
-                <p className="text-gray-500 text-xs mb-3">
-                  {completedCount}/{totalLessons} lessons completed
-                </p>
-
-                {/* Single smooth progress bar */}
+                <p className="text-gray-500 text-xs mb-3">{completedCount}/{totalLessons} lessons completed</p>
                 <div className="w-full rounded-full overflow-hidden" style={{ height: "6px", background: "rgba(255,255,255,0.08)" }}>
-                  <motion.div
-                    className="h-full rounded-full"
-                    animate={{ width: `${progressPct}%` }}
+                  <motion.div className="h-full rounded-full" animate={{ width: `${progressPct}%` }}
                     transition={{ duration: 0.5, ease: "easeOut" }}
-                    style={{ background: "linear-gradient(90deg, #C81D77, #6710C2)" }}
-                  />
+                    style={{ background: "linear-gradient(90deg, #C81D77, #6710C2)" }} />
                 </div>
               </div>
 
@@ -624,60 +743,33 @@ export default function LearnPage() {
                         <span className="text-gray-600 text-xs">
                           {module.lessons.filter(l => isCompleted(l._id)).length}/{module.lessons.length}
                         </span>
-                        {expandedModules.includes(module._id)
-                          ? <FaChevronUp size={10} className="text-gray-500" />
-                          : <FaChevronDown size={10} className="text-gray-500" />}
+                        {expandedModules.includes(module._id) ? <FaChevronUp size={10} className="text-gray-500" /> : <FaChevronDown size={10} className="text-gray-500" />}
                       </div>
                     </button>
 
                     <AnimatePresence>
                       {expandedModules.includes(module._id) && (
-                        <motion.div
-                          initial={{ height: 0, opacity: 0 }}
-                          animate={{ height: "auto", opacity: 1 }}
-                          exit={{ height: 0, opacity: 0 }}
-                          transition={{ duration: 0.18 }}
-                          className="overflow-hidden"
-                        >
+                        <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }}
+                          exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.18 }} className="overflow-hidden">
                           {module.lessons.map((lesson, lIdx) => {
                             const done = isCompleted(lesson._id);
                             const current = activeLesson?._id === lesson._id;
                             const unlocked = isUnlocked(lesson._id);
+                            const hasSub = !!(enrollment?.submissions || []).find(s => String(s.lessonId) === lesson._id);
 
                             return (
-                              <button
-                                key={lesson._id}
-                                onClick={() => handleLessonSelect(lesson)}
-                                className={`w-full flex items-center gap-3 px-3 py-2.5 mx-1 rounded-lg transition-all text-left mb-0.5 ${current
-                                    ? "bg-[#C81D77]/15 border border-[#C81D77]/30 cursor-pointer"
-                                    : unlocked
-                                      ? "hover:bg-white/5 cursor-pointer"
-                                      : "opacity-40 cursor-not-allowed"
-                                  }`}
-                              >
-                                {/* Icon */}
-                                <div className={`w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 ${done
-                                    ? "bg-emerald-500/20 text-emerald-400"
-                                    : !unlocked
-                                      ? "bg-white/5 text-gray-600"
-                                      : current
-                                        ? "bg-[#C81D77]/20 text-[#C81D77]"
-                                        : "bg-white/5 text-gray-500"
-                                  }`}>
-                                  {done
-                                    ? <FaCheckCircle size={12} />
-                                    : !unlocked
-                                      ? <FaLock size={11} />
-                                      : getLessonIcon(lesson.type, 11)}
+                              <button key={lesson._id} onClick={() => handleLessonSelect(lesson)}
+                                className={`w-full flex items-center gap-3 px-3 py-2.5 mx-1 rounded-lg transition-all text-left mb-0.5 ${current ? "bg-[#C81D77]/15 border border-[#C81D77]/30 cursor-pointer"
+                                    : unlocked ? "hover:bg-white/5 cursor-pointer"
+                                      : "opacity-40 cursor-not-allowed"}`}>
+                                <div className={`w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 ${done ? "bg-emerald-500/20 text-emerald-400"
+                                    : !unlocked ? "bg-white/5 text-gray-600"
+                                      : current ? "bg-[#C81D77]/20 text-[#C81D77]"
+                                        : "bg-white/5 text-gray-500"}`}>
+                                  {done ? <FaCheckCircle size={12} /> : !unlocked ? <FaLock size={11} /> : getLessonIcon(lesson.type, 11)}
                                 </div>
-
-                                {/* Text — NO strikethrough */}
                                 <div className="flex-1 min-w-0">
-                                  <p className={`text-xs font-medium truncate ${current ? "text-white"
-                                      : done ? "text-gray-300"       // ✅ removed line-through
-                                        : !unlocked ? "text-gray-600"
-                                          : "text-gray-300"
-                                    }`}>
+                                  <p className={`text-xs font-medium truncate ${current ? "text-white" : done ? "text-gray-300" : !unlocked ? "text-gray-600" : "text-gray-300"}`}>
                                     {lIdx + 1}. {lesson.title}
                                   </p>
                                   <div className="flex items-center gap-2 mt-0.5">
@@ -687,17 +779,13 @@ export default function LearnPage() {
                                       </span>
                                     )}
                                     <span className="text-[10px] text-gray-600 uppercase tracking-wider">{lesson.type}</span>
+                                    {lesson.type === "assignment" && hasSub && (
+                                      <span className="text-[10px] text-amber-500">✓ submitted</span>
+                                    )}
                                   </div>
                                 </div>
-
-                                {/* Right side indicator */}
-                                {current && (
-                                  <div className="w-1.5 h-1.5 rounded-full flex-shrink-0 animate-pulse"
-                                    style={{ background: "#C81D77" }} />
-                                )}
-                                {!unlocked && !done && (
-                                  <span className="text-[10px] text-gray-600 flex-shrink-0">🔒</span>
-                                )}
+                                {current && <div className="w-1.5 h-1.5 rounded-full flex-shrink-0 animate-pulse" style={{ background: "#C81D77" }} />}
+                                {!unlocked && !done && <span className="text-[10px] text-gray-600 flex-shrink-0">🔒</span>}
                               </button>
                             );
                           })}

@@ -5,7 +5,7 @@ const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`;
 
 // ── System Prompt ────────────────────────────────────────
-const SYSTEM_PROMPT = `তুমি SmartLMS Pro এর একজন বুদ্ধিমান AI শিক্ষা সহকারী। তুমি:
+const SYSTEM_PROMPT = `তুমি CareerCanvas এর একজন বুদ্ধিমান AI শিক্ষা সহকারী। তুমি:
 
 1. **MCQ তৈরি করতে পারো** — যখন কেউ MCQ চাইবে তখন এই format এ দাও:
    MCQ_START
@@ -45,7 +45,7 @@ export async function POST(req: NextRequest) {
       },
       {
         role: "model",
-        parts: [{ text: "বুঝেছি! আমি SmartLMS Pro এর AI Assistant। কীভাবে সাহায্য করতে পারি?" }],
+        parts: [{ text: "বুঝেছি! আমি CareerCanvas এর AI Assistant। কীভাবে সাহায্য করতে পারি?" }],
       },
       ...(history || []).slice(-10).map((m: { role: string; content: string }) => ({
         role: m.role === "assistant" ? "model" : "user",
