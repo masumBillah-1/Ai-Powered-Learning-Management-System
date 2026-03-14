@@ -46,6 +46,12 @@ export async function GET(req: NextRequest) {
         return NextResponse.json({ success: true, enrollments: [], total: 0 });
 
       const courseIds = courses.map((c: any) => c._id);
+
+      // ✅ courseId → title map বানাও
+      const courseMap = new Map<string, string>(
+        courses.map((c: any) => [c._id.toString(), c.title || "Untitled Course"])
+      );
+
       const query: any = { courseId: { $in: courseIds } };
       if (status) query.status = status;
 
@@ -59,16 +65,25 @@ export async function GET(req: NextRequest) {
           { name: 1, email: 1, phone: 1, photoURL: 1, address: 1, stats: 1, status: 1 }
         ).lean();
         const userMap = new Map(users.map((u: any) => [u._id.toString(), u]));
+
         result = enrollments.map((e: any) => ({
           ...e,
           studentData: userMap.get(e.studentId.toString()) || null,
+          // ✅ courseName যোগ করা হয়েছে — courseMap থেকে নিচ্ছে
+          courseName: e.courseName || courseMap.get(e.courseId.toString()) || "Unknown Course",
+        }));
+      } else {
+        // populate ছাড়াও courseName যোগ করো
+        result = enrollments.map((e: any) => ({
+          ...e,
+          courseName: e.courseName || courseMap.get(e.courseId.toString()) || "Unknown Course",
         }));
       }
 
       return NextResponse.json({ success: true, enrollments: result, total: result.length, courseCount: courses.length });
     }
 
-    // Student own enrollments
+    // ─── Student own enrollments ───────────────────────────────────────────────
     const query: any = { studentId: new mongoose.Types.ObjectId(decoded.userId) };
     if (courseId && mongoose.isValidObjectId(courseId))
       query.courseId = new mongoose.Types.ObjectId(courseId);
@@ -148,7 +163,7 @@ export async function POST(req: NextRequest) {
   }
 }
 
-// ─── PUT — Update lesson progress ────────────────────────────────────────────
+// ─── PUT — Update lesson progress ─────────────────────────────────────────────
 export async function PUT(req: NextRequest) {
   try {
     await connectDB();
@@ -160,7 +175,6 @@ export async function PUT(req: NextRequest) {
     if (!courseId || !mongoose.isValidObjectId(courseId))
       return NextResponse.json({ error: "Valid courseId required" }, { status: 400 });
 
-    // ── Step 1: Find current enrollment ──────────────────────────────────────
     const enrollment = await Enrollment.findOne({
       studentId: new mongoose.Types.ObjectId(decoded.userId),
       courseId:  new mongoose.Types.ObjectId(courseId),
@@ -169,7 +183,6 @@ export async function PUT(req: NextRequest) {
     if (!enrollment)
       return NextResponse.json({ error: "Enrollment not found" }, { status: 404 });
 
-    // ── Step 2: Build ONE combined update object ──────────────────────────────
     const updateOps: any = {
       $set: {
         "progress.lastAccessedAt": new Date(),
@@ -184,14 +197,11 @@ export async function PUT(req: NextRequest) {
     if (completed && lessonId) {
       const alreadyDone = enrollment.progress.completedLessons
         .some((id: any) => id.toString() === lessonId.toString());
-
       if (!alreadyDone) {
         updateOps.$addToSet = { "progress.completedLessons": String(lessonId) };
       }
     }
 
-    // ── Step 3: Apply update ──────────────────────────────────────────────────
-    // ✅ returnDocument: "after"  replaces deprecated { new: true }
     let updated = await Enrollment.findOneAndUpdate(
       {
         studentId: new mongoose.Types.ObjectId(decoded.userId),
@@ -203,7 +213,6 @@ export async function PUT(req: NextRequest) {
 
     if (!updated) return NextResponse.json({ error: "Update failed" }, { status: 500 });
 
-    // ── Step 4: Recalculate progressPercentage ────────────────────────────────
     if (completed) {
       const course = await Course.findById(courseId).lean() as any;
       if (course) {
@@ -220,18 +229,15 @@ export async function PUT(req: NextRequest) {
             courseId:  new mongoose.Types.ObjectId(courseId),
           },
           { $set: { "progress.progressPercentage": percentage } },
-          { returnDocument: "after" }  // ✅ fixed
+          { returnDocument: "after" }
         );
 
-        // ── Step 5: If course was previously completed but instructor added new lessons,
-        //    reset status to "active" so student can continue earning progress
         if (updated?.status === "completed" && percentage < 100) {
           await Enrollment.findByIdAndUpdate(updated._id, {
             $set: { status: "active", completedAt: null },
           });
         }
 
-        // ── Step 5b: Auto-certificate at 100% ────────────────────────────────
         if (percentage === 100 && updated && !updated.certificate?.issued) {
           const certId = `CERT-${Date.now()}-${decoded.userId.slice(-6).toUpperCase()}`;
           await Enrollment.findByIdAndUpdate(updated._id, {
@@ -253,7 +259,6 @@ export async function PUT(req: NextRequest) {
       }
     }
 
-    // ── Step 6: Update user total time ────────────────────────────────────────
     if (timeSpent > 0) {
       await User.findByIdAndUpdate(decoded.userId, {
         $inc: { "stats.totalTimeSpent": timeSpent },

@@ -17,7 +17,7 @@ export { User, Course, Blog, Enrollment, Transaction, Message, Notification };
 
 // Export types
 export type { IUserDocument } from "./User";
-export type { ICourseDocument, ILesson, IModule, IFAQ } from "./Course";
+export type { ICourseDocument, ILesson, IModule, IFAQ } from "./Course.js";
 export type { IBlog } from "./Blog";
 export type { IEnrollmentDocument } from "./Enrollment";
 export type { ITransactionDocument } from "./Transaction";
