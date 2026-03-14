@@ -361,7 +361,7 @@ export async function PUT(req: NextRequest) {
         );
       } else {
         // নতুন submission — push করো (array না থাকলেও MongoDB auto-create করে)
-        await collection.updateOne(
+        await (collection as any).updateOne(
           { _id: enrollment._id },
           { $push: { submissions: submissionData } }
         );
