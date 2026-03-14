@@ -16,9 +16,11 @@ interface LessonItem {
   title: string;
   type: string;
   duration: string;
-  videoUrl: string;       // for video type
-  textContent: string;    // for text type
-  assignmentDesc: string; // for assignment type
+  videoUrl: string;
+  textContent: string;
+  assignmentDesc: string;
+  assignmentMarks: string;   // ← নতুন
+  assignmentDueDate: string; // ← নতুন
 }
 interface ModuleItem { id: number; title: string; lessons: LessonItem[] }
 
@@ -188,6 +190,8 @@ export default function CreateCoursePage() {
               videoUrl: l.url || "",
               textContent: l.textContent || "",
               assignmentDesc: l.assignmentDesc || "",
+              assignmentMarks: String(l.marks || ""),                                              // ← নতুন
+              assignmentDueDate: l.dueDate ? new Date(l.dueDate).toISOString().split("T")[0] : "", // ← নতুন
             })),
           })));
         }
@@ -255,9 +259,19 @@ export default function CreateCoursePage() {
   const addModule = () => { setModules(prev => [...prev, { id: Date.now(), title: `Module ${prev.length + 1}`, lessons: [] }]); setModuleErr(""); };
   const removeModule = (id: number) => setModules(prev => prev.filter(m => m.id !== id));
   const updateModTitle = (id: number, t: string) => setModules(prev => prev.map(m => m.id === id ? { ...m, title: t } : m));
+
+  // ← assignmentMarks ও assignmentDueDate সহ default values
   const addLesson = (mid: number) => setModules(prev => prev.map(m =>
-    m.id === mid ? { ...m, lessons: [...m.lessons, { id: Date.now(), title: "", type: "video", duration: "", videoUrl: "", textContent: "", assignmentDesc: "" }] } : m
+    m.id === mid ? {
+      ...m, lessons: [...m.lessons, {
+        id: Date.now(), title: "", type: "video", duration: "",
+        videoUrl: "", textContent: "", assignmentDesc: "",
+        assignmentMarks: "",     // ← নতুন
+        assignmentDueDate: "",   // ← নতুন
+      }]
+    } : m
   ));
+
   const removeLesson = (mid: number, lid: number) => setModules(prev => prev.map(m => m.id === mid ? { ...m, lessons: m.lessons.filter(l => l.id !== lid) } : m));
   const updateLesson = (mid: number, lid: number, field: string, value: string) =>
     setModules(prev => prev.map(m => m.id === mid ? { ...m, lessons: m.lessons.map(l => l.id === lid ? { ...l, [field]: value } : l) } : m));
@@ -291,7 +305,7 @@ export default function CreateCoursePage() {
       let videoPayload: any = { type: "url", url: vals.videoUrl };
       if (vals.videoMode === "upload" && videoFile) { videoPayload = { type: "upload", base64: await fileToBase64(videoFile) }; }
 
-      // Map modules → include url, textContent, assignmentDesc in each lesson
+      // ← marks ও dueDate সহ payload
       const mappedModules = modules.map(m => ({
         title: m.title,
         lessons: m.lessons.map(l => ({
@@ -301,6 +315,8 @@ export default function CreateCoursePage() {
           url: l.videoUrl || "",
           textContent: l.textContent || "",
           assignmentDesc: l.assignmentDesc || "",
+          marks: l.assignmentMarks ? Number(l.assignmentMarks) : 0,               // ← নতুন
+          dueDate: l.assignmentDueDate ? new Date(l.assignmentDueDate) : null,     // ← নতুন
         })),
       }));
 
@@ -680,7 +696,7 @@ export default function CreateCoursePage() {
                             className="btn btn-xs btn-ghost btn-circle opacity-30 hover:opacity-100 hover:text-error flex-shrink-0 cursor-pointer">✕</button>
                         </div>
 
-                        {/* ── VIDEO: URL input + YouTube preview ── */}
+                        {/* ── VIDEO ── */}
                         {les.type === "video" && (
                           <div className="ml-7 space-y-2">
                             <label className="text-xs font-semibold opacity-40 block">📹 Video URL — YouTube, Vimeo বা direct link</label>
@@ -698,7 +714,6 @@ export default function CreateCoursePage() {
                                   style={{ color: "#832388" }}>Preview ↗</a>
                               )}
                             </div>
-                            {/* YouTube embed preview */}
                             {les.videoUrl && (() => {
                               const yt = les.videoUrl.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&\s]+)/);
                               if (!yt) return null;
@@ -711,7 +726,7 @@ export default function CreateCoursePage() {
                           </div>
                         )}
 
-                        {/* ── TEXT: content textarea ── */}
+                        {/* ── TEXT ── */}
                         {les.type === "text" && (
                           <div className="ml-7 space-y-1">
                             <label className="text-xs font-semibold opacity-40 block">📄 Lesson Content (Text / HTML)</label>
@@ -724,7 +739,7 @@ export default function CreateCoursePage() {
                           </div>
                         )}
 
-                        {/* ── QUIZ: info notice ── */}
+                        {/* ── QUIZ ── */}
                         {les.type === "quiz" && (
                           <div className="ml-7">
                             <div className="flex items-start gap-3 bg-base-200 border border-base-300 rounded-xl px-4 py-3">
@@ -737,16 +752,60 @@ export default function CreateCoursePage() {
                           </div>
                         )}
 
-                        {/* ── ASSIGNMENT: instructions textarea ── */}
+                        {/* ── ASSIGNMENT ── */}
                         {les.type === "assignment" && (
-                          <div className="ml-7 space-y-1">
-                            <label className="text-xs font-semibold opacity-40 block">📋 Assignment Instructions</label>
-                            <textarea rows={4}
-                              placeholder="Students কে কী করতে হবে তা বিস্তারিত লিখুন... deadline, submission format ইত্যাদি।"
-                              value={les.assignmentDesc || ""}
-                              onChange={e => updateLesson(mod.id, les.id, "assignmentDesc", e.target.value)}
-                              className="textarea textarea-bordered bg-base-200 w-full resize-y focus:outline-none focus:border-purple-500 text-sm transition-colors" />
-                            <p className="text-xs opacity-30">{(les.assignmentDesc || "").length} characters</p>
+                          <div className="ml-7 space-y-3">
+
+                            {/* Instructions */}
+                            <div className="space-y-1">
+                              <label className="text-xs font-semibold opacity-40 block">📋 Assignment Instructions</label>
+                              <textarea rows={4}
+                                placeholder="Students কে কী করতে হবে তা বিস্তারিত লিখুন... deadline, submission format ইত্যাদি।"
+                                value={les.assignmentDesc || ""}
+                                onChange={e => updateLesson(mod.id, les.id, "assignmentDesc", e.target.value)}
+                                className="textarea textarea-bordered bg-base-200 w-full resize-y focus:outline-none focus:border-purple-500 text-sm transition-colors" />
+                              <p className="text-xs opacity-30">{(les.assignmentDesc || "").length} characters</p>
+                            </div>
+
+                            {/* ← নতুন: Marks + Due Date */}
+                            <div className="grid grid-cols-2 gap-3">
+                              <div className="space-y-1">
+                                <label className="text-xs font-semibold opacity-40 block">🏆 Total Marks</label>
+                                <input
+                                  type="number"
+                                  min="0"
+                                  placeholder="e.g. 100"
+                                  value={les.assignmentMarks || ""}
+                                  onChange={e => updateLesson(mod.id, les.id, "assignmentMarks", e.target.value)}
+                                  className="input input-sm input-bordered bg-base-200 w-full focus:outline-none focus:border-purple-500 transition-colors"
+                                />
+                              </div>
+                              <div className="space-y-1">
+                                <label className="text-xs font-semibold opacity-40 block">📅 Due Date</label>
+                                <input
+                                  type="date"
+                                  value={les.assignmentDueDate || ""}
+                                  onChange={e => updateLesson(mod.id, les.id, "assignmentDueDate", e.target.value)}
+                                  className="input input-sm input-bordered bg-base-200 w-full focus:outline-none focus:border-purple-500 transition-colors"
+                                />
+                              </div>
+                            </div>
+
+                            {/* Preview badge — marks ও date দেওয়া থাকলে দেখাবে */}
+                            {(les.assignmentMarks || les.assignmentDueDate) && (
+                              <div className="flex flex-wrap gap-2">
+                                {les.assignmentMarks && (
+                                  <div className="badge badge-outline gap-1 text-xs" style={{ borderColor: "#832388", color: "#832388" }}>
+                                    🏆 {les.assignmentMarks} Marks
+                                  </div>
+                                )}
+                                {les.assignmentDueDate && (
+                                  <div className="badge badge-outline gap-1 text-xs opacity-70">
+                                    📅 Due: {new Date(les.assignmentDueDate).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" })}
+                                  </div>
+                                )}
+                              </div>
+                            )}
                           </div>
                         )}
 

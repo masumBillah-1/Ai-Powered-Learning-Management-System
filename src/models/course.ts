@@ -5,9 +5,11 @@ export interface ILesson {
   title: string;
   type: "video" | "quiz" | "assignment" | "text";
   duration: string;
-  url?: string;           // video URL
-  textContent?: string;   // text lesson content
-  assignmentDesc?: string; // assignment instructions
+  url?: string;
+  textContent?: string;
+  assignmentDesc?: string;
+  marks?: number;       // ← নতুন: assignment এর total marks
+  dueDate?: Date;       // ← নতুন: assignment এর due date
   order: number;
 }
 
@@ -51,9 +53,11 @@ const LessonSchema = new Schema<ILesson>({
   title:          { type: String, required: true, trim: true },
   type:           { type: String, enum: ["video", "quiz", "assignment", "text"], default: "video" },
   duration:       { type: String, default: "" },
-  url:            { type: String, default: "" },          // video URL
-  textContent:    { type: String, default: "" },          // text lesson body
-  assignmentDesc: { type: String, default: "" },          // assignment instructions
+  url:            { type: String, default: "" },
+  textContent:    { type: String, default: "" },
+  assignmentDesc: { type: String, default: "" },
+  marks:          { type: Number, default: 0 },     // ← নতুন
+  dueDate:        { type: Date, default: null },     // ← নতুন
   order:          { type: Number, default: 0 },
 });
 
@@ -71,30 +75,21 @@ const FAQSchema = new Schema<IFAQ>({
 // ─── Main Schema ──────────────────────────────────────────────────────────────
 const CourseSchema = new Schema<ICourseDocument>(
   {
-    instructorId: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "User",
-      required: true,
-    },
-
-    title:       { type: String, required: true, trim: true },
-    category:    { type: String, required: true },
-    level:       { type: String, enum: ["Basic", "Intermediate", "Advanced"], default: "Basic" },
-    description: { type: String, default: "" },
-
+    instructorId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
+    title:        { type: String, required: true, trim: true },
+    category:     { type: String, required: true },
+    level:        { type: String, enum: ["Basic", "Intermediate", "Advanced"], default: "Basic" },
+    description:  { type: String, default: "" },
     coverImage: {
       type: { type: String, enum: ["upload", "url"], default: "url" },
       url:  { type: String, default: "" },
     },
-
     salesVideo: {
       type: { type: String, enum: ["upload", "url"], default: "url" },
       url:  { type: String, default: "" },
     },
-
     faqs:    [FAQSchema],
     modules: [ModuleSchema],
-
     pricing: {
       type:            { type: String, enum: ["paid", "free"], default: "paid" },
       price:           { type: Number, default: 0 },
@@ -102,18 +97,13 @@ const CourseSchema = new Schema<ICourseDocument>(
       enrollmentLimit: { type: Number, default: null },
       accessDuration:  { type: String, enum: ["lifetime", "1year", "6months", "3months"], default: "lifetime" },
     },
-
     visibility:    { type: String, enum: ["public", "private"], default: "public" },
     status:        { type: String, enum: ["draft", "published"], default: "draft" },
     enrolledCount: { type: Number, default: 0 },
   },
-  {
-    timestamps: true,
-    collection: "courses",
-  }
+  { timestamps: true, collection: "courses" }
 );
 
-// ─── Index ────────────────────────────────────────────────────────────────────
 CourseSchema.index({ instructorId: 1 });
 CourseSchema.index({ status: 1, visibility: 1 });
 

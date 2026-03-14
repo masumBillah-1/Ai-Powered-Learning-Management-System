@@ -120,7 +120,7 @@ function CheckoutForm({
         style={{ background: loading ? "#888" : "linear-gradient(90deg, #C81D77, #6710C2)" }}
       >
         {loading ? (
-          <><FaSpinner className="animate-spin" /> Processing Payment...</>
+          <><FaSpinner className="animate-spin btn" /> Processing Payment...</>
         ) : (
           <><FaLock className="text-sm" /> Pay ৳{amount.toLocaleString()} Securely <FaArrowRight className="text-sm" /></>
         )}
