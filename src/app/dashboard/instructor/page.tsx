@@ -230,7 +230,7 @@ export default function Indashboard() {
                     tickFormatter={v => v >= 1000 ? `$${v / 1000}k` : `$${v}`} />
                   <Tooltip cursor={{ fill: "oklch(var(--b2))" }}
                     contentStyle={{ borderRadius: 12, border: "none", backgroundColor: "oklch(var(--b1))", boxShadow: "0 8px 24px rgba(0,0,0,0.1)", fontSize: 12 }}
-                    formatter={(v: number) => [`$${v}`, "Earnings"]} />
+                    formatter={(value: any) => [`$${value || 0}`, "Earnings"]} />
                   <Bar dataKey="v" fill="url(#bg)" radius={[6, 6, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
