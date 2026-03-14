@@ -1,57 +1,34 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from 'react';
-import {
-  AreaChart, Area, XAxis, YAxis,
-  CartesianGrid, Tooltip, ResponsiveContainer
-} from 'recharts';
-import {
-  DollarSign, Star, Users,
-  Calendar, TrendingUp, Download, BookOpen, RefreshCw, AlertCircle,
-} from 'lucide-react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { DollarSign, Users, CalendarDays, TrendingUp, Download, BookOpen, RefreshCw, AlertCircle } from 'lucide-react';
 
-// ─── Types ────────────────────────────────────────────────────────────────────
-interface CourseStat {
-  courseId: string;
-  title: string;
-  price: number;
-  enrollments: number;
-  earnings: number;
-}
-
-interface Transaction {
-  id: string;
-  enrollmentId: string;
-  date: string;
-  course: string;
-  studentName: string;
-  studentPhoto: string;
-  amount: number;
-}
-
+interface CourseStat { courseId: string; title: string; price: number; enrollments: number; earnings: number; }
+interface Transaction { id: string; enrollmentId: string; date: string; course: string; studentName: string; studentPhoto: string; amount: number; }
+interface MonthPoint { name: string; earnings: number; year: number; month: number; }
 interface EarningsData {
-  totalEarnings: number;
-  thisMonthEarnings: number;
-  totalStudents: number;
-  totalCourses: number;
-  courseStats: CourseStat[];
-  monthlyData: { name: string; earnings: number }[];
-  recentTransactions: Transaction[];
+  totalEarnings: number; thisMonthEarnings: number; totalStudents: number; totalCourses: number;
+  courseStats: CourseStat[]; allMonthlyData: MonthPoint[]; recentTransactions: Transaction[];
 }
 
-const formatDate = (d: string) =>
-  new Date(d).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+const RANGE_OPTIONS = [
+  { label: "Last 1 Month", value: 1 },
+  { label: "Last 3 Months", value: 3 },
+  { label: "Last 6 Months", value: 6 },
+  { label: "Last 12 Months", value: 12 },
+];
 
-const fmt = (n: number) =>
-  n >= 1000 ? `$${(n / 1000).toFixed(1)}k` : `$${n.toFixed(0)}`;
+const formatDate = (d: string) => new Date(d).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+const fmt = (n: number) => n >= 1000 ? `$${(n / 1000).toFixed(1)}k` : `$${n.toFixed(0)}`;
 
 export default function EarningsPage() {
   const [theme, setTheme] = useState("light");
   const [data, setData] = useState<EarningsData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [chartRange, setChartRange] = useState(12);
 
-  // ── Theme sync ──────────────────────────────────────────────────────────────
   useEffect(() => {
     const saved = localStorage.getItem("theme") || "light";
     setTheme(saved);
@@ -63,7 +40,6 @@ export default function EarningsPage() {
     return () => clearInterval(iv);
   }, [theme]);
 
-  // ── Fetch — courses + enrollments একসাথে, route ছাড়া ───────────────────────
   const fetchEarnings = useCallback(async () => {
     setLoading(true); setError("");
     try {
@@ -71,19 +47,16 @@ export default function EarningsPage() {
       const headers: Record<string, string> = { "Content-Type": "application/json" };
       if (token) headers["Authorization"] = `Bearer ${token}`;
 
-      // Step 1: instructor এর courses
       const cRes = await fetch("/api/courses?mine=true&limit=200", { credentials: "include", headers });
       const cData = await cRes.json();
       if (!cRes.ok) throw new Error(cData.error || "Courses fetch failed");
-
       const courses: any[] = cData.courses || [];
 
       if (courses.length === 0) {
-        setData({ totalEarnings: 0, thisMonthEarnings: 0, totalStudents: 0, totalCourses: 0, courseStats: [], monthlyData: [], recentTransactions: [] });
+        setData({ totalEarnings: 0, thisMonthEarnings: 0, totalStudents: 0, totalCourses: 0, courseStats: [], allMonthlyData: [], recentTransactions: [] });
         return;
       }
 
-      // Step 2: সেই courses এর enrollments
       let instructorId = "";
       try { const u = JSON.parse(localStorage.getItem("user") || "{}"); instructorId = u?._id || u?.id || ""; } catch { }
 
@@ -94,33 +67,26 @@ export default function EarningsPage() {
       const eRes = await fetch(eUrl, { credentials: "include", headers });
       const eData = await eRes.json();
       if (!eRes.ok) throw new Error(eData.error || "Enrollments fetch failed");
-
       const enrollments: any[] = eData.enrollments || [];
 
-      // Step 3: courseId → course map
       const courseMap = new Map(courses.map((c: any) => [c._id.toString(), c]));
-
-      // Step 4: per-course stats
       const statsMap = new Map<string, CourseStat>();
+
       for (const e of enrollments) {
         const cId = e.courseId?.toString() || "";
         const course = courseMap.get(cId);
         if (!course) continue;
         const price = course.pricing?.type === "free" ? 0 : (course.pricing?.discountPrice || course.pricing?.price || 0);
-        if (!statsMap.has(cId)) {
-          statsMap.set(cId, { courseId: cId, title: course.title, price, enrollments: 0, earnings: 0 });
-        }
+        if (!statsMap.has(cId)) statsMap.set(cId, { courseId: cId, title: course.title, price, enrollments: 0, earnings: 0 });
         const s = statsMap.get(cId)!;
         s.enrollments += 1;
         s.earnings += price;
       }
 
-      // Step 5: totals
       const totalEarnings = Array.from(statsMap.values()).reduce((s, c) => s + c.earnings, 0);
       const totalStudents = new Set(enrollments.map((e: any) => e.studentId?.toString())).size;
       const courseStats = Array.from(statsMap.values()).sort((a, b) => b.earnings - a.earnings);
 
-      // Step 6: this month
       const now = new Date();
       const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
       const thisMonthEarnings = enrollments
@@ -131,13 +97,11 @@ export default function EarningsPage() {
           return sum + (course.pricing?.type === "free" ? 0 : (course.pricing?.discountPrice || course.pricing?.price || 0));
         }, 0);
 
-      // Step 7: monthly chart (last 12 months)
       const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
       const monthlyMap = new Map<string, number>();
       for (let i = 11; i >= 0; i--) {
         const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-        const key = `${d.getFullYear()}-${d.getMonth()}`;
-        monthlyMap.set(key, 0);
+        monthlyMap.set(`${d.getFullYear()}-${d.getMonth()}`, 0);
       }
       for (const e of enrollments) {
         const d = new Date(e.enrolledAt);
@@ -148,12 +112,11 @@ export default function EarningsPage() {
         const price = course.pricing?.type === "free" ? 0 : (course.pricing?.discountPrice || course.pricing?.price || 0);
         monthlyMap.set(key, (monthlyMap.get(key) || 0) + price);
       }
-      const monthlyData = Array.from(monthlyMap.entries()).map(([key, earnings]) => {
-        const [, month] = key.split("-").map(Number);
-        return { name: monthNames[month], earnings };
+      const allMonthlyData: MonthPoint[] = Array.from(monthlyMap.entries()).map(([key, earnings]) => {
+        const [year, month] = key.split("-").map(Number);
+        return { name: monthNames[month], earnings, year, month };
       });
 
-      // Step 8: recent transactions (last 10)
       const recent = [...enrollments]
         .sort((a: any, b: any) => new Date(b.enrolledAt).getTime() - new Date(a.enrolledAt).getTime())
         .slice(0, 10);
@@ -173,8 +136,7 @@ export default function EarningsPage() {
         };
       });
 
-      setData({ totalEarnings, thisMonthEarnings, totalStudents, totalCourses: courses.length, courseStats, monthlyData, recentTransactions });
-
+      setData({ totalEarnings, thisMonthEarnings, totalStudents, totalCourses: courses.length, courseStats, allMonthlyData, recentTransactions });
     } catch (err: any) {
       setError(err.message || "Earnings load করতে সমস্যা হয়েছে।");
     } finally {
@@ -184,12 +146,18 @@ export default function EarningsPage() {
 
   useEffect(() => { fetchEarnings(); }, [fetchEarnings]);
 
-  // ── Stats cards ─────────────────────────────────────────────────────────────
+  const chartData = useMemo(() => {
+    if (!data?.allMonthlyData) return [];
+    return data.allMonthlyData.slice(-chartRange);
+  }, [data, chartRange]);
+
+  const rangeEarnings = useMemo(() => chartData.reduce((s, d) => s + d.earnings, 0), [chartData]);
+
   const stats = [
     { label: "Total Earnings", value: data ? fmt(data.totalEarnings) : "$0", subtitle: "All time", icon: DollarSign, color: '#832388', bg: '#f3e8ff', bgDark: '#2a1f35' },
     { label: "This Month", value: data ? fmt(data.thisMonthEarnings) : "$0", subtitle: new Date().toLocaleString('en-US', { month: 'long', year: 'numeric' }), icon: TrendingUp, color: '#00C48C', bg: '#d1fae5', bgDark: '#0f2520' },
-    { label: "Total Students", value: data ? data.totalStudents.toString() : "0", subtitle: "Unique students", icon: Users, color: '#F89B29', bg: '#fef3c7', bgDark: '#2a1f15' },
-    { label: "Total Courses", value: data ? data.totalCourses.toString() : "0", subtitle: "Your courses", icon: BookOpen, color: '#E3436B', bg: '#fce7f3', bgDark: '#2a1520' },
+    { label: "Students", value: data ? data.totalStudents.toString() : "0", subtitle: "Unique students", icon: Users, color: '#F89B29', bg: '#fef3c7', bgDark: '#2a1f15' },
+    { label: "Courses", value: data ? data.totalCourses.toString() : "0", subtitle: "Your courses", icon: BookOpen, color: '#E3436B', bg: '#fce7f3', bgDark: '#2a1520' },
   ];
 
   return (
@@ -207,11 +175,9 @@ export default function EarningsPage() {
         </button>
       </div>
 
-      {/* Error */}
       {error && (
         <div className="alert alert-error flex items-center gap-2 text-sm">
-          <AlertCircle size={16} />
-          <span>{error}</span>
+          <AlertCircle size={16} /><span>{error}</span>
           <button className="ml-auto btn btn-xs" onClick={fetchEarnings}>Retry</button>
         </div>
       )}
@@ -240,19 +206,40 @@ export default function EarningsPage() {
       {/* Chart */}
       <div className="card bg-base-100 shadow-xl border border-base-300">
         <div className="card-body p-6">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-lg font-bold">Earnings Overview</h2>
-            <div className="badge badge-lg gap-2 font-semibold">
-              <Calendar size={14} /> Last 12 Months
+          <div className="flex flex-wrap items-start justify-between gap-3 mb-6">
+            <div>
+              <h2 className="text-lg font-bold">Earnings Overview</h2>
+              {!loading && data && (
+                <p className="text-sm opacity-50 mt-0.5">
+                  {RANGE_OPTIONS.find(o => o.value === chartRange)?.label}
+                  <span className="font-bold ml-2" style={{ color: '#832388' }}>{fmt(rangeEarnings)}</span>
+                </p>
+              )}
+            </div>
+
+            {/* ✅ Simple DaisyUI select — সবসময় কাজ করে */}
+            <div className="flex items-center gap-2">
+              <CalendarDays size={16} className="opacity-40 flex-shrink-0" />
+              <select
+                value={chartRange}
+                onChange={e => setChartRange(Number(e.target.value))}
+                className="select select-sm select-bordered bg-base-100 font-semibold cursor-pointer"
+                style={{ minWidth: 155 }}
+              >
+                {RANGE_OPTIONS.map(opt => (
+                  <option key={opt.value} value={opt.value}>{opt.label}</option>
+                ))}
+              </select>
             </div>
           </div>
+
           {loading ? (
             <div className="flex items-center justify-center h-[300px]">
               <span className="loading loading-spinner loading-lg" style={{ color: '#832388' }} />
             </div>
           ) : (
             <ResponsiveContainer width="100%" height={300}>
-              <AreaChart data={data?.monthlyData || []}>
+              <AreaChart data={chartData}>
                 <defs>
                   <linearGradient id="colorEarnings" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="5%" stopColor="#832388" stopOpacity={0.3} />
@@ -266,12 +253,12 @@ export default function EarningsPage() {
                   tick={{ fontSize: 12, fontWeight: 600, fill: theme === 'dark' ? '#aaa' : '#94a3b8' }}
                   tickFormatter={(v) => v >= 1000 ? `$${v / 1000}k` : `$${v}`} />
                 <Tooltip
-                  contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px rgba(0,0,0,0.1)', backgroundColor: theme === 'dark' ? '#1A1A1A' : '#ffffff' }}
+                  contentStyle={{ borderRadius: '10px', border: 'none', boxShadow: '0 8px 30px rgba(0,0,0,0.12)', backgroundColor: theme === 'dark' ? '#1e293b' : '#ffffff' }}
                   formatter={(value: number) => [`$${value}`, 'Earnings']}
                   itemStyle={{ color: '#832388', fontWeight: 700 }}
+                  labelStyle={{ fontWeight: 600, opacity: 0.6 }}
                 />
-                <Area type="monotone" dataKey="earnings" stroke="#832388"
-                  strokeWidth={3} fillOpacity={1} fill="url(#colorEarnings)" />
+                <Area type="monotone" dataKey="earnings" stroke="#832388" strokeWidth={2.5} fillOpacity={1} fill="url(#colorEarnings)" />
               </AreaChart>
             </ResponsiveContainer>
           )}
@@ -300,25 +287,18 @@ export default function EarningsPage() {
                       <td className="text-center text-sm">
                         {c.price === 0
                           ? <span className="badge badge-sm" style={{ backgroundColor: '#d1fae5', color: '#059669' }}>Free</span>
-                          : <span className="opacity-70">${c.price}</span>
-                        }
+                          : <span className="opacity-70">${c.price}</span>}
                       </td>
                       <td className="text-center font-bold" style={{ color: '#F89B29' }}>{c.enrollments}</td>
-                      <td className="text-right font-bold text-base" style={{ color: '#00C48C' }}>
-                        ${c.earnings.toLocaleString()}
-                      </td>
+                      <td className="text-right font-bold" style={{ color: '#00C48C' }}>${c.earnings.toLocaleString()}</td>
                     </tr>
                   ))}
                 </tbody>
                 <tfoot>
                   <tr>
                     <td colSpan={2} className="font-bold opacity-50 text-sm">Total</td>
-                    <td className="text-center font-bold" style={{ color: '#F89B29' }}>
-                      {data.courseStats.reduce((s, c) => s + c.enrollments, 0)}
-                    </td>
-                    <td className="text-right font-black text-xl" style={{ color: '#832388' }}>
-                      ${data.totalEarnings.toLocaleString()}
-                    </td>
+                    <td className="text-center font-bold" style={{ color: '#F89B29' }}>{data.courseStats.reduce((s, c) => s + c.enrollments, 0)}</td>
+                    <td className="text-right font-black text-xl" style={{ color: '#832388' }}>${data.totalEarnings.toLocaleString()}</td>
                   </tr>
                 </tfoot>
               </table>
@@ -337,7 +317,6 @@ export default function EarningsPage() {
               <Download size={14} /> Export
             </button>
           </div>
-
           {loading ? (
             <div className="flex justify-center py-10">
               <span className="loading loading-spinner loading-lg" style={{ color: '#832388' }} />
@@ -370,18 +349,14 @@ export default function EarningsPage() {
                             : <div className="w-7 h-7 rounded-full flex items-center justify-center text-white text-xs font-bold flex-shrink-0"
                               style={{ background: 'linear-gradient(135deg,#832388,#FF0F7B)' }}>
                               {t.studentName.charAt(0).toUpperCase()}
-                            </div>
-                          }
+                            </div>}
                           <span className="text-sm font-semibold">{t.studentName}</span>
                         </div>
                       </td>
                       <td className="text-sm opacity-60 whitespace-nowrap">{formatDate(t.date)}</td>
                       <td className="font-semibold text-sm max-w-[180px] truncate">{t.course}</td>
-                      <td className="text-right font-bold text-base" style={{ color: '#00C48C' }}>
-                        {t.amount === 0
-                          ? <span className="text-xs opacity-40">Free</span>
-                          : `$${t.amount}`
-                        }
+                      <td className="text-right font-bold" style={{ color: '#00C48C' }}>
+                        {t.amount === 0 ? <span className="text-xs opacity-40">Free</span> : `$${t.amount}`}
                       </td>
                     </tr>
                   ))}
