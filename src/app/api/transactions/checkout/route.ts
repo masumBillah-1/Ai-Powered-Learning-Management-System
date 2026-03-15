@@ -10,21 +10,15 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY as string, {
   apiVersion: "2026-02-25.clover",
 });
 
-// ✅ Cookie OR Authorization header — দুটো থেকেই token নাও
 function getDecoded(req: NextRequest) {
-  // 1. Cookie থেকে চেষ্টা করো (social login)
   let token = req.cookies.get("token")?.value;
-
-  // 2. Authorization header থেকে চেষ্টা করো (email/password login)
   if (!token) {
     const authHeader = req.headers.get("authorization");
     if (authHeader?.startsWith("Bearer ")) {
       token = authHeader.slice(7);
     }
   }
-
   if (!token) return null;
-
   try {
     return jwt.verify(token, process.env.JWT_SECRET as string) as {
       userId: string;
@@ -33,6 +27,29 @@ function getDecoded(req: NextRequest) {
   } catch {
     return null;
   }
+}
+
+// ✅ DB schema অনুযায়ী price extract
+// DB তে pricing object নেই — flat price & originalPrice field আছে
+function extractPrice(course: any): { isFree: boolean; priceInBDT: number } {
+  // Free check — pricing.type === "free" অথবা price === 0
+  if (course.pricing?.type === "free" || course.price === 0) {
+    return { isFree: true, priceInBDT: 0 };
+  }
+
+  // ✅ DB schema: flat price field (primary)
+  const basePrice = course.pricing?.price ?? course.price ?? 0;
+
+  // ✅ DB schema: originalPrice = discounted/sale price
+  // (form এ discountPrice → API route এ originalPrice হিসেবে save হয়)
+  const discountPrice = course.pricing?.discountPrice ?? course.originalPrice ?? null;
+
+  // discountPrice থাকলে এবং basePrice এর চেয়ে কম হলে সেটাই final price
+  const finalPrice = (discountPrice && discountPrice > 0 && discountPrice < basePrice)
+    ? discountPrice
+    : basePrice;
+
+  return { isFree: finalPrice === 0, priceInBDT: finalPrice };
 }
 
 // ─── POST — PaymentIntent ──────────────────────────────────────────────────
@@ -60,34 +77,45 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Course not found" }, { status: 404 });
     }
 
+    // ✅ Price extract — DB flat field থেকে
+    const { isFree, priceInBDT } = extractPrice(course);
+
     // Free course enroll
-    if (course.pricing?.type === "free") {
+    if (isFree) {
       const existing = await Enrollment.findOne({ studentId: decoded.userId, courseId });
       if (!existing) {
         await Enrollment.create({
           studentId:      decoded.userId,
           courseId,
           courseName:     course.title,
-          courseImage:    course.coverImage?.url || "",
+          // ✅ DB schema: thumbnail field
+          courseImage:    course.thumbnail || course.coverImage?.url || "",
           instructorName: course.instructorId?.name || "",
           status:         "active",
           enrolledAt:     new Date(),
-          progress: { completedLessons: [], progressPercentage: 0, totalTimeSpent: 0 },
+          progress: {
+            completedLessons:   [],
+            progressPercentage: 0,
+            totalTimeSpent:     0,
+            lastAccessedAt:     new Date(),
+          },
         });
         await Promise.all([
-          Course.findByIdAndUpdate(courseId, { $inc: { "stats.enrolledCount": 1, enrolledCount: 1 } }),
+          // ✅ enrollmentCount (DB schema field)
+          Course.findByIdAndUpdate(courseId, { $inc: { enrollmentCount: 1 } }),
           User.findByIdAndUpdate(decoded.userId, { $inc: { "stats.enrolledCourses": 1 } }),
         ]);
       }
       return NextResponse.json({ success: true, free: true });
     }
 
+    // Already enrolled check (paid)
     const alreadyEnrolled = await Enrollment.findOne({ studentId: decoded.userId, courseId });
     if (alreadyEnrolled) {
       return NextResponse.json({ error: "Already enrolled in this course" }, { status: 409 });
     }
 
-    const priceInBDT = course.pricing?.discountPrice || course.pricing?.price || 0;
+    // ✅ Price validate
     if (priceInBDT <= 0) {
       return NextResponse.json({ error: "Invalid course price" }, { status: 400 });
     }
@@ -169,20 +197,29 @@ export async function GET(req: NextRequest) {
 
     const alreadyEnrolled = await Enrollment.findOne({ studentId: decoded.userId, courseId });
     if (!alreadyEnrolled) {
-      const course = await Course.findById(courseId).populate("instructorId", "name").lean() as any;
+      const course = await Course.findById(courseId)
+        .populate("instructorId", "name")
+        .lean() as any;
       if (course) {
         await Enrollment.create({
           studentId:      decoded.userId,
           courseId,
           courseName:     course.title,
-          courseImage:    course.coverImage?.url || "",
+          // ✅ DB schema: thumbnail field
+          courseImage:    course.thumbnail || course.coverImage?.url || "",
           instructorName: course.instructorId?.name || "",
           status:         "active",
           enrolledAt:     new Date(),
-          progress: { completedLessons: [], progressPercentage: 0, totalTimeSpent: 0 },
+          progress: {
+            completedLessons:   [],
+            progressPercentage: 0,
+            totalTimeSpent:     0,
+            lastAccessedAt:     new Date(),
+          },
         });
         await Promise.all([
-          Course.findByIdAndUpdate(courseId, { $inc: { "stats.enrolledCount": 1, enrolledCount: 1 } }),
+          // ✅ enrollmentCount (DB schema field)
+          Course.findByIdAndUpdate(courseId, { $inc: { enrollmentCount: 1 } }),
           User.findByIdAndUpdate(decoded.userId, { $inc: { "stats.enrolledCourses": 1 } }),
         ]);
       }

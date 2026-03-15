@@ -254,7 +254,7 @@ export default function EarningsPage() {
                   tickFormatter={(v) => v >= 1000 ? `$${v / 1000}k` : `$${v}`} />
                 <Tooltip
                   contentStyle={{ borderRadius: '10px', border: 'none', boxShadow: '0 8px 30px rgba(0,0,0,0.12)', backgroundColor: theme === 'dark' ? '#1e293b' : '#ffffff' }}
-                  formatter={(value: number) => [`$${value}`, 'Earnings']}
+                  formatter={(value) => [`$${value ?? 0}`, 'Earnings']}
                   itemStyle={{ color: '#832388', fontWeight: 700 }}
                   labelStyle={{ fontWeight: 600, opacity: 0.6 }}
                 />

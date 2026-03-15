@@ -23,7 +23,6 @@ import {
 import { HiSparkles } from "react-icons/hi2";
 import Link from "next/link";
 
-// ── Stripe init ───────────────────────────────────────────────────────────────
 const stripePromise = loadStripe(
   process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!
 );
@@ -31,19 +30,59 @@ const stripePromise = loadStripe(
 // ── Types ─────────────────────────────────────────────────────────────────────
 interface CourseInfo {
   title: string;
-  coverImage?: { url: string };
-  pricing: {
-    type: string;
-    price: number;
+  // ✅ DB schema: thumbnail field (not coverImage.url)
+  thumbnail?: string;
+  coverImage?: { url?: string };
+  // ✅ DB schema: flat price & originalPrice fields
+  price?: number;
+  originalPrice?: number;
+  // legacy pricing object support
+  pricing?: {
+    type?: string;
+    price?: number;
     discountPrice?: number;
   };
   instructorId?: { name: string; photoURL?: string };
   level?: string;
   category?: string;
+  // ✅ DB schema: enrollmentCount
+  enrollmentCount?: number;
   enrolledCount?: number;
 }
 
-// ✅ Helper — localStorage token থেকে auth header বানাও
+// ── Helpers ───────────────────────────────────────────────────────────────────
+
+// Cover image URL
+function getCoverUrl(course: CourseInfo): string {
+  if (course.thumbnail && course.thumbnail.trim()) return course.thumbnail.trim();
+  if (course.coverImage?.url && course.coverImage.url.trim()) return course.coverImage.url.trim();
+  return "";
+}
+
+// ✅ Price info — DB তে flat price & originalPrice
+function getCoursePrice(course: CourseInfo): {
+  isFree: boolean;
+  price: number;
+  discountPrice: number | null;
+} {
+  // DB schema: flat price field
+  const flatPrice    = course.price    ?? course.pricing?.price    ?? 0;
+  const flatDiscount = course.originalPrice ?? course.pricing?.discountPrice ?? null;
+
+  // Free check — pricing.type === "free" অথবা price === 0
+  const isFree = course.pricing?.type === "free" || flatPrice === 0;
+
+  return {
+    isFree,
+    price:         flatPrice,
+    discountPrice: flatDiscount && flatDiscount < flatPrice ? flatDiscount : null,
+  };
+}
+
+function getEnrolledCount(course: CourseInfo): number {
+  return course.enrollmentCount ?? course.enrolledCount ?? 0;
+}
+
 function authHeaders(): HeadersInit {
   const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
   return token
@@ -51,7 +90,7 @@ function authHeaders(): HeadersInit {
     : { "Content-Type": "application/json" };
 }
 
-// ── Inner CheckoutForm ────────────────────────────────────────────────────────
+// ── CheckoutForm ──────────────────────────────────────────────────────────────
 function CheckoutForm({
   courseId,
   courseName,
@@ -63,9 +102,9 @@ function CheckoutForm({
   amount: number;
   onSuccess: () => void;
 }) {
-  const stripe = useStripe();
+  const stripe   = useStripe();
   const elements = useElements();
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading]   = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -120,7 +159,7 @@ function CheckoutForm({
         style={{ background: loading ? "#888" : "linear-gradient(90deg, #C81D77, #6710C2)" }}
       >
         {loading ? (
-          <><FaSpinner className="animate-spin btn" /> Processing Payment...</>
+          <><FaSpinner className="animate-spin" /> Processing Payment...</>
         ) : (
           <><FaLock className="text-sm" /> Pay ৳{amount.toLocaleString()} Securely <FaArrowRight className="text-sm" /></>
         )}
@@ -135,7 +174,7 @@ function CheckoutForm({
   );
 }
 
-// ── Success View ──────────────────────────────────────────────────────────────
+// ── SuccessView ───────────────────────────────────────────────────────────────
 function SuccessView({ courseName }: { courseName: string }) {
   const router = useRouter();
 
@@ -193,22 +232,21 @@ function SuccessView({ courseName }: { courseName: string }) {
 
 // ── Main Page ─────────────────────────────────────────────────────────────────
 export default function EnrollmentPage() {
-  const params = useParams();
-  const router = useRouter();
-  const searchParams = useSearchParams();
-  const courseId = params.courseId as string;
-
+  const params        = useParams();
+  const router        = useRouter();
+  const searchParams  = useSearchParams();
+  const courseId      = params.courseId as string;
   const paymentIntentId = searchParams.get("payment_intent");
 
-  const [course, setCourse] = useState<CourseInfo | null>(null);
+  const [course, setCourse]         = useState<CourseInfo | null>(null);
   const [clientSecret, setClientSecret] = useState("");
-  const [amount, setAmount] = useState(0);
-  const [loading, setLoading] = useState(true);
-  const [verifying, setVerifying] = useState(false);
-  const [success, setSuccess] = useState(false);
-  const [error, setError] = useState("");
+  const [amount, setAmount]         = useState(0);
+  const [loading, setLoading]       = useState(true);
+  const [verifying, setVerifying]   = useState(false);
+  const [success, setSuccess]       = useState(false);
+  const [error, setError]           = useState("");
 
-  // ── Step 1: Stripe redirect থেকে ফিরলে verify করো ──────────────────────────
+  // ── Payment verify (Stripe redirect ফিরে এলে) ─────────────────────────────
   useEffect(() => {
     if (paymentIntentId && courseId) {
       verifyPayment(paymentIntentId);
@@ -218,16 +256,16 @@ export default function EnrollmentPage() {
   const verifyPayment = async (intentId: string) => {
     setVerifying(true);
     try {
-      const res = await fetch(
+      const res  = await fetch(
         `/api/transactions/checkout?payment_intent=${intentId}&courseId=${courseId}`,
-        { headers: authHeaders() }  // ✅ auth header
+        { headers: authHeaders() }
       );
       const data = await res.json();
 
       if (data.success && data.status === "succeeded") {
         setSuccess(true);
         if (!course) {
-          const courseRes = await fetch(`/api/courses/${courseId}`);
+          const courseRes  = await fetch(`/api/courses/${courseId}`);
           const courseData = await courseRes.json();
           if (courseData.success) setCourse(courseData.course);
         }
@@ -242,7 +280,7 @@ export default function EnrollmentPage() {
     }
   };
 
-  // ── Step 2: Normal load ───────────────────────────────────────────────────
+  // ── Normal checkout init ──────────────────────────────────────────────────
   useEffect(() => {
     if (!paymentIntentId) {
       initCheckout();
@@ -252,8 +290,8 @@ export default function EnrollmentPage() {
   const initCheckout = async () => {
     try {
       setLoading(true);
+      setError("");
 
-      // ✅ Login check — না থাকলে login page এ পাঠাও
       const token = localStorage.getItem("token");
       if (!token) {
         router.replace(`/login?redirect=/enrollment/${courseId}`);
@@ -261,21 +299,27 @@ export default function EnrollmentPage() {
       }
 
       // Course details
-      const courseRes = await fetch(`/api/courses/${courseId}`);
+      const courseRes  = await fetch(`/api/courses/${courseId}`);
       const courseData = await courseRes.json();
-      if (!courseData.success) {
+      if (!courseData.success || !courseData.course) {
         setError("Course not found");
         setLoading(false);
         return;
       }
-      setCourse(courseData.course);
+
+      const c = courseData.course;
+      setCourse(c);
+
+      // ✅ DB schema: flat price field (pricing object নাও থাকতে পারে)
+      const { isFree, price, discountPrice } = getCoursePrice(c);
+      const finalPrice = discountPrice ?? price;
 
       // Free course
-      if (courseData.course.pricing?.type === "free") {
-        const res = await fetch("/api/transactions/checkout", {
-          method: "POST",
-          headers: authHeaders(),  // ✅ auth header
-          body: JSON.stringify({ courseId }),
+      if (isFree) {
+        const res  = await fetch("/api/transactions/checkout", {
+          method:  "POST",
+          headers: authHeaders(),
+          body:    JSON.stringify({ courseId }),
         });
         const data = await res.json();
         if (data.success && data.free) {
@@ -289,11 +333,21 @@ export default function EnrollmentPage() {
         return;
       }
 
-      // Paid course — PaymentIntent তৈরি
-      const checkoutRes = await fetch("/api/transactions/checkout", {
-        method: "POST",
-        headers: authHeaders(),  // ✅ auth header
-        body: JSON.stringify({ courseId }),
+      // ✅ Paid course — price validate করে checkout call
+      if (!finalPrice || finalPrice <= 0) {
+        setError("Invalid course price. Please contact support.");
+        setLoading(false);
+        return;
+      }
+
+      const checkoutRes  = await fetch("/api/transactions/checkout", {
+        method:  "POST",
+        headers: authHeaders(),
+        body:    JSON.stringify({
+          courseId,
+          // ✅ price explicitly পাঠানো — checkout API যদি DB থেকে না পায়
+          amount: finalPrice,
+        }),
       });
       const checkoutData = await checkoutRes.json();
 
@@ -309,7 +363,7 @@ export default function EnrollmentPage() {
       }
 
       setClientSecret(checkoutData.clientSecret);
-      setAmount(checkoutData.amount);
+      setAmount(checkoutData.amount || finalPrice);
     } catch {
       setError("Something went wrong. Please try again.");
     } finally {
@@ -317,10 +371,13 @@ export default function EnrollmentPage() {
     }
   };
 
-  const discountPercent =
-    course?.pricing?.discountPrice && course?.pricing?.price
-      ? Math.round(((course.pricing.price - course.pricing.discountPrice) / course.pricing.price) * 100)
-      : 0;
+  // ── Derived values ────────────────────────────────────────────────────────
+  const pricing         = course ? getCoursePrice(course) : null;
+  const coverUrl        = course ? getCoverUrl(course) : "";
+  const enrolledCount   = course ? getEnrolledCount(course) : 0;
+  const discountPercent = pricing?.discountPrice && pricing.price
+    ? Math.round(((pricing.price - pricing.discountPrice) / pricing.price) * 100)
+    : 0;
 
   // ── Loading ───────────────────────────────────────────────────────────────
   if (loading || verifying) {
@@ -388,10 +445,11 @@ export default function EnrollmentPage() {
           {/* Left: Course Summary */}
           <motion.div initial={{ opacity: 0, x: -30 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.1 }} className="space-y-6">
             <div className="bg-white dark:bg-gray-900 rounded-3xl shadow-xl overflow-hidden border border-gray-100 dark:border-gray-800">
-              {course?.coverImage?.url && (
+              {/* ✅ thumbnail field থেকে cover image */}
+              {coverUrl && (
                 <div className="relative h-48 overflow-hidden">
-                  <img src={course.coverImage.url} alt={course.title} className="w-full h-full object-cover"
-                    onError={(e) => { (e.target as HTMLImageElement).src = "https://via.placeholder.com/600x300?text=Course"; }} />
+                  <img src={coverUrl} alt={course?.title} className="w-full h-full object-cover"
+                    onError={e => { (e.target as HTMLImageElement).src = "https://placehold.co/600x300/1a1a2e/C81D77?text=Course"; }} />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
                   {course?.category && (
                     <div className="absolute bottom-4 left-4">
@@ -406,9 +464,10 @@ export default function EnrollmentPage() {
                 <h2 className="text-xl font-black text-gray-900 dark:text-white mb-2 leading-tight">{course?.title}</h2>
                 {course?.instructorId?.name && (
                   <div className="flex items-center gap-2 mb-4">
-                    <div className="w-7 h-7 rounded-full overflow-hidden bg-[#C81D77] flex items-center justify-center">
+                    <div className="w-7 h-7 rounded-full overflow-hidden bg-[#C81D77] flex items-center justify-center flex-shrink-0">
                       {course.instructorId.photoURL ? (
-                        <img src={course.instructorId.photoURL} alt={course.instructorId.name} className="w-full h-full object-cover" />
+                        <img src={course.instructorId.photoURL} alt={course.instructorId.name}
+                          className="w-full h-full object-cover" referrerPolicy="no-referrer" />
                       ) : (
                         <span className="text-white text-xs font-bold">{course.instructorId.name.charAt(0).toUpperCase()}</span>
                       )}
@@ -418,14 +477,14 @@ export default function EnrollmentPage() {
                 )}
                 <div className="flex items-center gap-4 text-sm text-gray-500 dark:text-gray-400">
                   {course?.level && (
-                    <span className="px-2 py-1 rounded-lg bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-300 font-bold text-xs">
+                    <span className="px-2 py-1 rounded-lg bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-300 font-bold text-xs capitalize">
                       {course.level}
                     </span>
                   )}
-                  {course?.enrolledCount !== undefined && (
+                  {enrolledCount > 0 && (
                     <div className="flex items-center gap-1">
                       <FaBook className="text-xs" />
-                      <span>{course.enrolledCount}+ students</span>
+                      <span>{enrolledCount}+ students</span>
                     </div>
                   )}
                 </div>
@@ -438,17 +497,17 @@ export default function EnrollmentPage() {
                 <FaStar className="text-yellow-400" /> Order Summary
               </h3>
               <div className="space-y-3">
-                {course?.pricing?.discountPrice && (
+                {pricing?.discountPrice && (
                   <div className="flex justify-between items-center">
                     <span className="text-gray-500 dark:text-gray-400">Original Price</span>
-                    <span className="text-gray-400 line-through">৳{course.pricing.price?.toLocaleString()}</span>
+                    <span className="text-gray-400 line-through">৳{pricing.price.toLocaleString()}</span>
                   </div>
                 )}
                 {discountPercent > 0 && (
                   <div className="flex justify-between items-center">
                     <span className="text-green-600 dark:text-green-400 font-medium">Discount ({discountPercent}% off)</span>
                     <span className="text-green-600 dark:text-green-400 font-bold">
-                      -৳{((course?.pricing?.price || 0) - (course?.pricing?.discountPrice || 0)).toLocaleString()}
+                      -৳{((pricing?.price || 0) - (pricing?.discountPrice || 0)).toLocaleString()}
                     </span>
                   </div>
                 )}
@@ -460,7 +519,7 @@ export default function EnrollmentPage() {
                 </div>
               </div>
               <div className="mt-4 pt-4 border-t border-gray-100 dark:border-gray-800 space-y-2">
-                {["Lifetime access", "Certificate of completion", "Mobile & desktop access", "24/7 support"].map((item) => (
+                {["Lifetime access", "Certificate of completion", "Mobile & desktop access", "24/7 support"].map(item => (
                   <div key={item} className="flex items-center gap-2 text-sm">
                     <FaCheckCircle className="text-[#C81D77] text-xs flex-shrink-0" />
                     <span className="text-gray-600 dark:text-gray-400">{item}</span>
@@ -486,18 +545,23 @@ export default function EnrollmentPage() {
                       appearance: {
                         theme: "stripe",
                         variables: {
-                          colorPrimary: "#C81D77",
-                          colorBackground: "#ffffff",
-                          colorText: "#1f2937",
-                          colorDanger: "#ef4444",
-                          fontFamily: "system-ui, sans-serif",
-                          spacingUnit: "4px",
-                          borderRadius: "12px",
+                          colorPrimary:     "#C81D77",
+                          colorBackground:  "#ffffff",
+                          colorText:        "#1f2937",
+                          colorDanger:      "#ef4444",
+                          fontFamily:       "system-ui, sans-serif",
+                          spacingUnit:      "4px",
+                          borderRadius:     "12px",
                         },
                       },
                     }}
                   >
-                    <CheckoutForm courseId={courseId} courseName={course?.title || ""} amount={amount} onSuccess={() => setSuccess(true)} />
+                    <CheckoutForm
+                      courseId={courseId}
+                      courseName={course?.title || ""}
+                      amount={amount}
+                      onSuccess={() => setSuccess(true)}
+                    />
                   </Elements>
                 ) : (
                   <div className="text-center py-8 text-gray-500 dark:text-gray-400">
