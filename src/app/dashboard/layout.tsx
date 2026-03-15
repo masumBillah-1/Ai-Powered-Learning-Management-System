@@ -13,7 +13,9 @@ import { FaSun, FaMoon } from "react-icons/fa";
 type Role = "student" | "instructor" | "admin";
 interface UserData { name: string; email: string; photoURL?: string; role: Role; }
 
-const POLL_INTERVAL = 5_000;
+// ✅ Poll interval বাড়ানো হয়েছে — 5s থেকে 60s
+// বারবার API call = বারবার MongoDB connection = timeout বেশি
+const POLL_INTERVAL = 60_000;
 
 const menus: Record<Role, { label: string; href: string; icon: React.ReactNode }[]> = {
   student: [
@@ -21,6 +23,7 @@ const menus: Record<Role, { label: string; href: string; icon: React.ReactNode }
     { label: "Profile", href: "/dashboard/profile", icon: <User size={18} /> },
     { label: "Courses", href: "/dashboard/student/courses", icon: <BookOpen size={18} /> },
     { label: "Assignments", href: "/dashboard/student/assignments", icon: <FileText size={18} /> },
+    { label: "Announcements", href: "/dashboard/announcements", icon: <Megaphone size={18} /> },
     { label: "Quiz", href: "/dashboard/student/quiz", icon: <HelpCircle size={18} /> },
     { label: "Certificates", href: "/dashboard/student/certificates", icon: <Award size={18} /> },
     { label: "Blog", href: "/dashboard/blog", icon: <BookOpen size={18} /> },
@@ -31,7 +34,7 @@ const menus: Record<Role, { label: string; href: string; icon: React.ReactNode }
     { label: "Dashboard", href: "/dashboard/instructor", icon: <LayoutDashboard size={18} /> },
     { label: "Profile", href: "/dashboard/profile", icon: <User size={18} /> },
     { label: "Courses", href: "/dashboard/instructor/courses", icon: <BookOpen size={18} /> },
-    { label: "Announcements", href: "/dashboard/instructor/announcements", icon: <Megaphone size={18} /> },
+    { label: "Announcements", href: "/dashboard/announcements", icon: <Megaphone size={18} /> },
     { label: "Assignments", href: "/dashboard/instructor/assignments", icon: <FileText size={18} /> },
     { label: "Students", href: "/dashboard/instructor/students", icon: <Users size={18} /> },
     { label: "Quiz", href: "/dashboard/instructor/quiz", icon: <HelpCircle size={18} /> },
@@ -46,7 +49,7 @@ const menus: Record<Role, { label: string; href: string; icon: React.ReactNode }
     { label: "Profile", href: "/dashboard/profile", icon: <User size={18} /> },
     { label: "Courses", href: "/dashboard/admin/courses", icon: <BookOpen size={18} /> },
     { label: "Users", href: "/dashboard/admin/users", icon: <Users size={18} /> },
-    { label: "Announcements", href: "/dashboard/admin/announcements", icon: <Megaphone size={18} /> },
+    { label: "Announcements", href: "/dashboard/announcements", icon: <Megaphone size={18} /> },
     { label: "Earnings", href: "/dashboard/admin/earnings", icon: <DollarSign size={18} /> },
     { label: "Blog", href: "/dashboard/blog", icon: <BookOpen size={18} /> },
     { label: "Messages", href: "/dashboard/messages", icon: <MessageSquare size={18} /> },
@@ -66,7 +69,13 @@ const roleProtectedPrefixes: Record<Role, string[]> = {
   admin: ["/dashboard/admin"],
 };
 
-const sharedPaths = ["/dashboard/profile", "/dashboard/messages", "/dashboard/settings"];
+const sharedPaths = [
+  "/dashboard/profile",
+  "/dashboard/messages",
+  "/dashboard/settings",
+  "/dashboard/announcements",
+  "/dashboard/blog",
+];
 
 function isUnauthorizedPath(path: string, userRole: Role): boolean {
   if (sharedPaths.some(p => path.startsWith(p))) return false;
@@ -106,7 +115,6 @@ function Sidebar({ items, collapsed, onToggle, mobileOpen, onMobileClose }: {
     return (
       <div className={`flex flex-col h-full overflow-hidden bg-gradient-to-b from-[#1a1a2e] via-[#16213e] to-[#0f3460] transition-all duration-300 ${w ? "w-60" : "w-[68px]"}`}>
         <div className={`h-16 flex items-center flex-shrink-0 border-b border-white/[0.07] ${w ? "px-3.5 justify-between" : "justify-center px-0"}`}>
-          {/* collapsed হলে logo hide — শুধু toggle button center এ */}
           {w && (
             <Link href="/" className="flex items-center gap-2.5 no-underline min-w-0">
               <div className="w-8 h-8 rounded-lg flex-shrink-0 flex items-center justify-center text-[15px] font-black text-white bg-gradient-to-br from-[#832388] to-[#FF0F7B]">S</div>
@@ -338,7 +346,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [mobileOpen, setMobileOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
 
-  // ✅ null দিয়ে শুরু — initial load এ কোনো role নেই, MongoDB থেকে আসবে
   const currentRoleRef = useRef<Role | null>(null);
   const lastFetchRef = useRef<number>(0);
 
@@ -362,9 +369,35 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     localStorage.setItem("theme", next);
   };
 
+  // ✅ localStorage থেকে user load করার helper
+  const loadFromCache = useCallback((isInitial: boolean) => {
+    const raw = localStorage.getItem("user");
+    if (!raw) return false;
+    try {
+      const parsed: UserData = JSON.parse(raw);
+      const r = (["student", "instructor", "admin"].includes(parsed.role)
+        ? parsed.role : "student") as Role;
+      currentRoleRef.current = r;
+      setUser(parsed);
+      setRole(r);
+      if (isInitial) {
+        setIsLoading(false);
+        if (isUnauthorizedPath(pathname, r)) router.replace(roleDashboard[r]);
+      }
+      return true;
+    } catch {
+      return false;
+    }
+  }, [pathname, router]);
+
   const fetchUser = useCallback(async (isInitial = false) => {
     const token = localStorage.getItem("token");
-    if (!token) { router.replace("/login"); return; }
+
+    // ✅ Token নেই → সত্যিকারের logout
+    if (!token) {
+      router.replace("/login");
+      return;
+    }
 
     // Debounce — 2s এর মধ্যে duplicate call skip
     const now = Date.now();
@@ -376,13 +409,34 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         headers: { Authorization: `Bearer ${token}` },
         cache: "no-store",
       });
-      const data = await res.json();
-      console.log("🔍 API Response:", JSON.stringify(data?.user));
 
-      if (!data.user) {
+      // ✅ KEY FIX: 500/503 = MongoDB timeout বা server error
+      // token delete করবো না — cached user দিয়ে চালিয়ে যাবো
+      if (res.status >= 500) {
+        console.warn(`⚠️ Server error ${res.status} — keeping cached session, NOT logging out`);
+        if (isInitial) {
+          const ok = loadFromCache(true);
+          if (!ok) {
+            // cache ও নেই — তখন login
+            router.replace("/login");
+          }
+        }
+        return;
+      }
+
+      // ✅ 401 = token expire বা invalid → তখনই logout
+      if (res.status === 401) {
         localStorage.removeItem("user");
         localStorage.removeItem("token");
         router.replace("/login");
+        return;
+      }
+
+      const data = await res.json();
+
+      if (!data.user) {
+        // data নেই কিন্তু 200 response — unexpected, cache রাখো
+        if (isInitial) loadFromCache(true);
         return;
       }
 
@@ -392,10 +446,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
       localStorage.setItem("user", JSON.stringify(freshUser));
 
-      // ✅ KEY FIX: currentRoleRef null মানে first load — role change redirect নয়
-      // currentRoleRef set আছে AND আলাদা role এলে তখনই redirect
+      // Role change হলে redirect
       if (currentRoleRef.current !== null && newRole !== currentRoleRef.current) {
-        console.log(`🔄 Role changed: ${currentRoleRef.current} → ${newRole}`);
         currentRoleRef.current = newRole;
         setUser(freshUser);
         setRole(newRole);
@@ -410,7 +462,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
       if (isInitial) {
         setIsLoading(false);
-        // KEY FIX: wrong role dashboard এ থাকলেও redirect
         const isWrongRoleDashboard = Object.entries(roleDashboard).some(
           ([r, path]) => r !== newRole && pathname.startsWith(path)
         );
@@ -418,33 +469,21 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           router.replace(roleDashboard[newRole]);
         }
       }
-    } catch {
+
+    } catch (err) {
+      // ✅ Network error বা fetch throw — logout করবো না
+      console.warn("⚠️ fetchUser error — keeping session:", err);
       if (isInitial) {
-        const raw = localStorage.getItem("user");
-        if (raw) {
-          try {
-            const parsed: UserData = JSON.parse(raw);
-            const fallbackRole = (["student", "instructor", "admin"].includes(parsed.role)
-              ? parsed.role : "student") as Role;
-            currentRoleRef.current = fallbackRole;
-            setUser(parsed);
-            setRole(fallbackRole);
-            setIsLoading(false);
-            if (isUnauthorizedPath(pathname, fallbackRole)) {
-              router.replace(roleDashboard[fallbackRole]);
-            }
-          } catch { router.replace("/login"); }
-        } else {
-          router.replace("/login");
-        }
+        const ok = loadFromCache(true);
+        if (!ok) router.replace("/login");
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [loadFromCache]);
 
   useEffect(() => { fetchUser(true); }, [fetchUser]);
 
-  // Background poll — 30s
+  // ✅ Poll interval বাড়ানো হয়েছে: 5s → 60s
   useEffect(() => {
     const interval = setInterval(() => {
       if (!isLoading) fetchUser(false);
@@ -452,7 +491,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     return () => clearInterval(interval);
   }, [isLoading, fetchUser]);
 
-  // Tab visible হলে instant check
+  // Tab visible হলে check
   useEffect(() => {
     const onVisible = () => {
       if (document.visibilityState === "visible" && !isLoading) fetchUser(false);
@@ -461,7 +500,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     return () => document.removeEventListener("visibilitychange", onVisible);
   }, [isLoading, fetchUser]);
 
-  // Window focus হলে instant check
+  // Window focus হলে check
   useEffect(() => {
     const onFocus = () => { if (!isLoading) fetchUser(false); };
     window.addEventListener("focus", onFocus);

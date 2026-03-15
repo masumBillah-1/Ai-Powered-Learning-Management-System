@@ -11,47 +11,88 @@ interface Course {
   description: string;
   category: string;
   level: string;
-  coverImage: {
-    type: string;
-    url: string;
-  };
-  pricing: {
-    type: string;
-    price: number;
-    discountPrice?: number;
-  };
-  enrolledCount: number;
-  instructorId: {
-    _id: string;
-    name: string;
-    photoURL?: string;
-  };
+  // ✅ DB schema: thumbnail field (not coverImage.url)
+  thumbnail?: string;
+  coverImage?: { type?: string; url?: string };
+  // ✅ DB schema: flat price & originalPrice
+  price?: number;
+  originalPrice?: number;
+  // legacy
+  pricing?: { type?: string; price?: number; discountPrice?: number };
+  // ✅ DB schema: enrollmentCount
+  enrollmentCount?: number;
+  enrolledCount?: number;
+  instructorId: { _id: string; name: string; photoURL?: string };
   status: string;
-  visibility: string;
+  visibility?: string;
 }
 
 const levelColors: Record<string, string> = {
-  Beginner: "from-emerald-400 to-teal-500",
+  beginner:     "from-emerald-400 to-teal-500",
+  intermediate: "from-amber-400 to-orange-500",
+  advanced:     "from-rose-500 to-pink-600",
+  Beginner:     "from-emerald-400 to-teal-500",
   Intermediate: "from-amber-400 to-orange-500",
-  Advanced: "from-rose-500 to-pink-600",
+  Advanced:     "from-rose-500 to-pink-600",
 };
 
 const levelBg: Record<string, string> = {
-  Beginner: "bg-emerald-500/10 text-emerald-400 border-emerald-500/30",
+  beginner:     "bg-emerald-500/10 text-emerald-400 border-emerald-500/30",
+  intermediate: "bg-amber-500/10 text-amber-400 border-amber-500/30",
+  advanced:     "bg-rose-500/10 text-rose-400 border-rose-500/30",
+  Beginner:     "bg-emerald-500/10 text-emerald-400 border-emerald-500/30",
   Intermediate: "bg-amber-500/10 text-amber-400 border-amber-500/30",
-  Advanced: "bg-rose-500/10 text-rose-400 border-rose-500/30",
+  Advanced:     "bg-rose-500/10 text-rose-400 border-rose-500/30",
 };
 
+// ✅ Cover image — DB তে thumbnail field
+function getCoverUrl(course: Course): string {
+  if (course.thumbnail && course.thumbnail.trim()) return course.thumbnail.trim();
+  if (course.coverImage?.url && course.coverImage.url.trim()) return course.coverImage.url.trim();
+  return '';
+}
+
+// ✅ Price info — DB তে flat price & originalPrice fields
+// price = regular price (1000)
+// originalPrice = sale/discount price (900) — form এ discountPrice → API route এ originalPrice save হয়
+function getCoursePrice(course: Course): {
+  isFree: boolean;
+  regularPrice: number;
+  salePrice: number | null;  // originalPrice (discounted price)
+  discountPercent: number;
+} {
+  // legacy pricing object support
+  if (course.pricing) {
+    const reg  = course.pricing.price    ?? 0;
+    const sale = course.pricing.discountPrice ?? null;
+    const isFree = course.pricing.type === "free" || reg === 0;
+    const pct  = (sale && reg && sale < reg) ? Math.round(((reg - sale) / reg) * 100) : 0;
+    return { isFree, regularPrice: reg, salePrice: sale && sale < reg ? sale : null, discountPercent: pct };
+  }
+
+  // ✅ DB schema: flat fields
+  const reg  = course.price    ?? 0;
+  // DB: originalPrice = sale/discounted price (900), price = regular price (1000)
+  const sale = (course.originalPrice && course.originalPrice < reg) ? course.originalPrice : null;
+  const isFree = reg === 0;
+  const pct  = (sale && reg) ? Math.round(((reg - sale) / reg) * 100) : 0;
+
+  return { isFree, regularPrice: reg, salePrice: sale, discountPercent: pct };
+}
+
+function getEnrolledCount(course: Course): number {
+  return course.enrollmentCount ?? course.enrolledCount ?? 0;
+}
+
+// ── CourseCard ────────────────────────────────────────────────────────────────
 const CourseCard = ({ course, index }: { course: Course; index: number }) => {
-  const router = useRouter();
+  const router   = useRouter();
+  const coverUrl = getCoverUrl(course);
+  const { isFree, regularPrice, salePrice, discountPercent } = getCoursePrice(course);
 
-  const discount =
-    course.pricing.discountPrice && course.pricing.price > course.pricing.discountPrice
-      ? Math.round(((course.pricing.price - course.pricing.discountPrice) / course.pricing.price) * 100)
-      : null;
-
-  const gradientClass = levelColors[course.level] || "from-violet-500 to-purple-600";
-  const levelClass = levelBg[course.level] || "bg-violet-500/10 text-violet-400 border-violet-500/30";
+  const levelKey      = course.level?.toLowerCase() || '';
+  const gradientClass = levelColors[course.level] || levelColors[levelKey] || "from-violet-500 to-purple-600";
+  const levelClass    = levelBg[course.level]     || levelBg[levelKey]     || "bg-violet-500/10 text-violet-400 border-violet-500/30";
 
   return (
     <motion.div
@@ -65,34 +106,28 @@ const CourseCard = ({ course, index }: { course: Course; index: number }) => {
           {/* ─── Thumbnail ─── */}
           <div className="relative h-52 overflow-hidden flex-shrink-0">
             <img
-              src={course.coverImage?.url || 'https://placehold.co/600x400/1a1a2e/C81D77?text=Course'}
+              src={coverUrl || 'https://placehold.co/600x400/1a1a2e/C81D77?text=Course'}
               alt={course.title}
               className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 ease-out"
-              onError={(e) => {
-                (e.target as HTMLImageElement).src = 'https://placehold.co/600x400/1a1a2e/C81D77?text=Course';
-              }}
+              onError={e => { (e.target as HTMLImageElement).src = 'https://placehold.co/600x400/1a1a2e/C81D77?text=Course'; }}
             />
-
-            {/* Gradient overlay */}
             <div className="absolute inset-0 bg-gradient-to-t from-[#111827] via-[#111827]/20 to-transparent" />
 
-            {/* Discount badge */}
-            {discount && (
+            {/* ✅ discountPercent — DB originalPrice থেকে calculate */}
+            {discountPercent > 0 && (
               <div className="absolute top-4 right-4 flex items-center gap-1 px-2.5 py-1 rounded-full bg-[#C81D77] text-white text-xs font-bold shadow-lg shadow-[#C81D77]/40">
-                🔥 {discount}% OFF
+                🔥 {discountPercent}% OFF
               </div>
             )}
 
-            {/* Category chip */}
             <div className="absolute top-4 left-4">
               <span className="px-3 py-1 rounded-full bg-black/60 backdrop-blur-md text-white/90 text-xs font-semibold border border-white/10 tracking-wide">
                 {course.category}
               </span>
             </div>
 
-            {/* Level pill — sits on the image/content boundary */}
             <div className="absolute bottom-4 left-4">
-              <span className={`px-3 py-1 rounded-full text-xs font-bold border backdrop-blur-md ${levelClass}`}>
+              <span className={`px-3 py-1 rounded-full text-xs font-bold border backdrop-blur-md capitalize ${levelClass}`}>
                 {course.level}
               </span>
             </div>
@@ -100,25 +135,26 @@ const CourseCard = ({ course, index }: { course: Course; index: number }) => {
 
           {/* ─── Body ─── */}
           <div className="flex flex-col flex-1 p-5 gap-3">
-
-            {/* Title */}
             <h3 className="text-base font-extrabold text-white leading-snug group-hover:text-[#C81D77] transition-colors duration-300 line-clamp-2">
               {course.title}
             </h3>
 
-            {/* Description */}
             <p className="text-sm text-gray-400 leading-relaxed line-clamp-2 flex-1">
               {course.description}
             </p>
 
-            {/* Divider */}
             <div className="h-px bg-white/5" />
 
             {/* Instructor row */}
             <div className="flex items-center gap-2.5">
               <div className="w-8 h-8 rounded-full overflow-hidden ring-2 ring-[#C81D77]/30 flex-shrink-0">
                 {course.instructorId?.photoURL ? (
-                  <img src={course.instructorId.photoURL} alt={course.instructorId.name} className="w-full h-full object-cover" />
+                  <img
+                    src={course.instructorId.photoURL}
+                    alt={course.instructorId.name}
+                    className="w-full h-full object-cover"
+                    referrerPolicy="no-referrer"
+                  />
                 ) : (
                   <div className={`w-full h-full flex items-center justify-center bg-gradient-to-br ${gradientClass} text-white text-xs font-black`}>
                     {course.instructorId?.name?.charAt(0)?.toUpperCase() ?? "?"}
@@ -129,37 +165,36 @@ const CourseCard = ({ course, index }: { course: Course; index: number }) => {
                 <p className="text-xs text-gray-500 leading-none mb-0.5">Instructor</p>
                 <p className="text-xs font-semibold text-gray-300 truncate">{course.instructorId?.name}</p>
               </div>
-
-              {/* Enrolled count — push to right */}
               <div className="ml-auto flex items-center gap-1.5 text-xs text-gray-500 bg-white/5 px-3 py-1.5 rounded-full border border-white/5">
                 <span>👥</span>
-                <span className="font-semibold text-gray-400">{course.enrolledCount ?? 0}</span>
+                <span className="font-semibold text-gray-400">{getEnrolledCount(course)}</span>
               </div>
             </div>
 
             {/* ─── Price bar ─── */}
             <div className="flex items-end justify-between mt-1 pt-3 border-t border-white/5">
-              {course.pricing.type === "free" ? (
+              {isFree ? (
                 <div className="flex items-end gap-1">
                   <span className="text-2xl font-black text-emerald-400 leading-none">Free</span>
                   <span className="text-xs text-emerald-500/60 mb-0.5">Enroll now</span>
                 </div>
               ) : (
                 <div className="flex items-end gap-2">
+                  {/* ✅ salePrice (originalPrice) থাকলে সেটা show, নইলে regularPrice */}
                   <span className="text-2xl font-black text-[#C81D77] leading-none">
-                    ৳{course.pricing.discountPrice ?? course.pricing.price}
+                    ৳{salePrice ?? regularPrice}
                   </span>
-                  {course.pricing.discountPrice && (
+                  {/* ✅ salePrice থাকলে regularPrice strikethrough দেখাও */}
+                  {salePrice && (
                     <span className="text-sm text-gray-600 line-through mb-0.5">
-                      ৳{course.pricing.price}
+                      ৳{regularPrice}
                     </span>
                   )}
                 </div>
               )}
 
-              {/* CTA button */}
               <button
-                onClick={(e) => {
+                onClick={e => {
                   e.preventDefault();
                   const token = localStorage.getItem("token");
                   if (!token) {
@@ -171,14 +206,14 @@ const CourseCard = ({ course, index }: { course: Course; index: number }) => {
                 className="flex items-center gap-1.5 px-4 py-2 rounded-full bg-gradient-to-r from-[#C81D77] to-[#a0155e] text-white text-xs font-bold shadow-md shadow-[#C81D77]/30 group-hover:shadow-[#C81D77]/60 transition-all duration-300 group-hover:gap-2.5 cursor-pointer border-0"
               >
                 Enroll
-                <svg className="w-3.5 h-3.5 transition-transform duration-300 group-hover:translate-x-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                <svg className="w-3.5 h-3.5 transition-transform duration-300 group-hover:translate-x-0.5"
+                  fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" />
                 </svg>
               </button>
             </div>
           </div>
 
-          {/* Subtle gradient glow on hover */}
           <div className="absolute inset-x-0 bottom-0 h-1 bg-gradient-to-r from-[#C81D77] to-[#ff6b9d] opacity-0 group-hover:opacity-100 transition-opacity duration-500 rounded-b-3xl" />
         </div>
       </Link>
@@ -186,27 +221,25 @@ const CourseCard = ({ course, index }: { course: Course; index: number }) => {
   );
 };
 
-/* ─────────────────────────────────────────── */
-
+// ── CoursesPage ───────────────────────────────────────────────────────────────
 const CoursesPage = () => {
   const [courses, setCourses] = useState<Course[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
+  const [error, setError]     = useState("");
 
-  useEffect(() => {
-    fetchCourses();
-  }, []);
+  useEffect(() => { fetchCourses(); }, []);
 
   const fetchCourses = async () => {
     try {
       setLoading(true);
-      const res = await fetch('/api/courses?status=published');
+      const res  = await fetch('/api/courses?status=published');
       const data = await res.json();
-      if (data.success) {
-        const publicCourses = data.courses.filter(
-          (course: Course) => course.visibility === "public" && course.status === "published"
+
+      if (data.courses) {
+        const publishedCourses = (data.courses as Course[]).filter(
+          course => course.status === "published"
         );
-        setCourses(publicCourses);
+        setCourses(publishedCourses);
       } else {
         setError("Failed to load courses");
       }
@@ -218,7 +251,6 @@ const CoursesPage = () => {
     }
   };
 
-  /* ── Loading ── */
   if (loading) {
     return (
       <div className="min-h-screen bg-[#0b1120] py-20">
@@ -248,14 +280,14 @@ const CoursesPage = () => {
     );
   }
 
-  /* ── Error ── */
   if (error) {
     return (
       <div className="min-h-screen bg-[#0b1120] py-16 flex items-center justify-center">
         <div className="text-center">
           <div className="text-6xl mb-4">⚠️</div>
           <h2 className="text-2xl font-bold text-white mb-2">{error}</h2>
-          <button onClick={fetchCourses} className="mt-4 px-6 py-3 bg-[#C81D77] text-white rounded-full hover:bg-[#a0155e] transition-colors font-semibold">
+          <button onClick={fetchCourses}
+            className="mt-4 px-6 py-3 bg-[#C81D77] text-white rounded-full hover:bg-[#a0155e] transition-colors font-semibold">
             Try Again
           </button>
         </div>
@@ -263,7 +295,6 @@ const CoursesPage = () => {
     );
   }
 
-  /* ── Empty ── */
   if (courses.length === 0) {
     return (
       <div className="min-h-screen bg-[#0b1120] py-20">
@@ -279,18 +310,14 @@ const CoursesPage = () => {
     );
   }
 
-  /* ── Main ── */
   return (
     <div className="min-h-screen bg-[#0b1120] py-20">
-      {/* Background glow */}
       <div className="pointer-events-none fixed inset-0 overflow-hidden">
         <div className="absolute -top-40 -left-40 w-[600px] h-[600px] rounded-full bg-[#C81D77]/5 blur-[120px]" />
         <div className="absolute -bottom-40 -right-40 w-[600px] h-[600px] rounded-full bg-violet-700/5 blur-[120px]" />
       </div>
 
       <div className="container mx-auto px-4 relative z-10">
-
-        {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: 24 }}
           animate={{ opacity: 1, y: 0 }}
@@ -299,7 +326,10 @@ const CoursesPage = () => {
         >
           <p className="text-xs uppercase tracking-[0.3em] text-[#C81D77] font-bold mb-3">Learn & Grow</p>
           <h1 className="text-5xl md:text-6xl font-black text-white leading-tight">
-            All <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#C81D77] to-[#ff6b9d]">Courses</span>
+            All{" "}
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#C81D77] to-[#ff6b9d]">
+              Courses
+            </span>
           </h1>
           <p className="text-gray-400 mt-4 text-lg">Choose your path and start learning today</p>
 
@@ -309,7 +339,6 @@ const CoursesPage = () => {
           </div>
         </motion.div>
 
-        {/* Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-7">
           {courses.map((course, index) => (
             <CourseCard key={course._id} course={course} index={index} />

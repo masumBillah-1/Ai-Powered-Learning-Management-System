@@ -32,16 +32,25 @@ const HeroSection: React.FC = () => {
         }
 
         /* ── Dark cinematic overlays ── */
-        .hx-ov1 {
-          position: absolute; inset: 0; z-index: 1;
-          background: linear-gradient(
-            160deg,
-            rgba(5,1,15,0.55) 0%,
-            rgba(10,1,25,0.45) 30%,
-            rgba(8,2,18,0.35) 60%,
-            rgba(5,1,12,0.50) 100%
-          );
-        }
+      .hx-ov1 {
+  position: absolute; inset: 0; z-index: 1;
+  background: linear-gradient(
+    160deg,
+    rgba(5,1,15,0.55) 0%,
+    rgba(10,1,25,0.45) 30%,
+    rgba(8,2,18,0.35) 60%,
+    rgba(5,1,12,0.50) 100%
+  );
+}.hx-ov1 {
+  position: absolute; inset: 0; z-index: 1;
+  background: linear-gradient(
+    160deg,
+    rgba(5,1,15,0.55) 0%,
+    rgba(10,1,25,0.45) 30%,
+    rgba(8,2,18,0.35) 60%,
+    rgba(5,1,12,0.50) 100%
+  );
+}
         .hx-ov2 {
           position: absolute; inset: 0; z-index: 2;
           background:
@@ -49,12 +58,11 @@ const HeroSection: React.FC = () => {
             radial-gradient(ellipse 50% 50% at 0% 0%, rgba(255,15,123,0.15) 0%, transparent 60%),
             radial-gradient(ellipse 50% 50% at 100% 0%, rgba(248,155,41,0.12) 0%, transparent 60%);
         }
-        .hx-ov3 {
-          position: absolute; bottom: 0; left: 0;
-          width: 100%; height: 60%; z-index: 3;
-          background: linear-gradient(to top, rgba(5,1,15,0.60) 0%, rgba(8,2,20,0.30) 40%, transparent 100%);
-        }
-
+     .hx-ov3 {
+  position: absolute; bottom: 0; left: 0;
+  width: 100%; height: 60%; z-index: 3;
+  background: linear-gradient(to top, rgba(5,1,15,0.60) 0%, rgba(8,2,20,0.30) 40%, transparent 100%);
+}
         /* ── Scanline texture ── */
         .hx-scanline {
           position: absolute; inset: 0; z-index: 4; pointer-events: none;
@@ -219,15 +227,24 @@ const HeroSection: React.FC = () => {
         }
 
         /* ── Stats bar ── */
-        .hx-stats {
-          display: flex; align-items: stretch; margin-top: 50px;
-          border-radius: 20px; overflow: hidden;
-          background: rgba(255,255,255,0.14);
-          backdrop-filter: blur(20px);
-          -webkit-backdrop-filter: blur(20px);
-          border: 1px solid rgba(255,255,255,0.4);
-          box-shadow: 0 10px 40px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.6);
-        }
+   .hx-stats{
+  display:flex;
+  align-items:stretch;
+  margin-top:50px;
+  border-radius:20px;
+  overflow:hidden;
+
+  /* glass effect */
+  background:rgba(255,255,255,0.14);
+  backdrop-filter:blur(20px);
+  -webkit-backdrop-filter:blur(20px);
+
+  border:1px solid rgba(255,255,255,0.4);
+
+  box-shadow:
+    0 10px 40px rgba(0,0,0,0.25),
+    inset 0 1px 0 rgba(255,255,255,0.6);
+}
         .hx-stat-item {
           flex: 1; padding: 22px 28px; text-align: center;
           border-right: 1px solid rgba(255,255,255,0.08);
@@ -273,11 +290,11 @@ const HeroSection: React.FC = () => {
         .hx-corner-bl { bottom:20px; left:20px; border-bottom:1px solid rgba(131,35,136,0.3); border-left:1px solid rgba(131,35,136,0.3); }
         .hx-corner-br { bottom:20px; right:20px; border-bottom:1px solid rgba(227,67,107,0.3); border-right:1px solid rgba(227,67,107,0.3); }
 
-        .hx-fade-bottom {
-          position: absolute; bottom: 0; left: 0; width: 100%; height: 120px;
-          z-index: 8; pointer-events: none;
-          background: linear-gradient(to bottom, transparent, rgba(5,1,15,0.40));
-        }
+   .hx-fade-bottom {
+  position: absolute; bottom: 0; left: 0; width: 100%; height: 120px;
+  z-index: 8; pointer-events: none;
+  background: linear-gradient(to bottom, transparent, rgba(5,1,15,0.40));
+}
 
         @keyframes hxFade { from { opacity:0; transform:translateY(18px); } to { opacity:1; transform:translateY(0); } }
 
@@ -296,9 +313,9 @@ const HeroSection: React.FC = () => {
 
       <section className="hx-wrap">
 
-        {/* ── Real education background image ── */}
+        {/* ── Real education background image (Unsplash) ── */}
         <img
-          src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRhSiFhhRYyJlyA_eXpeq5vQf1vFFLtrPaX-Q&s"
+          src="https://png.pngtree.com/background/20250105/original/pngtree-beautiful-green-nature-blurred-background-picture-image_15534396.jpg"
           alt="Students learning together"
           className="hx-bg-img"
         />
@@ -384,14 +401,17 @@ const HeroSection: React.FC = () => {
               <span className="hx-stat-val">12K+</span>
               <span className="hx-stat-lbl">Students</span>
             </div>
+
             <div className="hx-stat-item">
               <span className="hx-stat-val">200+</span>
               <span className="hx-stat-lbl">Courses</span>
             </div>
+
             <div className="hx-stat-item">
               <span className="hx-stat-val">4.9★</span>
               <span className="hx-stat-lbl">Rating</span>
             </div>
+
             <div className="hx-stat-item">
               <span className="hx-stat-val">98%</span>
               <span className="hx-stat-lbl">Satisfaction</span>
