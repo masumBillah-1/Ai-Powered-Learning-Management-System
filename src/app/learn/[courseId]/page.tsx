@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -17,8 +17,8 @@ interface Lesson {
   _id: string;
   title: string;
   type: "video" | "quiz" | "assignment" | "text";
-  duration: string;
-  url?: string;
+  duration: number;
+  videoUrl?: string;
   textContent?: string;
   assignmentDesc?: string;
   marks?: number;
@@ -59,6 +59,40 @@ function getYouTubeEmbedUrl(url: string) {
   return url;
 }
 
+function getTimeRemaining(dueDate: string) {
+  const now = new Date();
+  const due = new Date(dueDate);
+  const diffMs = due.getTime() - now.getTime();
+
+  if (diffMs <= 0) {
+    return { text: "⏰ Time's up!", isOverdue: true, color: "#dc2626" };
+  }
+
+  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+  const diffHours = Math.floor((diffMs % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+  const diffMinutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+
+  if (diffDays > 0) {
+    return {
+      text: `⏳ ${diffDays} দিন ${diffHours} ঘন্টা বাকি`,
+      isOverdue: false,
+      color: diffDays > 3 ? "#10b981" : diffDays > 1 ? "#f59e0b" : "#dc2626"
+    };
+  } else if (diffHours > 0) {
+    return {
+      text: `⏳ ${diffHours} ঘন্টা ${diffMinutes} মিনিট বাকি`,
+      isOverdue: false,
+      color: diffHours > 12 ? "#f59e0b" : "#dc2626"
+    };
+  } else {
+    return {
+      text: `⏳ ${diffMinutes} মিনিট বাকি`,
+      isOverdue: false,
+      color: "#dc2626"
+    };
+  }
+}
+
 function getLessonIcon(type: string, size = 10) {
   switch (type) {
     case "video": return <FaPlay style={{ fontSize: size }} />;
@@ -94,11 +128,21 @@ export default function LearnPage() {
   const [linkUrl, setLinkUrl] = useState("");
   const [submitFile, setSubmitFile] = useState<File | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [currentTime, setCurrentTime] = useState(Date.now());
 
   const startTime = useRef<number>(Date.now());
   const activeLessonRef = useRef<Lesson | null>(null);
 
   useEffect(() => { if (courseId) initialFetch(); }, [courseId]);
+
+  // Update current time every minute for real-time countdown
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentTime(Date.now());
+    }, 60000); // Update every minute
+
+    return () => clearInterval(timer);
+  }, []);
 
   // ── Initial fetch ─────────────────────────────────────────────────────────
   const initialFetch = async () => {
@@ -180,8 +224,11 @@ export default function LearnPage() {
       setLockedToast(true); setTimeout(() => setLockedToast(false), 2500); return;
     }
     if (activeLessonRef.current && enrollment) {
-      const timeSpent = Math.round((Date.now() - startTime.current) / 60000);
-      if (timeSpent > 0) updateProgress(activeLessonRef.current._id, timeSpent, false);
+      // Only track time for video lessons
+      if (activeLessonRef.current.type === "video") {
+        const timeSpent = Math.round((Date.now() - startTime.current) / 60000);
+        if (timeSpent > 0) updateProgress(activeLessonRef.current._id, timeSpent, false);
+      }
     }
     startTime.current = Date.now();
     setActiveLesson(lesson);
@@ -196,7 +243,12 @@ export default function LearnPage() {
     setCompletingLesson(true);
     const newCompleted = [...localCompletedRef.current, activeLesson._id];
     localCompletedRef.current = newCompleted; setLocalCompleted(newCompleted);
-    const timeSpent = Math.round((Date.now() - startTime.current) / 60000);
+
+    // Only track time for video lessons
+    const timeSpent = activeLesson.type === "video"
+      ? Math.round((Date.now() - startTime.current) / 60000)
+      : 0;
+
     const success = await updateProgress(activeLesson._id, timeSpent, true);
     if (!success) {
       const reverted = localCompletedRef.current.filter(id => id !== activeLesson._id);
@@ -255,6 +307,24 @@ export default function LearnPage() {
       if (data.success) {
         toast.success(data.isLate ? "⚠️ Submitted (late)" : "✅ Assignment submitted!", { id: tid, ...toastOk });
         setTextAnswer(""); setLinkUrl(""); setSubmitFile(null);
+
+        // Mark assignment as completed after successful submission
+        if (!localCompletedRef.current.includes(activeLesson._id)) {
+          const newCompleted = [...localCompletedRef.current, activeLesson._id];
+          localCompletedRef.current = newCompleted;
+          setLocalCompleted(newCompleted);
+
+          // Update progress on server - no time tracking for assignments
+          const timeSpent = 0; // Assignments don't track time
+          const progressSuccess = await updateProgress(activeLesson._id, timeSpent, true);
+          if (!progressSuccess) {
+            // Revert if progress update failed
+            const reverted = localCompletedRef.current.filter(id => id !== activeLesson._id);
+            localCompletedRef.current = reverted;
+            setLocalCompleted(reverted);
+          }
+        }
+
         await silentRefreshEnrollment();
       } else {
         toast.error(`❌ ${data.error || "Submission failed"}`, { id: tid, ...toastErr });
@@ -359,8 +429,8 @@ export default function LearnPage() {
 
           {/* VIDEO PLAYER */}
           <div className="bg-black w-full relative" style={{ aspectRatio: "16/9", maxHeight: "75vh" }}>
-            {activeLesson?.type === "video" && activeLesson.url ? (
-              <iframe key={activeLesson._id} src={getYouTubeEmbedUrl(activeLesson.url)}
+            {activeLesson?.type === "video" && activeLesson.videoUrl ? (
+              <iframe key={activeLesson._id} src={getYouTubeEmbedUrl(activeLesson.videoUrl)}
                 className="w-full h-full"
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
                 allowFullScreen style={{ border: "none" }} />
@@ -405,9 +475,9 @@ export default function LearnPage() {
                 <h2 className="text-white text-xl font-bold leading-tight">
                   {activeLesson?.title || "Choose a lesson to start"}
                 </h2>
-                {activeLesson?.duration && (
+                {activeLesson?.duration !== undefined && activeLesson.type === "video" && (
                   <p className="text-gray-500 text-sm mt-1 flex items-center gap-1">
-                    <FaClock size={10} /> {activeLesson.duration}
+                    <FaClock size={10} /> {activeLesson.duration > 0 ? `${activeLesson.duration} min` : 'No duration'}
                   </p>
                 )}
               </div>
@@ -419,7 +489,9 @@ export default function LearnPage() {
                     Next →
                   </button>
                 )}
-                {activeLesson && !isCompleted(activeLesson._id) && activeLesson.type !== "assignment" ? (
+
+                {/* For regular lessons (not assignments) */}
+                {activeLesson && !isCompleted(activeLesson._id) && activeLesson.type !== "assignment" && (
                   <motion.button whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
                     onClick={handleMarkComplete} disabled={completingLesson}
                     className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-white font-bold text-sm shadow-lg disabled:opacity-60 whitespace-nowrap cursor-pointer"
@@ -427,11 +499,25 @@ export default function LearnPage() {
                     <FaCheckCircle size={13} />
                     {completingLesson ? "Saving..." : "Mark Complete"}
                   </motion.button>
-                ) : activeLesson && isCompleted(activeLesson._id) ? (
+                )}
+
+                {/* For assignments - show Mark Complete if submitted but not completed */}
+                {activeLesson && activeLesson.type === "assignment" && !isCompleted(activeLesson._id) && getSubmission(activeLesson._id) && (
+                  <motion.button whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
+                    onClick={handleMarkComplete} disabled={completingLesson}
+                    className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-white font-bold text-sm shadow-lg disabled:opacity-60 whitespace-nowrap cursor-pointer"
+                    style={{ background: "linear-gradient(90deg, #C81D77, #6710C2)" }}>
+                    <FaCheckCircle size={13} />
+                    {completingLesson ? "Saving..." : "Mark Complete"}
+                  </motion.button>
+                )}
+
+                {/* Show completed status */}
+                {activeLesson && isCompleted(activeLesson._id) && (
                   <div className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-emerald-400 font-bold text-sm border border-emerald-500/30 bg-emerald-500/10">
                     <FaCheckCircle size={13} /> Completed
                   </div>
-                ) : null}
+                )}
               </div>
             </div>
           </div>
@@ -477,9 +563,19 @@ export default function LearnPage() {
                   </div>
                   <p className="text-gray-300 text-sm leading-relaxed whitespace-pre-wrap">{activeLesson.assignmentDesc}</p>
                   {activeLesson.dueDate && (
-                    <p className="text-xs text-gray-500 mt-3 flex items-center gap-1">
-                      <FaClock size={10} /> Due: {new Date(activeLesson.dueDate).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}
-                    </p>
+                    <div className="mt-3 flex items-center justify-between">
+                      <p className="text-xs text-gray-500 flex items-center gap-1">
+                        <FaClock size={10} /> Due: {new Date(activeLesson.dueDate).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}
+                      </p>
+                      {(() => {
+                        const timeInfo = getTimeRemaining(activeLesson.dueDate);
+                        return (
+                          <p className="text-xs font-bold px-2 py-1 rounded-lg" style={{ color: timeInfo.color, background: `${timeInfo.color}15` }}>
+                            {timeInfo.text}
+                          </p>
+                        );
+                      })()}
+                    </div>
                   )}
                 </div>
               )}
@@ -760,12 +856,12 @@ export default function LearnPage() {
                             return (
                               <button key={lesson._id} onClick={() => handleLessonSelect(lesson)}
                                 className={`w-full flex items-center gap-3 px-3 py-2.5 mx-1 rounded-lg transition-all text-left mb-0.5 ${current ? "bg-[#C81D77]/15 border border-[#C81D77]/30 cursor-pointer"
-                                    : unlocked ? "hover:bg-white/5 cursor-pointer"
-                                      : "opacity-40 cursor-not-allowed"}`}>
+                                  : unlocked ? "hover:bg-white/5 cursor-pointer"
+                                    : "opacity-40 cursor-not-allowed"}`}>
                                 <div className={`w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 ${done ? "bg-emerald-500/20 text-emerald-400"
-                                    : !unlocked ? "bg-white/5 text-gray-600"
-                                      : current ? "bg-[#C81D77]/20 text-[#C81D77]"
-                                        : "bg-white/5 text-gray-500"}`}>
+                                  : !unlocked ? "bg-white/5 text-gray-600"
+                                    : current ? "bg-[#C81D77]/20 text-[#C81D77]"
+                                      : "bg-white/5 text-gray-500"}`}>
                                   {done ? <FaCheckCircle size={12} /> : !unlocked ? <FaLock size={11} /> : getLessonIcon(lesson.type, 11)}
                                 </div>
                                 <div className="flex-1 min-w-0">
@@ -773,14 +869,24 @@ export default function LearnPage() {
                                     {lIdx + 1}. {lesson.title}
                                   </p>
                                   <div className="flex items-center gap-2 mt-0.5">
-                                    {lesson.duration && (
+                                    {lesson.duration !== undefined && lesson.type === "video" && (
                                       <span className="text-gray-600 text-[10px] flex items-center gap-1">
-                                        <FaClock size={8} /> {lesson.duration}
+                                        <FaClock size={8} /> {lesson.duration > 0 ? `${lesson.duration}m` : '0m'}
                                       </span>
                                     )}
                                     <span className="text-[10px] text-gray-600 uppercase tracking-wider">{lesson.type}</span>
                                     {lesson.type === "assignment" && hasSub && (
                                       <span className="text-[10px] text-amber-500">✓ submitted</span>
+                                    )}
+                                    {lesson.type === "assignment" && lesson.dueDate && !hasSub && (
+                                      (() => {
+                                        const timeInfo = getTimeRemaining(lesson.dueDate);
+                                        return (
+                                          <span className="text-[9px] font-bold px-1 py-0.5 rounded" style={{ color: timeInfo.color, background: `${timeInfo.color}20` }}>
+                                            {timeInfo.isOverdue ? "⏰ Late" : timeInfo.text.replace("⏳ ", "").replace(" বাকি", "")}
+                                          </span>
+                                        );
+                                      })()
                                     )}
                                   </div>
                                 </div>
