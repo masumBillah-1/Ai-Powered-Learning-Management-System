@@ -76,7 +76,7 @@ export default function EarningsPage() {
         const cId = e.courseId?.toString() || "";
         const course = courseMap.get(cId);
         if (!course) continue;
-        const price = course.pricing?.type === "free" ? 0 : (course.pricing?.discountPrice || course.pricing?.price || 0);
+        const price = course.price || 0;  // ✅ Direct price field, not pricing.price
         if (!statsMap.has(cId)) statsMap.set(cId, { courseId: cId, title: course.title, price, enrollments: 0, earnings: 0 });
         const s = statsMap.get(cId)!;
         s.enrollments += 1;
@@ -94,7 +94,7 @@ export default function EarningsPage() {
         .reduce((sum: number, e: any) => {
           const course = courseMap.get(e.courseId?.toString() || "");
           if (!course) return sum;
-          return sum + (course.pricing?.type === "free" ? 0 : (course.pricing?.discountPrice || course.pricing?.price || 0));
+          return sum + (course.price || 0);  // ✅ Direct price field
         }, 0);
 
       const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
@@ -109,7 +109,7 @@ export default function EarningsPage() {
         if (!monthlyMap.has(key)) continue;
         const course = courseMap.get(e.courseId?.toString() || "");
         if (!course) continue;
-        const price = course.pricing?.type === "free" ? 0 : (course.pricing?.discountPrice || course.pricing?.price || 0);
+        const price = course.price || 0;  // ✅ Direct price field
         monthlyMap.set(key, (monthlyMap.get(key) || 0) + price);
       }
       const allMonthlyData: MonthPoint[] = Array.from(monthlyMap.entries()).map(([key, earnings]) => {
@@ -124,7 +124,7 @@ export default function EarningsPage() {
       const recentTransactions: Transaction[] = recent.map((e: any, i: number) => {
         const course = courseMap.get(e.courseId?.toString() || "");
         const student = e.studentData || {};
-        const price = course?.pricing?.type === "free" ? 0 : (course?.pricing?.discountPrice || course?.pricing?.price || 0);
+        const price = course?.price || 0;  // ✅ Direct price field
         return {
           id: `ORD-${String(i + 1).padStart(3, "0")}`,
           enrollmentId: e._id,
@@ -254,7 +254,7 @@ export default function EarningsPage() {
                   tickFormatter={(v) => v >= 1000 ? `$${v / 1000}k` : `$${v}`} />
                 <Tooltip
                   contentStyle={{ borderRadius: '10px', border: 'none', boxShadow: '0 8px 30px rgba(0,0,0,0.12)', backgroundColor: theme === 'dark' ? '#1e293b' : '#ffffff' }}
-                  formatter={(value: number) => [`$${value}`, 'Earnings']}
+                  formatter={(value) => [`$${value ?? 0}`, 'Earnings']}
                   itemStyle={{ color: '#832388', fontWeight: 700 }}
                   labelStyle={{ fontWeight: 600, opacity: 0.6 }}
                 />

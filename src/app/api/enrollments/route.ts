@@ -183,7 +183,7 @@ export async function GET(req: NextRequest) {
       const targetInstructorId = instructorId || decoded.userId;
       const courses = await Course.find(
         { instructorId: new mongoose.Types.ObjectId(targetInstructorId) },
-        { _id: 1, title: 1, coverImage: 1 }
+        { _id: 1, title: 1, thumbnail: 1 }
       ).lean() as any[];
 
       if (!courses.length)
@@ -197,10 +197,11 @@ export async function GET(req: NextRequest) {
       if (status) query.status = status;
 
       const enrollments = await Enrollment.find(query).sort({ enrolledAt: -1 }).limit(limit).lean() as any[];
-      let result: any[] = enrollments;
 
+      // ✅ Always populate student data if requested
+      let result: any[] = [];
       if (populateUser && enrollments.length > 0) {
-        const studentIds = [...new Set(enrollments.map((e: any) => e.studentId.toString()))];
+        const studentIds = [...new Set(enrollments.map((e: any) => String(e.studentId)))];
         const users = await User.find(
           { _id: { $in: studentIds.map(id => new mongoose.Types.ObjectId(id)) } },
           { name: 1, email: 1, phone: 1, photoURL: 1, address: 1, stats: 1, status: 1 }
@@ -208,13 +209,13 @@ export async function GET(req: NextRequest) {
         const userMap = new Map(users.map((u: any) => [u._id.toString(), u]));
         result = enrollments.map((e: any) => ({
           ...e,
-          studentData: userMap.get(e.studentId.toString()) || null,
-          courseName:  e.courseName || courseMap.get(e.courseId.toString()) || "Unknown",
+          studentData: userMap.get(String(e.studentId)) || null,
+          courseName:  e.courseName || courseMap.get(e.courseId?.toString() || "") || "Unknown",
         }));
       } else {
         result = enrollments.map((e: any) => ({
           ...e,
-          courseName: e.courseName || courseMap.get(e.courseId.toString()) || "Unknown",
+          courseName: e.courseName || courseMap.get(e.courseId?.toString() || "") || "Unknown",
         }));
       }
       return NextResponse.json({ success: true, enrollments: result, total: result.length });
@@ -230,7 +231,7 @@ export async function GET(req: NextRequest) {
       .sort({ enrolledAt: -1 }).limit(limit)
       .populate({
         path: "courseId",
-        select: "title coverImage instructorId level category",
+        select: "title thumbnail instructorId level category",
         populate: { path: "instructorId", select: "name photoURL" },
       }).lean() as any[];
 
@@ -239,7 +240,7 @@ export async function GET(req: NextRequest) {
       return {
         ...e,
         courseName:     e.courseName     || course?.title              || "Untitled",
-        courseImage:    e.courseImage     || course?.coverImage?.url    || "",
+        courseImage:    e.courseImage     || course?.thumbnail          || "",
         instructorName: e.instructorName  || course?.instructorId?.name || "Instructor",
       };
     });
@@ -272,7 +273,7 @@ export async function POST(req: NextRequest) {
       studentId:      decoded.userId,
       courseId,
       courseName:     course.title,
-      courseImage:    course.coverImage?.url || "",
+      courseImage:    course.thumbnail || "",
       instructorName: (course.instructorId as any)?.name || "",
       status:         "active",
       enrolledAt:     new Date(),

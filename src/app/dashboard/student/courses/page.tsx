@@ -7,7 +7,7 @@ import { motion, AnimatePresence } from "framer-motion";
 
 interface Enrollment {
   _id: string;
-  courseId: string | { _id: string; title?: string; coverImage?: { url: string } | string; instructorId?: { name: string; photoURL?: string } };
+  courseId: string | { _id: string; title?: string; thumbnail?: string; instructorId?: { name: string; photoURL?: string } };
   courseName: string;
   courseImage: string;
   instructorName: string;
@@ -41,11 +41,9 @@ function getCourseId(e: Enrollment): string {
 function getCourseImage(e: Enrollment): string {
   // ১. enrollment এ directly save করা image
   if (e.courseImage) return e.courseImage;
-  // ২. populate করা courseId object থেকে
-  if (typeof e.courseId === "object" && e.courseId?.coverImage) {
-    const img = e.courseId.coverImage as any;
-    // { url: "..." } বা সরাসরি string
-    return img?.url || img || PLACEHOLDER;
+  // २. populate করা courseId object থেকে (thumbnail field)
+  if (typeof e.courseId === "object" && e.courseId?.thumbnail) {
+    return (e.courseId.thumbnail as any) || PLACEHOLDER;
   }
   return PLACEHOLDER;
 }
