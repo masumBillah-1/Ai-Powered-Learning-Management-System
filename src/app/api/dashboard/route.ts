@@ -31,6 +31,9 @@ export async function GET(req: NextRequest) {
 
     // ── STUDENT ──────────────────────────────────────────────
     if (user.role === "student") {
+      // ✅ Get user's enrolled courses for course-specific notifications
+      const userEnrolledCourses = await Enrollment.find({ studentId: user._id }).distinct("courseId");
+
       const [enrollments, transactions, unreadCount] = await Promise.all([
         Enrollment.find({ studentId: user._id })
           .sort({ enrolledAt: -1 })
@@ -42,11 +45,38 @@ export async function GET(req: NextRequest) {
           .limit(5)
           .select("courseName amount status paymentMethod createdAt type"),
 
+        // ✅ Updated unread count with broadcast notifications (matching notifications API logic)
         Notification.countDocuments({
           $or: [
-            { userId: user._id, isRead: false },
-            { isBroadcast: true, targetRole: { $in: ["all", "student"] }, isRead: false },
+            // Individual notifications (non-broadcast)
+            { 
+              userId: user._id, 
+              isRead: false, 
+              type: "announcement"
+            },
+            // Broadcast notifications (others' published announcements)
+            { 
+              isBroadcast: true,
+              type: "announcement",
+              isRead: false,
+              createdBy: { $ne: user._id }, // নিজের না
+              $or: [
+                { targetRole: "all" },
+                { targetRole: "student" }
+                // ✅ Removed course-specific for now to match notifications API
+              ]
+            }
           ],
+          $and: [
+            {
+              $or: [
+                { expiresAt: { $exists: false } },
+                { expiresAt: { $gt: new Date() } },
+              ]
+            }
+          ]
+        }).then(count => {
+          return count;
         }),
       ]);
 
@@ -67,12 +97,15 @@ export async function GET(req: NextRequest) {
 
     // ── INSTRUCTOR ───────────────────────────────────────────
     if (user.role === "instructor") {
-      const [courses, recentEnrollments, monthlyEarnings] = await Promise.all([
+      // ✅ Get instructor's courses for course-specific notifications
+      const instructorCourses = await Course.find({ instructorId: user._id }).distinct("_id");
+
+      const [courses, recentEnrollments, monthlyEarnings, unreadCount] = await Promise.all([
         Course.find({ instructorId: user._id })
           .select("title coverImage stats status createdAt")
           .sort({ createdAt: -1 }),
 
-        Enrollment.find({ courseId: { $in: await Course.find({ instructorId: user._id }).distinct("_id") } })
+        Enrollment.find({ courseId: { $in: instructorCourses } })
           .sort({ enrolledAt: -1 })
           .limit(5)
           .select("courseName studentId progress enrolledAt"),
@@ -94,6 +127,37 @@ export async function GET(req: NextRequest) {
           },
           { $sort: { _id: 1 } },
         ]),
+
+        // ✅ Updated unread count for instructor (matching notifications API logic)
+        Notification.countDocuments({
+          $or: [
+            // Individual notifications (non-broadcast)
+            { 
+              userId: user._id, 
+              isRead: false, 
+              type: "announcement"
+            },
+            // Broadcast notifications (others' published announcements)
+            { 
+              isBroadcast: true,
+              type: "announcement",
+              isRead: false,
+              createdBy: { $ne: user._id }, // নিজের না
+              $or: [
+                { targetRole: "all" },
+                { targetRole: "instructor" }
+              ]
+            }
+          ],
+          $and: [
+            {
+              $or: [
+                { expiresAt: { $exists: false } },
+                { expiresAt: { $gt: new Date() } },
+              ]
+            }
+          ]
+        }),
       ]);
 
       return NextResponse.json({
@@ -108,6 +172,7 @@ export async function GET(req: NextRequest) {
         courses,
         recentEnrollments,
         monthlyEarnings,
+        unreadNotifications: unreadCount,
       });
     }
 
@@ -120,6 +185,7 @@ export async function GET(req: NextRequest) {
         revenueData,
         recentTransactions,
         pendingCourses,
+        unreadCount,
       ] = await Promise.all([
         User.countDocuments(),
         Course.countDocuments({ status: "published" }),
@@ -136,6 +202,37 @@ export async function GET(req: NextRequest) {
           .select("courseName studentName amount status paymentMethod createdAt"),
 
         Course.countDocuments({ status: "draft" }),
+
+        // ✅ Updated unread count for admin (matching notifications API logic)
+        Notification.countDocuments({
+          $or: [
+            // Individual notifications (non-broadcast)
+            { 
+              userId: user._id, 
+              isRead: false, 
+              type: "announcement"
+            },
+            // Broadcast notifications (others' published announcements)
+            { 
+              isBroadcast: true,
+              type: "announcement",
+              isRead: false,
+              createdBy: { $ne: user._id }, // নিজের না
+              $or: [
+                { targetRole: "all" },
+                { targetRole: "admin" }
+              ]
+            }
+          ],
+          $and: [
+            {
+              $or: [
+                { expiresAt: { $exists: false } },
+                { expiresAt: { $gt: new Date() } },
+              ]
+            }
+          ]
+        }),
       ]);
 
       return NextResponse.json({
@@ -154,6 +251,7 @@ export async function GET(req: NextRequest) {
           pendingCourses,
         },
         recentTransactions,
+        unreadNotifications: unreadCount,
       });
     }
 

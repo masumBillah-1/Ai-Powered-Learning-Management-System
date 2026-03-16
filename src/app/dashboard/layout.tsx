@@ -169,13 +169,15 @@ function Sidebar({ items, collapsed, onToggle, mobileOpen, onMobileClose }: {
   );
 }
 
-function TopNavbar({ role, items, theme, toggleTheme, user, onLogout, onMobileMenu, collapsed, unreadCount }: {
+function TopNavbar({ role, items, theme, toggleTheme, user, onLogout, onMobileMenu, collapsed, unreadCount, setUnreadCount, router }: {
   role: Role;
   items: { label: string; href: string; icon: React.ReactNode }[];
   theme: "dark" | "light"; toggleTheme: () => void;
   user: UserData | null; onLogout: () => void;
   onMobileMenu: () => void; collapsed: boolean;
   unreadCount: number;
+  setUnreadCount: (count: number) => void;
+  router: any;
 }) {
   const pathname = usePathname();
   const [showUser, setShowUser] = useState(false);
@@ -192,14 +194,18 @@ function TopNavbar({ role, items, theme, toggleTheme, user, onLogout, onMobileMe
   const handleNotifOpen = async () => {
     setShowNotif(v => !v);
     setShowUser(false);
-    if (notifications.length === 0) {
-      try {
-        const token = localStorage.getItem("token");
-        const res = await fetch("/api/notifications", { headers: { Authorization: `Bearer ${token}` } });
-        const data = await res.json();
-        if (data.notifications) setNotifications(data.notifications);
-      } catch { }
-    }
+    // ✅ Always fetch fresh notifications
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch("/api/notifications?type=announcement&limit=10", { headers: { Authorization: `Bearer ${token}` } });
+      const data = await res.json();
+      if (data.notifications) {
+        // ✅ Only show unread notifications
+        const unreadNotifications = data.notifications.filter((n: any) => !n.isRead);
+        setNotifications(unreadNotifications);
+        setUnreadCount(unreadNotifications.length);
+      }
+    } catch { }
   };
 
   useEffect(() => {
@@ -247,12 +253,58 @@ function TopNavbar({ role, items, theme, toggleTheme, user, onLogout, onMobileMe
             <div className="absolute right-0 top-[calc(100%+6px)] w-72 bg-white dark:bg-[#1e293b] border border-gray-200 dark:border-gray-700 rounded-xl shadow-2xl z-[200] overflow-hidden">
               <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200 dark:border-gray-700">
                 <span className="text-sm font-bold text-gray-900 dark:text-white">Notifications</span>
-                <span className="text-xs font-semibold cursor-pointer text-[#832388]">Mark all read</span>
+                <span className="text-xs font-semibold cursor-pointer text-[#832388]"
+                  onClick={async () => {
+                    try {
+                      await fetch("/api/notifications", {
+                        method: "PUT",
+                        headers: { "Content-Type": "application/json" },
+                        credentials: "include",
+                        body: JSON.stringify({ markAll: true }),
+                      });
+                      // Clear all notifications after marking all as read
+                      const res = await fetch("/api/notifications?type=announcement&limit=10", { credentials: "include" });
+                      const data = await res.json();
+                      if (data.notifications) {
+                        // ✅ Only show unread notifications
+                        const unreadNotifications = data.notifications.filter((n: any) => !n.isRead);
+                        setNotifications(unreadNotifications);
+                        setUnreadCount(unreadNotifications.length);
+                      }
+                    } catch (error) {
+                      console.error("Failed to mark all as read:", error);
+                    }
+                  }}>Mark all read</span>
               </div>
               {notifications.length === 0 ? (
                 <div className="px-4 py-6 text-center text-sm text-gray-400 dark:text-gray-500">কোনো notification নেই</div>
-              ) : notifications.slice(0, 5).map((n, i) => (
-                <div key={i} className={`flex gap-3 px-4 py-3 border-b border-gray-100 dark:border-gray-700 cursor-pointer items-start hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors ${!n.isRead ? "bg-gray-50 dark:bg-gray-800/50" : ""}`}>
+              ) : notifications.filter(n => !n.isRead).length === 0 ? (
+                <div className="px-4 py-6 text-center text-sm text-gray-400 dark:text-gray-500">সব notifications পড়া হয়েছে</div>
+              ) : notifications.filter(n => !n.isRead).slice(0, 5).map((n, i) => (
+                <div key={i}
+                  onClick={async () => {
+                    // Mark as read first
+                    if (!n.isRead) {
+                      try {
+                        await fetch(`/api/notifications?id=${n._id}`, {
+                          method: "PUT",
+                          headers: { "Content-Type": "application/json" },
+                          credentials: "include",
+                          body: JSON.stringify({ isRead: true }),
+                        });
+                        // ✅ Remove notification from dropdown after marking as read
+                        setNotifications(prev => prev.filter(notification => notification._id !== n._id));
+                        setUnreadCount(Math.max(0, unreadCount - 1));
+                      } catch (error) {
+                        console.error("Failed to mark as read:", error);
+                      }
+                    }
+
+                    // Navigate to announcements page without full reload
+                    router.push("/dashboard/announcements");
+                    setShowNotif(false);
+                  }}
+                  className={`flex gap-3 px-4 py-3 border-b border-gray-100 dark:border-gray-700 cursor-pointer items-start hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors ${!n.isRead ? "bg-gray-50 dark:bg-gray-800/50" : ""}`}>
                   <div className={`w-2 h-2 rounded-full flex-shrink-0 mt-1.5 ${n.isRead ? "bg-gray-300 dark:bg-gray-600" : "bg-[#FF0F7B]"}`} />
                   <div>
                     <p className={`text-[13px] leading-snug m-0 ${n.isRead ? "text-gray-500 dark:text-gray-400" : "text-gray-900 dark:text-white font-semibold"}`}>{n.title}</p>
@@ -261,7 +313,7 @@ function TopNavbar({ role, items, theme, toggleTheme, user, onLogout, onMobileMe
                 </div>
               ))}
               <div className="py-2.5 text-center">
-                <Link href="/dashboard/settings" className="text-xs font-semibold text-[#832388]">View all →</Link>
+                <Link href="/dashboard/announcements" className="text-xs font-semibold text-[#832388]">View all →</Link>
               </div>
             </div>
           )}
@@ -458,7 +510,23 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       currentRoleRef.current = newRole;
       setUser(freshUser);
       setRole(newRole);
-      setUnreadCount(data.unreadNotifications || 0);
+
+      // ✅ Get accurate unread count by fetching actual notifications
+      try {
+        const notifRes = await fetch("/api/notifications?type=announcement&limit=10", {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        const notifData = await notifRes.json();
+        if (notifData.notifications) {
+          // ✅ Count only unread notifications
+          const unreadNotifications = notifData.notifications.filter((n: any) => !n.isRead);
+          setUnreadCount(unreadNotifications.length);
+        } else {
+          setUnreadCount(0);
+        }
+      } catch {
+        setUnreadCount(0);
+      }
 
       if (isInitial) {
         setIsLoading(false);
@@ -550,6 +618,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         user={user} onLogout={handleLogout}
         onMobileMenu={() => setMobileOpen(true)}
         collapsed={collapsed} unreadCount={unreadCount}
+        setUnreadCount={setUnreadCount}
+        router={router}
       />
       <main className={`min-h-screen pt-16 transition-all duration-300 ${collapsed ? "md:pl-[68px]" : "md:pl-60"}`}>
         <div className="p-6">

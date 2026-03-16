@@ -16,6 +16,13 @@ export interface INotificationDocument extends Document {
   icon?: string;
   color?: string;
   expiresAt?: Date;
+  
+  // ✅ Broadcast/Announcement fields
+  isBroadcast: boolean;
+  targetRole?: "all" | "student" | "instructor" | "admin";
+  targetCourseId?: mongoose.Types.ObjectId;
+  createdBy: mongoose.Types.ObjectId;
+  
   createdAt: Date;
   updatedAt: Date;
 }
@@ -84,6 +91,25 @@ const NotificationSchema = new Schema<INotificationDocument>(
     expiresAt: {
       type: Date,
     },
+    
+    // ✅ Broadcast/Announcement fields
+    isBroadcast: {
+      type: Boolean,
+      default: false,
+    },
+    targetRole: {
+      type: String,
+      enum: ["all", "student", "instructor", "admin"],
+    },
+    targetCourseId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Course",
+    },
+    createdBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+    },
   },
   {
     timestamps: true,
@@ -98,6 +124,10 @@ NotificationSchema.index({ type: 1 });
 NotificationSchema.index({ priority: 1 });
 NotificationSchema.index({ expiresAt: 1 });
 NotificationSchema.index({ createdAt: -1 });
+// ✅ New indexes for broadcast notifications
+NotificationSchema.index({ isBroadcast: 1, targetRole: 1 });
+NotificationSchema.index({ targetCourseId: 1 });
+NotificationSchema.index({ createdBy: 1 });
 
 // ─── Instance Methods ─────────────────────────────────────────────────────────
 NotificationSchema.methods.markAsRead = function () {

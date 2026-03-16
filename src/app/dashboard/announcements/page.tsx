@@ -13,6 +13,7 @@ type Role = "student" | "instructor" | "admin";
 
 interface Announcement {
   _id: string;
+  userId?: string; // ✅ Added userId field for individual notifications
   title: string;
   message: string;
   courseId?: string;
@@ -21,6 +22,14 @@ interface Announcement {
   isRead: boolean;
   createdAt: string;
   instructorId?: string;
+  // ✅ Creator info
+  createdBy?: {
+    _id: string;
+    name: string;
+    email: string;
+    role: string;
+    photoURL?: string;
+  };
 }
 
 interface ICourse {
@@ -43,11 +52,30 @@ const tLoading = { position: "top-right" as const, style: { borderRadius: "10px"
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 const getStatus = (a: Announcement): "Published" | "Draft" => (a.status || "Draft") as "Published" | "Draft";
-const formatDate = (d: string) => new Date(d).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric", hour: "2-digit", minute: "2-digit" });
+const formatDate = (d: string) => {
+  const date = new Date(d);
+  const dateStr = date.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+  const timeStr = date.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", hour12: true });
+  return { date: dateStr, time: timeStr };
+};
+
+const truncateText = (text: string, charLimit: number) => {
+  if (!text || typeof text !== 'string') return "";
+  const trimmed = text.trim();
+  if (trimmed.length <= charLimit) return trimmed;
+  return trimmed.substring(0, charLimit) + "...";
+};
+
+const truncateWithoutDots = (text: string, charLimit: number) => {
+  if (!text || typeof text !== 'string') return "";
+  const trimmed = text.trim();
+  if (trimmed.length <= charLimit) return trimmed;
+  return trimmed.substring(0, charLimit);
+};
 
 function getPriorityStyle(priority: string, isDark: boolean) {
   const opt = PRIORITY_OPTIONS.find(p => p.value === priority) || PRIORITY_OPTIONS[1];
-  return { color: opt.color, bg: isDark ? opt.darkBg : opt.bg, label: opt.label, Icon: opt.Icon };
+  return { color: opt.color, bg: isDark ? opt.darkBg : opt.bg, darkBg: opt.darkBg, label: opt.label, Icon: opt.Icon };
 }
 
 // ─── StatusBadge (toggle) ─────────────────────────────────────────────────────
@@ -99,11 +127,31 @@ function StatusBadge({ announcementId, currentStatus, theme, onToggled, readonly
 }
 
 // ─── Form Fields ──────────────────────────────────────────────────────────────
-function AnnouncementFormFields({ form, theme, courses, coursesLoading, onChange }: {
-  form: { title: string; courseId: string; description: string; priority: string };
-  theme: string; courses: ICourse[]; coursesLoading: boolean;
+function AnnouncementFormFields({ form, theme, courses, coursesLoading, onChange, role }: {
+  form: { title: string; courseId: string; description: string; priority: string; targetType: string };
+  theme: string; courses: ICourse[]; coursesLoading: boolean; role: Role;
   onChange: (field: string, value: string) => void;
 }) {
+  // ✅ Target audience options based on role
+  const getTargetOptions = () => {
+    if (role === "admin") {
+      return [
+        { value: "all", label: "🌍 All Users (সবাই দেখবে)", desc: "সব student, instructor, admin" },
+        { value: "student", label: "👨‍🎓 All Students", desc: "শুধু student রা দেখবে" },
+        { value: "instructor", label: "👨‍🏫 All Instructors", desc: "শুধু instructor রা দেখবে" },
+        { value: "course", label: "📚 Specific Course", desc: "নির্দিষ্ট course এর student রা" }
+      ];
+    } else if (role === "instructor") {
+      return [
+        { value: "course", label: "📚 Course Students", desc: "নির্দিষ্ট course এর student রা" },
+        { value: "all-my-students", label: "👥 All My Students", desc: "আপনার সব course এর student রা" }
+      ];
+    }
+    return [];
+  };
+
+  const targetOptions = getTargetOptions();
+
   return (
     <div className="px-6 py-5 space-y-4 max-h-[60vh] overflow-y-auto">
       <div className="form-control">
@@ -116,19 +164,54 @@ function AnnouncementFormFields({ form, theme, courses, coursesLoading, onChange
           style={{ borderColor: form.title ? "#832388" : undefined, boxShadow: form.title ? "0 0 0 3px rgba(131,35,136,0.1)" : undefined }} />
       </div>
 
-      <div className="form-control">
-        <label className="label py-1">
-          <span className="label-text text-xs font-bold uppercase tracking-wider opacity-50 flex items-center gap-1.5"><BookOpen size={11} /> Course</span>
-          {coursesLoading && <span className="label-text-alt flex items-center gap-1 text-xs opacity-40"><span className="loading loading-spinner loading-xs" /> Loading...</span>}
-        </label>
-        <select value={form.courseId} onChange={e => onChange("courseId", e.target.value)}
-          className="select select-bordered w-full" disabled={coursesLoading}
-          style={{ borderColor: form.courseId ? "#832388" : undefined, boxShadow: form.courseId ? "0 0 0 3px rgba(131,35,136,0.1)" : undefined }}>
-          <option value="">{coursesLoading ? "Courses load হচ্ছে..." : "Select a course..."}</option>
-          {courses.map(c => <option key={c._id} value={c._id}>{c.title}{c.status === "draft" ? " (Draft)" : ""}</option>)}
-          {!coursesLoading && courses.length === 0 && <option disabled>কোনো course পাওয়া যায়নি</option>}
-        </select>
-      </div>
+      {/* ✅ Target Audience Selection */}
+      {targetOptions.length > 0 && (
+        <div className="form-control">
+          <label className="label py-1">
+            <span className="label-text text-xs font-bold uppercase tracking-wider opacity-50 flex items-center gap-1.5">🎯 Target Audience</span>
+          </label>
+          <div className="space-y-2">
+            {targetOptions.map(option => (
+              <label key={option.value} className="cursor-pointer">
+                <div className={`flex items-start gap-3 p-3 rounded-lg border-2 transition-all ${form.targetType === option.value
+                  ? "border-[#832388] bg-[#832388]/5"
+                  : "border-gray-200 hover:border-gray-300"
+                  }`}>
+                  <input
+                    type="radio"
+                    name="targetType"
+                    value={option.value}
+                    checked={form.targetType === option.value}
+                    onChange={e => onChange("targetType", e.target.value)}
+                    className="radio radio-primary radio-sm mt-0.5"
+                  />
+                  <div>
+                    <div className="font-semibold text-sm">{option.label}</div>
+                    <div className="text-xs opacity-60 mt-0.5">{option.desc}</div>
+                  </div>
+                </div>
+              </label>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* ✅ Course selection - show when targetType is "course" */}
+      {(form.targetType === "course" || (role === "instructor" && form.targetType !== "all-my-students")) && (
+        <div className="form-control">
+          <label className="label py-1">
+            <span className="label-text text-xs font-bold uppercase tracking-wider opacity-50 flex items-center gap-1.5"><BookOpen size={11} /> Course</span>
+            {coursesLoading && <span className="label-text-alt flex items-center gap-1 text-xs opacity-40"><span className="loading loading-spinner loading-xs" /> Loading...</span>}
+          </label>
+          <select value={form.courseId} onChange={e => onChange("courseId", e.target.value)}
+            className="select select-bordered w-full" disabled={coursesLoading}
+            style={{ borderColor: form.courseId ? "#832388" : undefined, boxShadow: form.courseId ? "0 0 0 3px rgba(131,35,136,0.1)" : undefined }}>
+            <option value="">{coursesLoading ? "Courses load হচ্ছে..." : "Select a course..."}</option>
+            {courses.map(c => <option key={c._id} value={c._id}>{c.title}{c.status === "draft" ? " (Draft)" : ""}</option>)}
+            {!coursesLoading && courses.length === 0 && <option disabled>কোনো course পাওয়া যায়নি</option>}
+          </select>
+        </div>
+      )}
 
       <div className="form-control">
         <label className="label py-1">
@@ -169,25 +252,45 @@ function AnnouncementFormFields({ form, theme, courses, coursesLoading, onChange
 }
 
 // ─── Create Modal ─────────────────────────────────────────────────────────────
-function CreateModal({ isOpen, onClose, theme, onSuccess, courses, coursesLoading }: {
+function CreateModal({ isOpen, onClose, theme, onSuccess, courses, coursesLoading, role }: {
   isOpen: boolean; onClose: () => void; theme: string;
-  onSuccess?: (data: Announcement) => void; courses: ICourse[]; coursesLoading: boolean;
+  onSuccess?: (data: Announcement) => void; courses: ICourse[]; coursesLoading: boolean; role: Role;
 }) {
-  const [form, setForm] = useState({ title: "", courseId: "", description: "", priority: "medium" });
+  const [form, setForm] = useState({ title: "", courseId: "", description: "", priority: "medium", targetType: "all" });
   const [loading, setLoading] = useState(false);
   const handleChange = (f: string, v: string) => setForm(p => ({ ...p, [f]: v }));
-  const handleClose = () => { if (loading) return; setForm({ title: "", courseId: "", description: "", priority: "medium" }); onClose(); };
+  const handleClose = () => { if (loading) return; setForm({ title: "", courseId: "", description: "", priority: "medium", targetType: "all" }); onClose(); };
 
   const handleSubmit = async (publishNow: boolean) => {
     if (!form.title.trim()) { toast.error("Title লিখুন।", tErr); return; }
-    if (!form.courseId) { toast.error("Course সিলেক্ট করুন।", tErr); return; }
     if (!form.description.trim()) { toast.error("Description লিখুন।", tErr); return; }
+
+    // ✅ Validation for course selection
+    if ((form.targetType === "course" || (role === "instructor" && form.targetType !== "all-my-students")) && !form.courseId) {
+      toast.error("Course সিলেক্ট করুন।", tErr);
+      return;
+    }
+
     setLoading(true);
     const tid = toast.loading(publishNow ? "🚀 Publishing..." : "💾 Draft সেভ হচ্ছে...", tLoading);
     try {
+      const payload: any = {
+        type: "announcement",
+        title: form.title.trim(),
+        message: form.description.trim(),
+        priority: form.priority,
+        status: publishNow ? "Published" : "Draft",
+        targetRole: form.targetType === "all-my-students" ? "student" : form.targetType,
+      };
+
+      // ✅ Add courseId for course-specific announcements
+      if (form.targetType === "course" || (role === "instructor" && form.targetType !== "all-my-students")) {
+        payload.courseId = form.courseId;
+      }
+
       const res = await fetch("/api/notifications", {
         method: "POST", headers: { "Content-Type": "application/json" }, credentials: "include",
-        body: JSON.stringify({ type: "announcement", title: form.title.trim(), message: form.description.trim(), priority: form.priority, status: publishNow ? "Published" : "Draft", courseId: form.courseId }),
+        body: JSON.stringify(payload),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || `Error ${res.status}`);
@@ -214,7 +317,7 @@ function CreateModal({ isOpen, onClose, theme, onSuccess, courses, coursesLoadin
           </div>
           <button onClick={handleClose} disabled={loading} className="btn btn-ghost btn-sm btn-circle opacity-50 hover:opacity-100 cursor-pointer"><X size={18} /></button>
         </div>
-        <AnnouncementFormFields form={form} theme={theme} courses={courses} coursesLoading={coursesLoading} onChange={handleChange} />
+        <AnnouncementFormFields form={form} theme={theme} courses={courses} coursesLoading={coursesLoading} onChange={handleChange} role={role} />
         <div className="flex items-center justify-between gap-3 px-6 py-4 border-t border-base-300" style={{ backgroundColor: theme === "dark" ? "rgba(131,35,136,0.05)" : "#fdf8ff" }}>
           <div className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold" style={{ backgroundColor: theme === "dark" ? sel.darkBg : sel.bg, color: sel.color }}><sel.Icon size={12} /> {sel.label}</div>
           <div className="flex items-center gap-2 ml-auto">
@@ -232,33 +335,155 @@ function CreateModal({ isOpen, onClose, theme, onSuccess, courses, coursesLoadin
   );
 }
 
-// ─── Edit Modal ───────────────────────────────────────────────────────────────
-function EditModal({ item, theme, onClose, onSuccess, courses, coursesLoading }: {
-  item: Announcement | null; theme: string; onClose: () => void;
-  onSuccess?: (u: Announcement) => void; courses: ICourse[]; coursesLoading: boolean;
+// ─── View Modal ───────────────────────────────────────────────────────────────
+function ViewModal({ item, theme, onClose, courses, role }: {
+  item: Announcement | null; theme: string; onClose: () => void; courses: ICourse[]; role: Role;
 }) {
-  const [form, setForm] = useState({ title: "", courseId: "", description: "", priority: "medium" });
+  if (!item) return null;
+
+  const pStyle = getPriorityStyle(item.priority, theme === "dark");
+  const courseTitle = courses.find(c => c._id === item.courseId)?.title || "";
+  const currentStatus = getStatus(item);
+  const isStudent = role === "student";
+
+  return (
+    <div className="modal modal-open" style={{ zIndex: 9999 }}>
+      <div className="fixed inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
+      <div className="modal-box relative w-full max-w-md p-0 overflow-hidden rounded-2xl shadow-2xl" style={{ border: "1px solid rgba(131,35,136,0.25)", zIndex: 10000 }}>
+        <div className="h-1.5 w-full" style={{ background: "linear-gradient(90deg,#832388,#E3436B,#F89B29)" }} />
+
+        {/* Header */}
+        <div className="flex items-center justify-between px-5 pt-4 pb-3">
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 rounded-lg flex items-center justify-center text-lg" style={{ background: "linear-gradient(135deg,#832388,#E3436B)" }}>👁️</div>
+            <h3 className="text-lg font-bold leading-tight">Announcement</h3>
+          </div>
+          <button onClick={onClose} className="btn btn-ghost btn-sm btn-circle opacity-50 hover:opacity-100 cursor-pointer"><X size={16} /></button>
+        </div>
+
+        {/* Content */}
+        <div className="px-5 pb-5 space-y-4">
+          {/* Title */}
+          <div>
+            <h4 className="text-base font-bold text-gray-900 dark:text-white mb-2">{item.title}</h4>
+          </div>
+
+          {/* Message - Highlighted */}
+          <div className="p-4 rounded-xl border-2" style={{
+            borderColor: pStyle.color + "33",
+            backgroundColor: theme === "dark" ? pStyle.darkBg : pStyle.bg + "22"
+          }}>
+            <div className="text-sm leading-relaxed whitespace-pre-wrap text-gray-800 dark:text-gray-200">
+              {item.message}
+            </div>
+          </div>
+
+          {/* Creator Info - Only for Students */}
+          {isStudent && item.createdBy && (
+            <div className="flex items-center gap-3 p-3 rounded-lg bg-base-100 border border-base-300">
+              {item.createdBy.photoURL ? (
+                <img src={item.createdBy.photoURL} alt="" className="w-7 h-7 rounded-lg object-cover" />
+              ) : (
+                <div className="w-7 h-7 rounded-lg flex items-center justify-center font-bold text-xs text-white bg-gradient-to-br from-[#832388] to-[#FF0F7B]">
+                  {item.createdBy.name?.charAt(0)?.toUpperCase() || "?"}
+                </div>
+              )}
+              <div>
+                <div className="text-sm font-semibold">From: {item.createdBy.name || 'Unknown'}</div>
+                <div className="text-xs opacity-60 capitalize">{item.createdBy.role || 'user'}</div>
+              </div>
+            </div>
+          )}
+
+          {/* Info Row */}
+          <div className="flex items-center justify-between gap-3 pt-2">
+            {/* Priority Badge */}
+            <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold" style={{ backgroundColor: theme === "dark" ? pStyle.darkBg : pStyle.bg, color: pStyle.color }}>
+              <pStyle.Icon size={12} /> {pStyle.label}
+            </div>
+
+            {/* Status Badge */}
+            <span className="text-xs font-bold px-2 py-1 rounded-full" style={{
+              backgroundColor: currentStatus === "Published" ? (theme === "dark" ? "#0f2520" : "#d1fae5") : (theme === "dark" ? "#2a1f15" : "#fef3c7"),
+              color: currentStatus === "Published" ? "#00C48C" : "#F89B29"
+            }}>
+              {currentStatus}
+            </span>
+          </div>
+
+          {/* Course & Date */}
+          <div className="flex items-center justify-between text-xs opacity-60 pt-1">
+            {courseTitle && (
+              <span className="flex items-center gap-1">
+                <BookOpen size={12} /> {courseTitle}
+              </span>
+            )}
+            <span className="flex items-center gap-1 ml-auto">
+              <Calendar size={12} />
+              <div className="text-right">
+                <div>{formatDate(item.createdAt).date}</div>
+                <div className="text-xs opacity-60">{formatDate(item.createdAt).time}</div>
+              </div>
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Edit Modal ───────────────────────────────────────────────────────────────
+function EditModal({ item, theme, onClose, onSuccess, courses, coursesLoading, role }: {
+  item: Announcement | null; theme: string; onClose: () => void;
+  onSuccess?: (u: Announcement) => void; courses: ICourse[]; coursesLoading: boolean; role: Role;
+}) {
+  const [form, setForm] = useState({ title: "", courseId: "", description: "", priority: "medium", targetType: "all" });
   const [loading, setLoading] = useState(false);
   const handleChange = (f: string, v: string) => setForm(p => ({ ...p, [f]: v }));
   const handleClose = () => { if (loading) return; onClose(); };
 
   useEffect(() => {
     if (!item) return;
-    setForm({ title: item.title || "", courseId: item.courseId || "", description: item.message || "", priority: item.priority || "medium" });
+    setForm({
+      title: item.title || "",
+      courseId: item.courseId || "",
+      description: item.message || "",
+      priority: item.priority || "medium",
+      targetType: "all" // Default for existing announcements
+    });
   }, [item]);
 
   if (!item) return null;
 
   const handleSubmit = async (publishNow: boolean) => {
     if (!form.title.trim()) { toast.error("Title লিখুন।", tErr); return; }
-    if (!form.courseId) { toast.error("Course সিলেক্ট করুন।", tErr); return; }
     if (!form.description.trim()) { toast.error("Description লিখুন।", tErr); return; }
+
+    // ✅ Validation for course selection
+    if ((form.targetType === "course" || (role === "instructor" && form.targetType !== "all-my-students")) && !form.courseId) {
+      toast.error("Course সিলেক্ট করুন।", tErr);
+      return;
+    }
+
     setLoading(true);
     const tid = toast.loading(publishNow ? "🚀 Publishing..." : "💾 Draft সেভ হচ্ছে...", tLoading);
     try {
+      const payload: any = {
+        title: form.title.trim(),
+        message: form.description.trim(),
+        priority: form.priority,
+        status: publishNow ? "Published" : "Draft",
+        targetRole: form.targetType === "all-my-students" ? "student" : form.targetType,
+      };
+
+      // ✅ Add courseId for course-specific announcements
+      if (form.targetType === "course" || (role === "instructor" && form.targetType !== "all-my-students")) {
+        payload.courseId = form.courseId;
+      }
+
       const res = await fetch(`/api/notifications?id=${item._id}`, {
         method: "PUT", headers: { "Content-Type": "application/json" }, credentials: "include",
-        body: JSON.stringify({ title: form.title.trim(), message: form.description.trim(), priority: form.priority, status: publishNow ? "Published" : "Draft", courseId: form.courseId }),
+        body: JSON.stringify(payload),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || `Error ${res.status}`);
@@ -291,7 +516,7 @@ function EditModal({ item, theme, onClose, onSuccess, courses, coursesLoading }:
           </div>
           <button onClick={handleClose} disabled={loading} className="btn btn-ghost btn-sm btn-circle opacity-50 hover:opacity-100 cursor-pointer"><X size={18} /></button>
         </div>
-        <AnnouncementFormFields form={form} theme={theme} courses={courses} coursesLoading={coursesLoading} onChange={handleChange} />
+        <AnnouncementFormFields form={form} theme={theme} courses={courses} coursesLoading={coursesLoading} onChange={handleChange} role={role} />
         <div className="flex items-center justify-between gap-3 px-6 py-4 border-t border-base-300" style={{ backgroundColor: theme === "dark" ? "rgba(227,67,107,0.05)" : "#fff9f9" }}>
           <div className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold" style={{ backgroundColor: theme === "dark" ? sel.darkBg : sel.bg, color: sel.color }}><sel.Icon size={12} /> {sel.label}</div>
           <div className="flex items-center gap-2 ml-auto">
@@ -319,6 +544,7 @@ export default function AnnouncementsPage() {
   const [filterCourse, setFilterCourse] = useState("All Courses"); // admin only
   const [showCreate, setShowCreate] = useState(false);
   const [editItem, setEditItem] = useState<Announcement | null>(null);
+  const [viewItem, setViewItem] = useState<Announcement | null>(null); // ✅ View modal state
   const [deleteItem, setDeleteItem] = useState<Announcement | null>(null);
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
   const [courses, setCourses] = useState<ICourse[]>([]);
@@ -371,19 +597,9 @@ export default function AnnouncementsPage() {
   const fetchAnnouncements = useCallback(async (r: Role, uid: string) => {
     setFetchLoading(true); setFetchError("");
     try {
-      let url = "";
-      if (r === "admin") {
-        // Admin → সব announcements
-        url = "/api/notifications?type=announcement&limit=200&all=true";
-      } else if (r === "instructor") {
-        // Instructor → শুধু নিজের (instructorId দিয়ে filter)
-        url = uid
-          ? `/api/notifications?type=announcement&limit=100&all=true&instructorId=${uid}`
-          : "/api/notifications?type=announcement&limit=100&all=true&mine=true";
-      } else {
-        // Student → enrolled courses এর Published announcements only
-        url = "/api/notifications?type=announcement&limit=100&enrolled=true&status=Published";
-      }
+      // ✅ Updated API call - সব role এর জন্য same endpoint
+      // API automatically handle করবে creator + target audience logic
+      const url = "/api/notifications?type=announcement&limit=200";
       const res = await fetch(url, { credentials: "include" });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed to fetch");
@@ -428,10 +644,28 @@ export default function AnnouncementsPage() {
 
   const getCourseTitle = (courseId?: string) => courses.find(c => c._id === courseId)?.title || "";
 
-  // ── canEdit: admin সব পারে, instructor শুধু নিজেরটা ──
-  const canEdit = (a: Announcement) => role === "admin" || (role === "instructor" && (!a.instructorId || a.instructorId === userId));
-  const canDelete = (a: Announcement) => canEdit(a);
+  // ── canEdit: শুধু নিজের announcement edit করতে পারবে ──
+  const canEdit = (a: Announcement) => {
+    // Individual notification check
+    if (a.userId === userId) return true;
+    // Broadcast notification check (creator can edit)
+    if (a.createdBy?._id === userId) return true;
+    return false;
+  };
+
+  const canDelete = (a: Announcement) => {
+    // Individual notification check  
+    if (a.userId === userId) return true;
+    // Broadcast notification check (creator can delete)
+    if (a.createdBy?._id === userId) return true;
+    return false;
+  };
+
   const canCreate = role === "admin" || role === "instructor";
+  const isOwnAnnouncement = (a: Announcement) => {
+    // Check both userId and createdBy for ownership
+    return a.userId === userId || a.createdBy?._id === userId;
+  };
 
   // ── filter ──
   const filtered = announcements.filter(a => {
@@ -556,7 +790,7 @@ export default function AnnouncementsPage() {
           {fetchLoading ? (
             <div className="flex flex-col items-center justify-center py-20 gap-4">
               <span className="loading loading-spinner loading-lg" style={{ color: "#832388" }} />
-              <p className="opacity-50 text-sm">MongoDB থেকে data আনা হচ্ছে...</p>
+              <p className="opacity-50 text-sm">Please Wait...</p>
             </div>
           ) : fetchError ? (
             <div className="text-center py-16">
@@ -576,19 +810,19 @@ export default function AnnouncementsPage() {
             </div>
           ) : (
             <div className="overflow-x-auto">
-              <table className="table">
+              <table className="table table-zebra">
                 <thead>
                   <tr>
-                    <th className="text-xs font-bold uppercase tracking-wider opacity-60">Date</th>
+                    <th className="hidden md:table-cell text-xs font-bold uppercase tracking-wider opacity-60">Date</th>
                     <th className="text-xs font-bold uppercase tracking-wider opacity-60">Announcement</th>
                     {/* Course column — admin & instructor দেখবে */}
-                    {!isStudent && <th className="text-xs font-bold uppercase tracking-wider opacity-60">Course</th>}
-                    <th className="text-center text-xs font-bold uppercase tracking-wider opacity-60">Priority</th>
+                    {!isStudent && <th className="hidden lg:table-cell text-xs font-bold uppercase tracking-wider opacity-60">Course</th>}
+                    <th className="hidden sm:table-cell text-center text-xs font-bold uppercase tracking-wider opacity-60">Priority</th>
                     <th className="text-center text-xs font-bold uppercase tracking-wider opacity-60">
-                      Status {!isStudent && <span className="ml-1 opacity-40 normal-case font-normal text-[10px]">(click to toggle)</span>}
+                      Status
                     </th>
-                    {/* Actions — student দেখে না */}
-                    {!isStudent && <th className="text-right text-xs font-bold uppercase tracking-wider opacity-60">Actions</th>}
+                    {/* Actions column - সবার জন্য */}
+                    <th className="text-right text-xs font-bold uppercase tracking-wider opacity-60">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -600,29 +834,60 @@ export default function AnnouncementsPage() {
                     const deletable = canDelete(item);
                     return (
                       <tr key={item._id} className="hover">
-                        <td>
+                        <td className="hidden md:table-cell">
                           <div className="flex items-center gap-2 text-sm opacity-70">
                             <Calendar size={14} />
-                            <span className="font-semibold whitespace-nowrap">{formatDate(item.createdAt)}</span>
+                            <div className="font-semibold whitespace-nowrap">
+                              <div>{formatDate(item.createdAt).date}</div>
+                              <div className="text-xs opacity-60">{formatDate(item.createdAt).time}</div>
+                            </div>
                           </div>
                         </td>
-                        <td>
-                          <h4 className="text-sm font-bold mb-1">{item.title}</h4>
-                          <p className="text-xs opacity-40 mt-0.5 line-clamp-1">{item.message}</p>
-                          {/* mobile এ course দেখাও */}
-                          {isStudent && courseTitle && <p className="text-xs opacity-60 italic mt-0.5">📚 {courseTitle}</p>}
+                        <td className="max-w-xs">
+                          <h4 className="text-sm font-bold mb-1 break-words" title={item.title}>
+                            {truncateText(item.title, 15)}
+                          </h4>
+                          <p className="text-xs opacity-40 mt-0.5 break-words" title={item.message}>
+                            {truncateText(item.message, 20)}
+                          </p>
+                          {/* ✅ Creator info display */}
+                          {item.createdBy && !isOwnAnnouncement(item) && (
+                            <div className="flex items-center gap-1.5 mt-1 max-w-full">
+                              <span className="text-xs opacity-50 flex-shrink-0">By:</span>
+                              <span className="text-xs font-semibold opacity-70" title={item.createdBy.name || 'Unknown'}>
+                                {item.createdBy.name || 'Unknown'}
+                              </span>
+                              <span className="text-xs opacity-40 capitalize flex-shrink-0">({item.createdBy.role || 'user'})</span>
+                            </div>
+                          )}
+                          {/* Mobile এ date, course, priority দেখাও */}
+                          <div className="flex flex-wrap items-center gap-2 mt-2 md:hidden">
+                            <span className="text-xs opacity-60 flex items-center gap-1">
+                              <Calendar size={12} />
+                              <div>
+                                <div>{formatDate(item.createdAt).date}</div>
+                                <div className="text-xs opacity-60">{formatDate(item.createdAt).time}</div>
+                              </div>
+                            </span>
+                            {courseTitle && (
+                              <span className="text-xs opacity-60" title={courseTitle}>📚 {truncateText(courseTitle, 3)}</span>
+                            )}
+                            <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-bold sm:hidden" style={{ backgroundColor: pStyle.bg, color: pStyle.color }}>
+                              <pStyle.Icon size={10} /> {pStyle.label}
+                            </div>
+                          </div>
                         </td>
 
                         {/* Course column */}
                         {!isStudent && (
-                          <td>
+                          <td className="hidden lg:table-cell">
                             {courseTitle
-                              ? <span className="text-xs font-semibold opacity-70">📚 {courseTitle}</span>
+                              ? <span className="text-xs font-semibold opacity-70" title={courseTitle}>📚 {truncateText(courseTitle, 4)}</span>
                               : <span className="text-xs opacity-30">—</span>}
                           </td>
                         )}
 
-                        <td className="text-center">
+                        <td className="hidden sm:table-cell text-center">
                           <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold" style={{ backgroundColor: pStyle.bg, color: pStyle.color }}>
                             <pStyle.Icon size={11} /> {pStyle.label}
                           </div>
@@ -638,24 +903,33 @@ export default function AnnouncementsPage() {
                           />
                         </td>
 
-                        {/* Actions — student দেখে না */}
-                        {!isStudent && (
-                          <td>
-                            <div className="flex justify-end gap-2">
-                              <button className="btn btn-ghost btn-sm cursor-pointer" title="View"><Eye size={16} /></button>
-                              {editable && (
-                                <button className="btn btn-ghost btn-sm cursor-pointer" title="Edit" onClick={() => setEditItem(item)}><Edit2 size={16} /></button>
-                              )}
-                              {deletable && (
-                                <button className="btn btn-ghost btn-sm text-error cursor-pointer" title="Delete" onClick={() => openDeleteModal(item)}><Trash2 size={16} /></button>
-                              )}
-                              {/* নিজের না হলে lock icon */}
-                              {!editable && isInstructor && (
-                                <span className="btn btn-ghost btn-sm btn-disabled opacity-30" title="অন্য instructor এর announcement"><Lock size={14} /></span>
-                              )}
-                            </div>
-                          </td>
-                        )}
+                        {/* Actions — সবার জন্য */}
+                        <td>
+                          <div className="flex justify-end gap-1">
+                            <button className="btn btn-ghost btn-sm cursor-pointer" title="View" onClick={() => setViewItem(item)}>
+                              <Eye size={16} />
+                            </button>
+                            {!isStudent && editable && (
+                              <button className="btn btn-ghost btn-sm cursor-pointer" title="Edit" onClick={() => setEditItem(item)}>
+                                <Edit2 size={16} />
+                              </button>
+                            )}
+                            {!isStudent && deletable && (
+                              <button className="btn btn-ghost btn-sm text-error cursor-pointer" title="Delete" onClick={() => openDeleteModal(item)}>
+                                <Trash2 size={16} />
+                              </button>
+                            )}
+                            {/* নিজের না হলে creator info show - শুধু desktop এ */}
+                            {!isStudent && !isOwnAnnouncement(item) && item.createdBy && (
+                              <div className="hidden lg:flex items-center gap-1 px-2 py-1 rounded text-xs opacity-60 max-w-24" title={`Created by ${item.createdBy.name || 'Unknown'}`}>
+                                <span className="w-1.5 h-1.5 rounded-full bg-current opacity-40 flex-shrink-0" />
+                                <span className="truncate">
+                                  {item.createdBy.name ? item.createdBy.name.split(' ')[0] : 'Unknown'}
+                                </span>
+                              </div>
+                            )}
+                          </div>
+                        </td>
                       </tr>
                     );
                   })}
@@ -686,7 +960,9 @@ export default function AnnouncementsPage() {
             </div>
             {deleteItem && (
               <div className="rounded-xl p-4 mb-4 border" style={{ backgroundColor: theme === "dark" ? "#2a1515" : "#fef2f2", borderColor: "#fca5a5" }}>
-                <p className="text-sm font-bold text-error line-clamp-2">{deleteItem.title}</p>
+                <p className="text-sm font-bold text-error" title={deleteItem.title}>
+                  {truncateText(deleteItem.title, 50)}
+                </p>
                 {getCourseTitle(deleteItem.courseId) && <p className="text-xs opacity-60 mt-1">📚 {getCourseTitle(deleteItem.courseId)}</p>}
               </div>
             )}
@@ -704,10 +980,13 @@ export default function AnnouncementsPage() {
       </dialog>
 
       {/* ── Create Modal ── */}
-      <CreateModal isOpen={showCreate} onClose={() => setShowCreate(false)} theme={theme} onSuccess={handleCreated} courses={courses} coursesLoading={coursesLoading} />
+      <CreateModal isOpen={showCreate} onClose={() => setShowCreate(false)} theme={theme} onSuccess={handleCreated} courses={courses} coursesLoading={coursesLoading} role={role} />
 
       {/* ── Edit Modal ── */}
-      <EditModal item={editItem} theme={theme} onClose={() => setEditItem(null)} onSuccess={handleEdited} courses={courses} coursesLoading={coursesLoading} />
+      <EditModal item={editItem} theme={theme} onClose={() => setEditItem(null)} onSuccess={handleEdited} courses={courses} coursesLoading={coursesLoading} role={role} />
+
+      {/* ── View Modal ── */}
+      <ViewModal item={viewItem} theme={theme} onClose={() => setViewItem(null)} courses={courses} role={role} />
     </div>
   );
 } 
