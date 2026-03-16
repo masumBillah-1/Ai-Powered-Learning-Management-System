@@ -495,7 +495,9 @@ export default function LearnPage() {
                     onClick={() => setAskAIOpen(true)}
                     className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-white font-semibold text-sm border border-violet-500/30 bg-gradient-to-r from-violet-500/10 to-indigo-500/10 hover:from-violet-500/20 hover:to-indigo-500/20 transition-all whitespace-nowrap cursor-pointer"
                   >
-                    <FaRobot size={13} />
+                    <div className="w-5 h-5 rounded-lg bg-gradient-to-br from-violet-500 to-indigo-600 flex items-center justify-center">
+                      <HiSparkles size={12} className="text-white" />
+                    </div>
                     Ask AI
                   </motion.button>
                 )}

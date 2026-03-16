@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { FaTimes, FaPaperPlane, FaRobot, FaVideo, FaLightbulb, FaQuestionCircle } from "react-icons/fa";
+import { FaTimes, FaPaperPlane, FaVideo, FaLightbulb, FaQuestionCircle } from "react-icons/fa";
 import { HiSparkles } from "react-icons/hi2";
 
 interface Message {
@@ -143,7 +143,7 @@ export default function VideoAskAI({
                         <div className="flex items-center justify-between p-4 border-b border-white/10 bg-gradient-to-r from-violet-500/10 to-indigo-500/10">
                             <div className="flex items-center gap-3">
                                 <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-500 to-indigo-600 flex items-center justify-center">
-                                    <FaRobot className="text-white text-lg" />
+                                    <HiSparkles className="text-white text-lg" />
                                 </div>
                                 <div>
                                     <h3 className="text-white font-bold text-sm">Video AI Assistant</h3>
@@ -155,7 +155,7 @@ export default function VideoAskAI({
                             </div>
                             <button
                                 onClick={onClose}
-                                className="w-8 h-8 rounded-lg bg-white/5 hover:bg-white/10 flex items-center justify-center text-gray-400 hover:text-white transition-all"
+                                className="w-8 h-8 rounded-lg bg-white/5 hover:bg-white/10 flex items-center justify-center text-gray-400 hover:text-white transition-all cursor-pointer"
                             >
                                 <FaTimes size={14} />
                             </button>
@@ -169,8 +169,8 @@ export default function VideoAskAI({
                                     className={`flex ${message.role === "user" ? "justify-end" : "justify-start"}`}
                                 >
                                     <div className={`max-w-[80%] ${message.role === "user"
-                                            ? "bg-gradient-to-r from-violet-500 to-indigo-600 text-white"
-                                            : "bg-[#0d1117] border border-white/10 text-gray-200"
+                                        ? "bg-gradient-to-r from-violet-500 to-indigo-600 text-white"
+                                        : "bg-[#0d1117] border border-white/10 text-gray-200"
                                         } rounded-2xl px-4 py-3`}>
                                         <div className="text-sm leading-relaxed whitespace-pre-wrap">
                                             {message.content}
@@ -214,7 +214,7 @@ export default function VideoAskAI({
                                         <button
                                             key={index}
                                             onClick={() => handleQuickQuestion(question)}
-                                            className="text-xs px-3 py-1.5 rounded-full bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white border border-white/10 transition-all"
+                                            className="text-xs px-3 py-1.5 rounded-full bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white border border-white/10 transition-all cursor-pointer"
                                         >
                                             {question}
                                         </button>
@@ -246,7 +246,7 @@ export default function VideoAskAI({
                                 <button
                                     onClick={handleSend}
                                     disabled={!input.trim() || isLoading}
-                                    className="w-11 h-11 rounded-xl bg-gradient-to-r from-violet-500 to-indigo-600 hover:from-violet-600 hover:to-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center text-white transition-all"
+                                    className="w-11 h-11 rounded-xl bg-gradient-to-r from-violet-500 to-indigo-600 hover:from-violet-600 hover:to-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center text-white transition-all cursor-pointer"
                                 >
                                     {isLoading ? (
                                         <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
