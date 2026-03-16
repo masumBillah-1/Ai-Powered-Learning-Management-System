@@ -6,11 +6,12 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   FaPlay, FaCheckCircle, FaChevronDown, FaChevronUp,
   FaBook, FaClock, FaArrowLeft, FaFileAlt,
-  FaTrophy, FaBars, FaTimes, FaLock, FaLink, FaPaperPlane
+  FaTrophy, FaBars, FaTimes, FaLock, FaLink, FaPaperPlane, FaRobot
 } from "react-icons/fa";
 import { HiSparkles } from "react-icons/hi2";
 import Link from "next/link";
 import toast, { Toaster } from "react-hot-toast";
+import VideoAskAI from "@/components/VideoAskAI";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 interface Lesson {
@@ -129,6 +130,9 @@ export default function LearnPage() {
   const [submitFile, setSubmitFile] = useState<File | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [currentTime, setCurrentTime] = useState(Date.now());
+
+  // ── Video Ask AI state ────────────────────────────────────────────────────
+  const [askAIOpen, setAskAIOpen] = useState(false);
 
   const startTime = useRef<number>(Date.now());
   const activeLessonRef = useRef<Lesson | null>(null);
@@ -483,6 +487,19 @@ export default function LearnPage() {
               </div>
 
               <div className="flex items-center gap-2 flex-shrink-0">
+                {/* Ask AI Button - শুধু video lessons এর জন্য */}
+                {activeLesson && activeLesson.type === "video" && activeLesson.videoUrl && (
+                  <motion.button
+                    whileHover={{ scale: 1.03 }}
+                    whileTap={{ scale: 0.97 }}
+                    onClick={() => setAskAIOpen(true)}
+                    className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-white font-semibold text-sm border border-violet-500/30 bg-gradient-to-r from-violet-500/10 to-indigo-500/10 hover:from-violet-500/20 hover:to-indigo-500/20 transition-all whitespace-nowrap cursor-pointer"
+                  >
+                    <FaRobot size={13} />
+                    Ask AI
+                  </motion.button>
+                )}
+
                 {nextLesson && canGoNext && (
                   <button onClick={() => handleLessonSelect(nextLesson)}
                     className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-white font-semibold text-sm border border-white/10 bg-white/5 hover:bg-white/10 transition-all whitespace-nowrap cursor-pointer">
@@ -905,6 +922,16 @@ export default function LearnPage() {
           )}
         </AnimatePresence>
       </div>
+
+      {/* Video Ask AI Modal */}
+      <VideoAskAI
+        isOpen={askAIOpen}
+        onClose={() => setAskAIOpen(false)}
+        videoTitle={activeLesson?.title || ""}
+        videoUrl={activeLesson?.videoUrl}
+        lessonId={activeLesson?._id || ""}
+        courseId={courseId}
+      />
     </div>
   );
 }

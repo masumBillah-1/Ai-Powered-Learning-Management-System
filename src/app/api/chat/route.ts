@@ -1,5 +1,5 @@
-// src/app/api/chat/route.ts
 import { NextRequest, NextResponse } from "next/server";
+import { generateVideoContext } from "@/lib/youtubeTranscript";
 
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`;
@@ -29,7 +29,7 @@ const SYSTEM_PROMPT = `তুমি CareerCanvas এর একজন বুদ�
 // ── POST — AI Chat (MongoDB save নেই) ───────────────────
 export async function POST(req: NextRequest) {
   try {
-    const { message, history } = await req.json();
+    const { message, history, context } = await req.json();
 
     if (!message) {
       return NextResponse.json(
@@ -38,14 +38,43 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // Video context এর জন্য enhanced system prompt
+    let enhancedPrompt = SYSTEM_PROMPT;
+    
+    if (context?.type === "video_lesson") {
+      try {
+        // Generate video context with transcript
+        const videoContext = await generateVideoContext(context.videoUrl, context.videoTitle);
+        enhancedPrompt += `\n\n${videoContext}`;
+      } catch (error) {
+        // Fallback without transcript
+        enhancedPrompt += `\n\n🎥 **Video Context:**
+আপনি এখন "${context.videoTitle}" নামক video lesson সম্পর্কে কথা বলছেন।
+এই video এর context এ প্রশ্নের উত্তর দিন। যেমন:
+- "এই video তে কি শিখলাম?" 
+- "Main points গুলো কি?"
+- "এই concept টা আরো explain করো"
+- "Practice questions দাও এই video based এ"
+- "Real-life examples দাও"
+
+Video Title: ${context.videoTitle}
+Lesson ID: ${context.lessonId}
+Course ID: ${context.courseId}
+
+এই video এর content এর সাথে relevant উত্তর দিন।`;
+      }
+    }
+
     const contents = [
       {
         role: "user",
-        parts: [{ text: SYSTEM_PROMPT }],
+        parts: [{ text: enhancedPrompt }],
       },
       {
         role: "model",
-        parts: [{ text: "বুঝেছি! আমি CareerCanvas এর AI Assistant। কীভাবে সাহায্য করতে পারি?" }],
+        parts: [{ text: context?.type === "video_lesson" 
+          ? `বুঝেছি! আমি "${context.videoTitle}" video সম্পর্কে আপনার যেকোনো প্রশ্নের উত্তর দিতে পারি। কি জানতে চান?`
+          : "বুঝেছি! আমি CareerCanvas এর AI Assistant। কীভাবে সাহায্য করতে পারি?" }],
       },
       ...(history || []).slice(-10).map((m: { role: string; content: string }) => ({
         role: m.role === "assistant" ? "model" : "user",
