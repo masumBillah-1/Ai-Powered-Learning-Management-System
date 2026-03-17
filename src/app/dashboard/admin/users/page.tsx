@@ -34,6 +34,7 @@ export default function AdminUsersPage() {
   const [banTarget, setBanTarget] = useState<User | null>(null);
   const [deleting, setDeleting] = useState(false);
   const [banning, setBanning] = useState(false);
+  const [adminPassword, setAdminPassword] = useState(""); // ✅ Admin password for verification
 
   // ── Dark/Light sync ──
   useEffect(() => {
@@ -55,7 +56,13 @@ export default function AdminUsersPage() {
     try {
       setLoading(true);
       setError(null);
-      const res = await fetch("/api/admin/users");
+
+      // ✅ Add authorization header
+      const token = localStorage.getItem("token");
+      const res = await fetch("/api/admin/users", {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
         throw new Error(err.message || `HTTP ${res.status}`);
@@ -74,10 +81,34 @@ export default function AdminUsersPage() {
   // ── Delete confirm ──
   const handleDeleteConfirm = async () => {
     if (!deleteTarget) return;
+
+    // ✅ Password validation
+    if (!adminPassword.trim()) {
+      toast.error("Please enter your password to confirm", {
+        icon: "🔒",
+        style: { fontWeight: "600", fontSize: "13px" },
+      });
+      return;
+    }
+
     setDeleting(true);
     try {
-      const res = await fetch(`/api/admin/users/${deleteTarget._id}`, { method: "DELETE" });
-      if (!res.ok) throw new Error("Failed to delete user");
+      // ✅ Add authorization header + admin password
+      const token = localStorage.getItem("token");
+      const res = await fetch(`/api/admin/users/${deleteTarget._id}`, {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({ adminPassword }), // ✅ Send password for verification
+      });
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error || "Failed to delete user");
+      }
+
       setUsers(prev => prev.filter(u => u._id !== deleteTarget._id));
       closeModal("delete_user_modal");
       toast.success(`"${deleteTarget.name}" successfully deleted!`, {
@@ -85,8 +116,12 @@ export default function AdminUsersPage() {
         style: { fontWeight: "600", fontSize: "13px" },
       });
       setDeleteTarget(null);
+      setAdminPassword(""); // ✅ Clear password
     } catch (err: any) {
-      toast.error(err.message || "Delete failed");
+      toast.error(err.message || "Delete failed", {
+        icon: "❌",
+        style: { fontWeight: "600", fontSize: "13px" },
+      });
     } finally {
       setDeleting(false);
     }
@@ -99,12 +134,22 @@ export default function AdminUsersPage() {
     const newStatus = isBanned ? "active" : "suspended";
     setBanning(true);
     try {
+      // ✅ Add authorization header
+      const token = localStorage.getItem("token");
       const res = await fetch(`/api/admin/users/${banTarget._id}`, {
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
         body: JSON.stringify({ status: newStatus }),
       });
-      if (!res.ok) throw new Error("Failed to update status");
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error || "Failed to update status");
+      }
+
       setUsers(prev => prev.map(u => u._id === banTarget._id ? { ...u, status: newStatus } : u));
       closeModal("ban_user_modal");
       if (isBanned) {
@@ -384,30 +429,55 @@ export default function AdminUsersPage() {
             </div>
 
             {deleteTarget && (
-              <div className="rounded-xl p-4 mb-4 border flex items-center gap-3"
-                style={{
-                  backgroundColor: theme === "dark" ? "#2a1515" : "#fef2f2",
-                  borderColor: "#fca5a5",
-                }}>
-                {deleteTarget.photoURL
-                  ? <img src={deleteTarget.photoURL} className="w-9 h-9 rounded-full object-cover flex-shrink-0" alt="" />
-                  : (
-                    <div className="w-9 h-9 rounded-full flex items-center justify-center text-white text-sm font-black flex-shrink-0"
-                      style={{ background: "linear-gradient(135deg,#FF0F7B,#F89B29)" }}>
-                      {deleteTarget.name?.charAt(0)}
-                    </div>
-                  )
-                }
-                <div>
-                  <p className="text-sm font-bold text-error">{deleteTarget.name}</p>
-                  <p className="text-xs opacity-60">{deleteTarget.email}</p>
+              <>
+                <div className="rounded-xl p-4 mb-4 border flex items-center gap-3"
+                  style={{
+                    backgroundColor: theme === "dark" ? "#2a1515" : "#fef2f2",
+                    borderColor: "#fca5a5",
+                  }}>
+                  {deleteTarget.photoURL
+                    ? <img src={deleteTarget.photoURL} className="w-9 h-9 rounded-full object-cover flex-shrink-0" alt="" />
+                    : (
+                      <div className="w-9 h-9 rounded-full flex items-center justify-center text-white text-sm font-black flex-shrink-0"
+                        style={{ background: "linear-gradient(135deg,#FF0F7B,#F89B29)" }}>
+                        {deleteTarget.name?.charAt(0)}
+                      </div>
+                    )
+                  }
+                  <div>
+                    <p className="text-sm font-bold text-error">{deleteTarget.name}</p>
+                    <p className="text-xs opacity-60">{deleteTarget.email}</p>
+                  </div>
                 </div>
-              </div>
+
+                {/* ✅ Password Input Field */}
+                <div className="mb-4">
+                  <label className="block text-sm font-bold mb-2 opacity-70">
+                    🔒 Enter your admin password to confirm
+                  </label>
+                  <input
+                    type="password"
+                    value={adminPassword}
+                    onChange={(e) => setAdminPassword(e.target.value)}
+                    placeholder="Your password"
+                    className="input input-bordered w-full bg-base-200 focus:outline-none focus:border-error"
+                    disabled={deleting}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" && !deleting) {
+                        handleDeleteConfirm();
+                      }
+                    }}
+                  />
+                  <p className="text-xs opacity-40 mt-1.5">
+                    Security verification required for user deletion
+                  </p>
+                </div>
+              </>
             )}
 
             <div className="flex justify-end gap-3">
               <form method="dialog">
-                <button className="btn btn-ghost cursor-pointer" onClick={() => setDeleteTarget(null)}>
+                <button className="btn btn-ghost cursor-pointer" onClick={() => { setDeleteTarget(null); setAdminPassword(""); }}>
                   বাতিল
                 </button>
               </form>
@@ -415,7 +485,7 @@ export default function AdminUsersPage() {
                 className="btn text-white border-0 cursor-pointer gap-2"
                 style={{ background: "linear-gradient(135deg,#dc2626,#E3436B)" }}
                 onClick={handleDeleteConfirm}
-                disabled={deleting}
+                disabled={deleting || !adminPassword.trim()}
               >
                 {deleting
                   ? <><span className="loading loading-spinner loading-sm" /> Deleting...</>
@@ -426,7 +496,7 @@ export default function AdminUsersPage() {
           </div>
         </div>
         <form method="dialog" className="modal-backdrop">
-          <button onClick={() => setDeleteTarget(null)}>close</button>
+          <button onClick={() => { setDeleteTarget(null); setAdminPassword(""); }}>close</button>
         </form>
       </dialog>
 

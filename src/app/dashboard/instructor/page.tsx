@@ -1,5 +1,6 @@
 "use client";
 import React, { useState, useEffect, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
 import { Users, BookOpen, CheckCircle, GraduationCap, Layers, DollarSign, RefreshCw } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
@@ -11,7 +12,7 @@ interface DashData {
   totalLessons: number;
   publishedCourses: number;
   recentStudents: { name: string; photoURL?: string; courseName: string; enrolledAt: string }[];
-  activeCourses: { _id: string; title: string; enrolledCount: number; pricing: any; status: string }[];
+  activeCourses: { _id: string; title: string; enrolledCount: number; price: number; status: string }[];
   monthlyChart: { name: string; v: number }[];
 }
 
@@ -46,6 +47,7 @@ function StatCard({ icon, label, value, color, trend, loading }: {
 }
 
 export default function Indashboard() {
+  const router = useRouter();
   const [data, setData] = useState<DashData | null>(null);
   const [loading, setLoading] = useState(true);
   const [chartYear, setChartYear] = useState(new Date().getFullYear());
@@ -84,12 +86,14 @@ export default function Indashboard() {
       const completed = enrollments.filter((e: any) => e.status === "completed").length;
       const completionRate = enrollments.length > 0 ? Math.round((completed / enrollments.length) * 100) : 0;
 
-      // earnings
+      // earnings - ✅ Fixed to use flat price field from DB schema
       const courseMap = new Map(courses.map((c: any) => [c._id.toString(), c]));
       const totalEarnings = enrollments.reduce((sum: number, e: any) => {
         const course = courseMap.get(e.courseId?.toString() || "");
         if (!course) return sum;
-        return sum + (course.pricing?.type === "free" ? 0 : (course.pricing?.discountPrice || course.pricing?.price || 0));
+        // ✅ Check flat price field (DB schema) instead of pricing object
+        const coursePrice = course.originalPrice || course.price || 0;
+        return sum + (coursePrice === 0 ? 0 : coursePrice);
       }, 0);
 
       // ── 3. Recent students (last 5) ────────────────────────────────────────
@@ -107,19 +111,19 @@ export default function Indashboard() {
           };
         });
 
-      // ── 4. Active courses (top 5 by enrollment) ────────────────────────────
+      // ── 4. Active courses (top 5 by enrollment) - ✅ Fixed to use enrollmentCount from DB
       const activeCourses = [...courses]
-        .sort((a: any, b: any) => (b.enrolledCount || 0) - (a.enrolledCount || 0))
+        .sort((a: any, b: any) => (b.enrollmentCount || 0) - (a.enrollmentCount || 0))
         .slice(0, 5)
         .map((c: any) => ({
           _id: c._id,
           title: c.title,
-          enrolledCount: c.enrolledCount || 0,
-          pricing: c.pricing,
+          enrolledCount: c.enrollmentCount || 0, // ✅ Use enrollmentCount from DB
+          price: c.originalPrice || c.price || 0, // ✅ Use flat price field
           status: c.status,
         }));
 
-      // ── 5. Monthly chart (selected year) ──────────────────────────────────
+      // ── 5. Monthly chart (selected year) - ✅ Fixed to use flat price field
       const monthlyMap = new Map<number, number>();
       for (let i = 0; i < 12; i++) monthlyMap.set(i, 0);
 
@@ -128,7 +132,8 @@ export default function Indashboard() {
         if (d.getFullYear() !== chartYear) continue;
         const month = d.getMonth();
         const course = courseMap.get(e.courseId?.toString() || "");
-        const price = course?.pricing?.type === "free" ? 0 : (course?.pricing?.discountPrice || course?.pricing?.price || 0);
+        // ✅ Use flat price field from DB schema
+        const price = course ? (course.originalPrice || course.price || 0) : 0;
         monthlyMap.set(month, (monthlyMap.get(month) || 0) + price);
       }
 
@@ -155,10 +160,9 @@ export default function Indashboard() {
     return `${Math.floor(hrs / 24)}d ago`;
   };
 
-  const fmtPrice = (pricing: any) => {
-    if (!pricing || pricing.type === "free") return "Free";
-    const p = pricing.discountPrice || pricing.price || 0;
-    return `$${p}`;
+  const fmtPrice = (price: number) => {
+    if (!price || price === 0) return "Free";
+    return `৳${price.toLocaleString()}`;
   };
 
   const stats = [
@@ -167,7 +171,7 @@ export default function Indashboard() {
     { icon: <CheckCircle />, label: "Completion", value: data ? `${data.completionRate}%` : "0%", color: "green", trend: "+5%" },
     { icon: <Users />, label: "Followers", value: "—", color: "indigo", trend: "N/A" },
     { icon: <Layers />, label: "Lessons", value: data ? data.totalLessons.toString() : "0", color: "cyan", trend: `Total` },
-    { icon: <DollarSign />, label: "Earnings", value: data ? `$${data.totalEarnings.toLocaleString()}` : "$0", color: "orange", trend: "All time" },
+    { icon: <DollarSign />, label: "Earnings", value: data ? `৳${data.totalEarnings.toLocaleString()}` : "৳0", color: "orange", trend: "All time" },
   ];
 
   return (
@@ -213,7 +217,7 @@ export default function Indashboard() {
               <span className="loading loading-spinner loading-lg" style={{ color: '#6710C2' }} />
             </div>
           ) : (
-            <div style={{ width: "100%", height: "220px" }}>
+            <div style={{ width: "100%", height: "220px", cursor: "pointer" }} className="text-base-content">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={data?.monthlyChart || []} barSize={18}>
                   <defs>
@@ -224,13 +228,23 @@ export default function Indashboard() {
                   </defs>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="oklch(var(--b3))" />
                   <XAxis dataKey="name" axisLine={false} tickLine={false}
-                    tick={{ fontSize: 10, fill: "oklch(var(--bc) / 0.4)" }} dy={6} />
+                    tick={{ fontSize: 10, fill: "currentColor", fontWeight: 600 }} dy={6} />
                   <YAxis axisLine={false} tickLine={false}
-                    tick={{ fontSize: 10, fill: "oklch(var(--bc) / 0.4)" }}
-                    tickFormatter={v => v >= 1000 ? `$${v / 1000}k` : `$${v}`} />
-                  <Tooltip cursor={{ fill: "oklch(var(--b2))" }}
-                    contentStyle={{ borderRadius: 12, border: "none", backgroundColor: "oklch(var(--b1))", boxShadow: "0 8px 24px rgba(0,0,0,0.1)", fontSize: 12 }}
-                    formatter={(value: any) => [`$${value || 0}`, "Earnings"]} />
+                    tick={{ fontSize: 10, fill: "currentColor", fontWeight: 600 }}
+                    tickFormatter={v => v >= 1000 ? `৳${v / 1000}k` : `৳${v}`} />
+                  <Tooltip
+                    cursor={{ fill: "rgba(103, 16, 194, 0.1)" }}
+                    contentStyle={{
+                      borderRadius: 12,
+                      border: "1px solid rgba(0, 0, 0, 0.1)",
+                      backgroundColor: "#FFFFFF",
+                      boxShadow: "0 8px 24px rgba(0,0,0,0.15)",
+                      fontSize: 12,
+                      color: "#1F2937"
+                    }}
+                    labelStyle={{ color: "#1F2937", fontWeight: 600 }}
+                    formatter={(value: any) => [`৳${value || 0}`, "Earnings"]}
+                  />
                   <Bar dataKey="v" fill="url(#bg)" radius={[6, 6, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
@@ -267,7 +281,9 @@ export default function Indashboard() {
               ))}
             </div>
           )}
-          <button className="w-full mt-3 py-2 rounded-xl border-2 border-dashed border-base-300 text-xs font-black opacity-40 hover:opacity-70 hover:border-[#6710C2] hover:text-[#6710C2] transition-all cursor-pointer">
+          <button
+            onClick={() => router.push('/dashboard/instructor/students')}
+            className="w-full mt-3 py-2 rounded-xl border-2 border-dashed border-base-300 text-xs font-black opacity-40 hover:opacity-70 hover:border-[#6710C2] hover:text-[#6710C2] transition-all cursor-pointer">
             View All
           </button>
         </div>
@@ -305,7 +321,7 @@ export default function Indashboard() {
                   <tr key={c._id} className="border-t border-base-300 hover:bg-base-200/40 transition-colors">
                     <td className="px-6 py-4 text-sm font-bold max-w-[220px] truncate">{c.title}</td>
                     <td className="px-6 py-4 text-center text-sm opacity-50 font-semibold">{c.enrolledCount}</td>
-                    <td className="px-6 py-4 text-center text-sm font-black" style={{ color: '#00C48C' }}>{fmtPrice(c.pricing)}</td>
+                    <td className="px-6 py-4 text-center text-sm font-black" style={{ color: '#00C48C' }}>{fmtPrice(c.price)}</td>
                     <td className="px-6 py-4 text-right">
                       <span className={`text-[10px] font-black uppercase tracking-widest px-2.5 py-1 rounded-full ${c.status === 'published' ? 'bg-success/10 text-success' : 'bg-warning/10 text-warning'}`}>
                         {c.status === 'published' ? 'Live' : 'Draft'}

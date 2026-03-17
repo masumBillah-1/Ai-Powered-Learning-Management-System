@@ -7,7 +7,14 @@ import { motion, AnimatePresence } from "framer-motion";
 
 interface Enrollment {
   _id: string;
-  courseId: string | { _id: string; title?: string; thumbnail?: string; instructorId?: { name: string; photoURL?: string } };
+  courseId: string | {
+    _id: string;
+    title?: string;
+    thumbnail?: string;
+    price?: number;
+    originalPrice?: number;
+    instructorId?: { name: string; photoURL?: string }
+  };
   courseName: string;
   courseImage: string;
   instructorName: string;
@@ -62,6 +69,13 @@ function getInstructorName(e: Enrollment): string {
     return (e.courseId.instructorId as any)?.name || "Instructor";
   }
   return "Instructor";
+}
+
+function getInstructorPhoto(e: Enrollment): string | null {
+  if (typeof e.courseId === "object" && e.courseId?.instructorId) {
+    return (e.courseId.instructorId as any)?.photoURL || null;
+  }
+  return null;
 }
 
 function SkeletonCard() {
@@ -216,6 +230,7 @@ export default function StudentCoursesPage() {
                 const courseImage = getCourseImage(enrollment);
                 const courseName = getCourseName(enrollment);
                 const instructorName = getInstructorName(enrollment);
+                const instructorPhoto = getInstructorPhoto(enrollment);
                 const progress = enrollment.progress?.progressPercentage || 0;
 
                 return (
@@ -260,18 +275,6 @@ export default function StudentCoursesPage() {
                           </div>
                         </div>
                       )}
-
-                      {/* Progress badge */}
-                      {enrollment.status === "active" && (
-                        <div className="absolute top-3 left-3">
-                          <span
-                            className="text-white text-xs font-black px-3 py-1 rounded-full shadow"
-                            style={{ backgroundColor: getProgressColor(progress) }}
-                          >
-                            {progress}%
-                          </span>
-                        </div>
-                      )}
                     </figure>
 
                     {/* Card Body */}
@@ -279,9 +282,22 @@ export default function StudentCoursesPage() {
                       <div className="flex justify-between items-center mb-2">
                         <div className="flex items-center gap-2">
                           <div className="w-6 h-6 rounded-full overflow-hidden bg-[#C81D77] flex items-center justify-center">
-                            <span className="text-white text-xs font-bold">
-                              {instructorName?.charAt(0)?.toUpperCase() || "?"}
-                            </span>
+                            {instructorPhoto ? (
+                              <img
+                                src={instructorPhoto}
+                                alt={instructorName}
+                                className="w-full h-full object-cover"
+                                referrerPolicy="no-referrer"
+                                onError={(e) => {
+                                  (e.target as HTMLImageElement).style.display = 'none';
+                                  (e.target as HTMLImageElement).parentElement!.innerHTML = `<span class="text-white text-xs font-bold">${instructorName?.charAt(0)?.toUpperCase() || "?"}</span>`;
+                                }}
+                              />
+                            ) : (
+                              <span className="text-white text-xs font-bold">
+                                {instructorName?.charAt(0)?.toUpperCase() || "?"}
+                              </span>
+                            )}
                           </div>
                           <span className="text-xs font-semibold opacity-60 truncate max-w-[120px]">
                             {instructorName}

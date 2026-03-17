@@ -31,68 +31,87 @@ export async function GET(req: NextRequest) {
 
     // ── STUDENT ──────────────────────────────────────────────
     if (user.role === "student") {
-      // ✅ Get user's enrolled courses for course-specific notifications
-      const userEnrolledCourses = await Enrollment.find({ studentId: user._id }).distinct("courseId");
+      try {
+        // ✅ Get user's enrolled courses for course-specific notifications
+        const userEnrolledCourses = await Enrollment.find({ studentId: user._id }).distinct("courseId");
 
-      const [enrollments, transactions, unreadCount] = await Promise.all([
-        Enrollment.find({ studentId: user._id })
-          .sort({ enrolledAt: -1 })
-          .limit(5)
-          .select("courseName courseImage progress status enrolledAt"),
+        const [enrollments, transactions, unreadCount] = await Promise.all([
+          Enrollment.find({ studentId: user._id })
+            .populate({
+              path: "courseId",
+              select: "title thumbnail coverImage",
+              options: { virtuals: false }, // ✅ Disable virtuals to avoid modules.reduce error
+            })
+            .sort({ enrolledAt: -1 })
+            .limit(5)
+            .select("courseId courseName courseImage progress status enrolledAt")
+            .lean(), // ✅ Use lean() for better performance
 
-        Transaction.find({ studentId: user._id })
-          .sort({ createdAt: -1 })
-          .limit(5)
-          .select("courseName amount status paymentMethod createdAt type"),
+          Transaction.find({ studentId: user._id })
+            .sort({ createdAt: -1 })
+            .limit(5)
+            .select("courseName amount status paymentMethod createdAt type"),
 
-        // ✅ Updated unread count with broadcast notifications (matching notifications API logic)
-        Notification.countDocuments({
-          $or: [
-            // Individual notifications (non-broadcast)
-            { 
-              userId: user._id, 
-              isRead: false, 
-              type: "announcement"
-            },
-            // Broadcast notifications (others' published announcements)
-            { 
-              isBroadcast: true,
-              type: "announcement",
-              isRead: false,
-              createdBy: { $ne: user._id }, // নিজের না
-              $or: [
-                { targetRole: "all" },
-                { targetRole: "student" }
-                // ✅ Removed course-specific for now to match notifications API
-              ]
-            }
-          ],
-          $and: [
-            {
-              $or: [
-                { expiresAt: { $exists: false } },
-                { expiresAt: { $gt: new Date() } },
-              ]
-            }
-          ]
-        }).then(count => {
-          return count;
-        }),
-      ]);
+          // ✅ Updated unread count with broadcast notifications (matching notifications API logic)
+          Notification.countDocuments({
+            $or: [
+              // Individual notifications (non-broadcast)
+              { 
+                userId: user._id, 
+                isRead: false, 
+                type: "announcement"
+              },
+              // Broadcast notifications (others' published announcements)
+              { 
+                isBroadcast: true,
+                type: "announcement",
+                isRead: false,
+                createdBy: { $ne: user._id }, // নিজের না
+                $or: [
+                  { targetRole: "all" },
+                  { targetRole: "student" }
+                  // ✅ Removed course-specific for now to match notifications API
+                ]
+              }
+            ],
+            $and: [
+              {
+                $or: [
+                  { expiresAt: { $exists: false } },
+                  { expiresAt: { $gt: new Date() } },
+                ]
+              }
+            ]
+          }).then(count => {
+            return count;
+          }),
+        ]);
 
-      return NextResponse.json({
-        user: {
-          _id: user._id,
-          name: user.name,
-          email: user.email,
-          photoURL: user.photoURL || "",
-          role: user.role,
-        },
-        stats: user.stats,
-        recentEnrollments: enrollments,
-        recentTransactions: transactions,
-        unreadNotifications: unreadCount,
-      });
+        return NextResponse.json({
+          user: {
+            _id: user._id,
+            name: user.name,
+            email: user.email,
+            photoURL: user.photoURL || "",
+            role: user.role,
+          },
+          stats: user.stats || {
+            enrolledCourses: 0,
+            completedCourses: 0,
+            certificatesEarned: 0,
+            totalLearningTime: 0,
+          },
+          recentEnrollments: enrollments || [],
+          recentTransactions: transactions || [],
+          unreadNotifications: unreadCount || 0,
+        });
+      } catch (studentErr: any) {
+        console.error("❌ Student dashboard error:", studentErr);
+        return NextResponse.json({ 
+          error: `Student dashboard error: ${studentErr.message}`,
+          details: studentErr.stack 
+        }, { status: 500 });
+      }
     }
 
     // ── INSTRUCTOR ───────────────────────────────────────────
