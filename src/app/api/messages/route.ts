@@ -39,8 +39,8 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json({ success: true, conversations });
   } catch (err: any) {
-    console.error("❌ GET /api/messages error:", err.message);
-    return NextResponse.json({ error: err.message }, { status: 500 });
+    console.error("❌ GET /api/messages ERROR:", err.message);
+    return NextResponse.json({ error: "Server connection failed. Try again." }, { status: 500 });
   }
 }
 
@@ -96,7 +96,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ success: true, message, conversation });
   } catch (err: any) {
-    console.error("❌ POST /api/messages error:", err.message);
-    return NextResponse.json({ error: err.message }, { status: 500 });
+    console.error("❌ POST /api/messages ERROR:", err.message);
+    return NextResponse.json({ error: "Failed to send message." }, { status: 500 });
   }
 }

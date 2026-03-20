@@ -22,8 +22,8 @@ export async function connectDB() {
     return cached.conn;
   }
 
-  // ✅ Dead connection হলে reset
-  if (mongoose.connection.readyState !== 1) {
+  // ✅ Only reset if state is disconnected (0) or disconnecting (3)
+  if (mongoose.connection.readyState === 0 || mongoose.connection.readyState === 3) {
     cached.conn = null;
     cached.promise = null;
   }

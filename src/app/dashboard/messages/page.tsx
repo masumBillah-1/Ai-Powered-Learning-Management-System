@@ -85,12 +85,15 @@ export default function SupportChatPage() {
 
   const fetchConversations = async () => {
     try {
-      const res = await axios.get('/api/messages', { timeout: 10000 }); // 10s timeout
-      if (res.data.success) setConversations(res.data.conversations);
+      const res = await axios.get('/api/messages', { timeout: 30000 }); // Increase to 30s
+      if (res.data.success) {
+        setConversations(res.data.conversations);
+      }
     } catch (err: any) {
-      console.error(err);
-      if (err.code === 'ECONNABORTED' || err.response?.status === 500) {
-        setConversations([]); // Show empty state on timeout
+      console.error("❌ fetchConversations error:", err.message);
+      if (err.code === 'ECONNABORTED' || err.response?.status === 500 || err.response?.status === 504) {
+        // Only reset if we truly lost connectivity
+        if (!conversations.length) setConversations([]); 
       }
     } finally {
       setLoading(false);
@@ -154,9 +157,11 @@ export default function SupportChatPage() {
     if (activeRoomId) {
       const fetchMsgs = async () => {
         try {
-          const res = await axios.get(`/api/messages/${activeRoomId}`);
+          const res = await axios.get(`/api/messages/${activeRoomId}`, { timeout: 15000 });
           if (res.data.success) setMessages(res.data.messages);
-        } catch (err) { console.error(err); }
+        } catch (err: any) { 
+          console.error("❌ fetchMsgs error:", err.response?.data?.error || err.message); 
+        }
       };
       fetchMsgs();
       const interval = setInterval(fetchMsgs, 4000);
