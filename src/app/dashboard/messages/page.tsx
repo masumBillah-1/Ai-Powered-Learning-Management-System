@@ -51,10 +51,12 @@ export default function SupportChatPage() {
   const [currentUser, setCurrentUser] = useState<{ id: string, role: string, photoURL?: string } | null>(null);
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [enrolledInstructors, setEnrolledInstructors] = useState<any[]>([]);
+  const [allUsers, setAllUsers] = useState<any[]>([]); // New state for admin/instructor
   const [messages, setMessages] = useState<Message[]>([]);
   const [activeRoomId, setActiveRoomId] = useState<string | null>(null);
   const [activeUser, setActiveUser] = useState<any>(null);
   const [input, setInput] = useState("");
+  const [searchTerm, setSearchTerm] = useState(""); // New state for search
   const [loading, setLoading] = useState(true);
   const [showEmoji, setShowEmoji] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -67,8 +69,16 @@ export default function SupportChatPage() {
       const userObj = { id: parsed._id || parsed.id, role: parsed.role, photoURL: parsed.photoURL };
       setCurrentUser(userObj);
       if (userObj.role === 'student') fetchEnrolledData();
+      if (userObj.role === 'admin' || userObj.role === 'instructor') fetchAllUsers();
     }
   }, []);
+
+  const fetchAllUsers = async () => {
+    try {
+      const res = await axios.get('/api/messages/users');
+      if (res.data.success) setAllUsers(res.data.users);
+    } catch (err) { console.error(err); }
+  };
 
   const fetchEnrolledData = async () => {
     try {
@@ -101,7 +111,7 @@ export default function SupportChatPage() {
   };
 
   const sidebarList = useMemo(() => {
-    if (!currentUser) return [];
+    if (!currentUser) return [] as Conversation[];
 
     // 1. Get existing conversations from DB
     const existingConversations = conversations.filter(conv => {
@@ -123,29 +133,41 @@ export default function SupportChatPage() {
       return true;
     });
 
-    // 2. If student, add instructors who don't have a conversation yet
-    if (currentUser.role === 'student') {
-      const newInstructorChats = enrolledInstructors
-        .filter(inst => !existingConversations.some(conv => 
-          conv.participants.some(p => p._id === inst._id)
+    // 2. Extra chats for discovery
+    let enrichedList = [...existingConversations];
+    
+    if (currentUser.role === 'student' || currentUser.role === 'admin') {
+      const candidateUsers = currentUser.role === 'student' 
+        ? enrolledInstructors 
+        : allUsers.filter(u => u.role === 'instructor');
+
+      const extraChats = candidateUsers
+        .filter(u => !existingConversations.some(conv => 
+          conv.participants.some(p => p._id === u._id)
         ))
-        .map(inst => ({
-          _id: `temp_${inst._id}`,
-          roomId: [currentUser.id, inst._id].sort().join('_'), // Consistent ID for both parties
-          lastMessage: "Start a conversation...",
+        .map(u => ({
+          _id: `temp_${u._id}`,
+          roomId: [currentUser.id, u._id].sort().join('_'),
+          lastMessage: "No conversations. Start now...",
           participants: [
-            { _id: currentUser.id, name: "Me", role: "student" },
-            { ...inst }
+            { _id: currentUser.id, name: "Me", role: currentUser.role },
+            { ...u }
           ],
           unreadCount: {},
           updatedAt: new Date().toISOString()
-        }));
+        })) as unknown as Conversation[];
 
-      return [...existingConversations, ...newInstructorChats];
+      enrichedList = [...existingConversations, ...extraChats];
     }
 
-    return existingConversations;
-  }, [conversations, currentUser, enrolledInstructors]);
+    // 3. Apply local search filter
+    if (!searchTerm.trim()) return enrichedList;
+    
+    return enrichedList.filter(conv => {
+      const user = conv.participants.find(p => p._id !== currentUser.id);
+      return user?.name?.toLowerCase().includes(searchTerm.toLowerCase());
+    });
+  }, [conversations, currentUser, enrolledInstructors, allUsers, searchTerm]);
 
   useEffect(() => {
     fetchConversations();
@@ -155,6 +177,14 @@ export default function SupportChatPage() {
 
   useEffect(() => {
     if (activeRoomId) {
+      const markAsRead = async () => {
+        try {
+          await axios.put(`/api/messages/${activeRoomId}`);
+          fetchConversations(); // Update list to clear badge
+        } catch (err) { console.error("❌ markAsRead error:", err); }
+      };
+      markAsRead();
+
       const fetchMsgs = async () => {
         try {
           const res = await axios.get(`/api/messages/${activeRoomId}`, { timeout: 15000 });
@@ -223,7 +253,24 @@ export default function SupportChatPage() {
       <aside className="w-60 bg-base-200 border-r border-base-300 flex flex-col">
         <div className="p-5 border-b border-base-300">
           <h2 className={`text-lg font-bold ${theme.text}`}>Message Center</h2>
-          <div className={`badge ${theme.badge} badge-sm text-white uppercase font-bold`}>{currentUser?.role}</div>
+          <div className={`badge ${theme.badge} badge-sm text-white uppercase font-bold mb-3`}>{currentUser?.role}</div>
+          
+          {/* Sidebar Search Bar */}
+          <div className="relative mt-2">
+            <input 
+              type="text" 
+              placeholder="Search contacts..." 
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="input input-xs h-9 w-full rounded-lg bg-base-300 border-none px-3 focus:ring-1 focus:ring-primary placeholder:opacity-50 text-[11px]"
+            />
+            {searchTerm && (
+              <button 
+                onClick={() => setSearchTerm("")}
+                className="absolute right-2 top-1.5 opacity-50 hover:opacity-100 text-[10px]"
+              >✕</button>
+            )}
+          </div>
         </div>
 
         <div className="flex-1 overflow-y-auto p-2 space-y-1">
@@ -248,8 +295,17 @@ export default function SupportChatPage() {
                     <div className="flex items-center gap-2 overflow-hidden mb-0.5">
                       <h4 className={`text-xs font-bold truncate ${isSelected ? theme.text : ''}`}>{user.name}</h4>
                       <span className="px-1.5 py-0.5 rounded-md bg-base-300 text-[10px] capitalize font-bold opacity-70 flex-shrink-0">{user.role}</span>
+                      
+                      {/* Unread Badge */}
+                      {currentUser && (conv as any).unreadCount?.[currentUser.id] > 0 && !isSelected && (
+                        <span className="ml-auto badge badge-error badge-xs text-[9px] p-1.5 min-w-[18px] h-[18px] text-white font-bold border-none">
+                          {(conv as any).unreadCount[currentUser.id]}
+                        </span>
+                      )}
                     </div>
-                    <p className="text-[10px] opacity-60 truncate font-medium">{conv.lastMessage || "No messages yet"}</p>
+                    <p className={`text-[10px] truncate font-medium ${currentUser && (conv as any).unreadCount?.[currentUser.id] > 0 && !isSelected ? 'opacity-100 text-base-content font-bold' : 'opacity-60'}`}>
+                      {conv.lastMessage || "No messages yet"}
+                    </p>
                   </div>
                 </div>
               );
