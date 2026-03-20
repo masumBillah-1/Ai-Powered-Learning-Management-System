@@ -238,7 +238,7 @@ const Register = () => {
                 onClick={handleGoogleLogin}
                 disabled={googleLoading}
                 type="button"
-                className="flex items-center justify-center gap-2 py-2.5 rounded-lg border border-gray-300 dark:border-[#2D2438] bg-white dark:bg-[#1B1229] text-gray-800 dark:text-white hover:bg-gray-50 dark:hover:bg-[#2D2438] transition disabled:opacity-50 shadow-sm text-sm font-medium"
+                className="flex items-center justify-center gap-2 py-2.5 rounded-lg border border-gray-300 dark:border-[#2D2438] bg-white dark:bg-[#1B1229] text-gray-800 dark:text-white hover:bg-gray-50 dark:hover:bg-[#2D2438] transition disabled:opacity-50 shadow-sm text-sm font-medium cursor-pointer"
               >
                 {googleLoading
                   ? <span className="w-4 h-4 border-2 border-gray-400 border-t-transparent rounded-full animate-spin" />

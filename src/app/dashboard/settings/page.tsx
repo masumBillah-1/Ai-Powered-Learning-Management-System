@@ -1,33 +1,59 @@
 "use client";
 import { useState, useEffect } from "react";
 import {
-  User, Shield, Bell, Globe, CreditCard, Star,
-  Upload, Trash2, Eye, EyeOff, Check, Lock,
-  Smartphone, Plus, X
+  User, Shield, Bell, CreditCard, Star, Settings,
+  Eye, EyeOff, Check, Smartphone
 } from "lucide-react";
 
 type Role = "student" | "instructor" | "admin";
 
 export default function SettingsPage() {
-  const [activeTab, setActiveTab]   = useState("Profile");
-  const [role, setRole]             = useState<Role>("student");
-  const [theme, setTheme]           = useState("light");
-  const [showPw, setShowPw]         = useState({ current: false, new: false, confirm: false });
-  const [education, setEducation]   = useState([{ degree: "", university: "", from: "", to: "" }]);
-  const [notifs, setNotifs]         = useState({ email: true, push: true, assign: true, msg: false });
-  const [twoFA, setTwoFA]           = useState({ app: true, sms: false });
-  const [saved, setSaved]           = useState(false);
+  const [activeTab, setActiveTab] = useState("Security");
+  const [role, setRole] = useState<Role>("student");
+  const [theme, setTheme] = useState("light");
+  const [showPw, setShowPw] = useState({ current: false, new: false, confirm: false });
+  const [notifs, setNotifs] = useState({ email: true, push: true, assign: true, msg: false });
+  const [twoFA, setTwoFA] = useState({ app: true, sms: false });
+  const [saved, setSaved] = useState(false);
+
+  // System settings state
+  const [showDemoLogin, setShowDemoLogin] = useState(true);
+  const [settingsLoading, setSettingsLoading] = useState(false);
 
   // ── Dark/Light + Role sync ──
   useEffect(() => {
     const t = localStorage.getItem("theme") || "light";
-    const r = (localStorage.getItem("dashboardRole") as Role) || "student";
-    setTheme(t); setRole(r);
+
+    // Get role from user object first, fallback to dashboardRole
+    let r: Role = "student";
+    try {
+      const userStr = localStorage.getItem("user");
+      if (userStr) {
+        const user = JSON.parse(userStr);
+        r = user.role || "student";
+      }
+    } catch {
+      r = (localStorage.getItem("dashboardRole") as Role) || "student";
+    }
+
+    setTheme(t);
+    setRole(r);
     document.documentElement.setAttribute("data-theme", t);
 
     const interval = setInterval(() => {
       const ct = localStorage.getItem("theme") || "light";
-      const cr = (localStorage.getItem("dashboardRole") as Role) || "student";
+
+      let cr: Role = "student";
+      try {
+        const userStr = localStorage.getItem("user");
+        if (userStr) {
+          const user = JSON.parse(userStr);
+          cr = user.role || "student";
+        }
+      } catch {
+        cr = (localStorage.getItem("dashboardRole") as Role) || "student";
+      }
+
       if (ct !== theme) { setTheme(ct); document.documentElement.setAttribute("data-theme", ct); }
       if (cr !== role) setRole(cr);
     }, 100);
@@ -37,11 +63,66 @@ export default function SettingsPage() {
   const showSaved = () => { setSaved(true); setTimeout(() => setSaved(false), 2000); };
 
   const tabs: Record<Role, { id: string; icon: React.ElementType }[]> = {
-    student:    [{ id: "Profile", icon: User }, { id: "Security", icon: Shield }, { id: "Notifications", icon: Bell }, { id: "Social", icon: Globe }],
-    instructor: [{ id: "Profile", icon: User }, { id: "Security", icon: Shield }, { id: "Notifications", icon: Bell }, { id: "Social", icon: Globe }, { id: "Plans", icon: Star }, { id: "Withdraw", icon: CreditCard }],
-    admin:      [{ id: "Profile", icon: User }, { id: "Security", icon: Shield }, { id: "Notifications", icon: Bell }],
+    student: [{ id: "Security", icon: Shield }, { id: "Notifications", icon: Bell }],
+    instructor: [{ id: "Security", icon: Shield }, { id: "Notifications", icon: Bell }, { id: "Plans", icon: Star }, { id: "Withdraw", icon: CreditCard }],
+    admin: [{ id: "Security", icon: Shield }, { id: "Notifications", icon: Bell }, { id: "System", icon: Settings }],
   };
   const currentTabs = tabs[role];
+
+  // Auto-adjust active tab if current tab not available for role
+  useEffect(() => {
+    if (!currentTabs.find(t => t.id === activeTab)) {
+      setActiveTab(currentTabs[0]?.id || "Security");
+    }
+  }, [role, currentTabs, activeTab]);
+
+  // Fetch system settings (admin only)
+  useEffect(() => {
+    if (role === "admin") {
+      fetchSystemSettings();
+    }
+  }, [role]);
+
+  const fetchSystemSettings = async () => {
+    try {
+      const res = await fetch("/api/admin/settings");
+      const data = await res.json();
+      if (data.success && data.settings) {
+        setShowDemoLogin(data.settings.showDemoLogin ?? true);
+      }
+    } catch (error) {
+      console.error("Failed to fetch settings:", error);
+    }
+  };
+
+  const updateSystemSetting = async (key: string, value: boolean) => {
+    setSettingsLoading(true);
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch("/api/admin/settings", {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ key, value }),
+      });
+
+      const data = await res.json();
+      if (data.success) {
+        showSaved();
+        // Update local state
+        if (key === "showDemoLogin") setShowDemoLogin(value);
+      } else {
+        alert("Failed to update setting");
+      }
+    } catch (error) {
+      console.error("Failed to update setting:", error);
+      alert("Failed to update setting");
+    } finally {
+      setSettingsLoading(false);
+    }
+  };
 
   // ── Save button ──
   const SaveBtn = ({ label = "Save Changes" }: { label?: string }) => (
@@ -78,85 +159,6 @@ export default function SettingsPage() {
         ))}
       </div>
 
-      {/* ── PROFILE ── */}
-      {activeTab === "Profile" && (
-        <div className="space-y-6">
-
-          {/* Avatar */}
-          <div className="rounded-2xl bg-base-100 border border-base-300 p-6">
-            <p className="text-xs font-bold uppercase tracking-wider opacity-50 mb-4">Profile Picture</p>
-            <div className="flex items-center gap-4">
-              <div
-                className="w-16 h-16 rounded-full flex items-center justify-center text-white text-2xl font-black flex-shrink-0"
-                style={{ background: "linear-gradient(135deg,#FF0F7B,#F89B29)" }}
-              >
-                E
-              </div>
-              <div className="flex gap-2">
-                <button className="btn btn-xs gap-1 cursor-pointer"><Upload size={12} /> Upload</button>
-                <button className="btn btn-xs btn-ghost gap-1 cursor-pointer"><Trash2 size={12} /> Remove</button>
-              </div>
-            </div>
-          </div>
-
-          {/* Personal Info */}
-          <div className="rounded-2xl bg-base-100 border border-base-300 p-6">
-            <p className="text-xs font-bold uppercase tracking-wider opacity-50 mb-4">Personal Information</p>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {[
-                { label: "First Name", val: "Eugene",              type: "text"  },
-                { label: "Last Name",  val: "Andre",               type: "text"  },
-                { label: "Email",      val: "eugene@example.com",  type: "email" },
-                { label: "Phone",      val: "+880-1712-345678",    type: "tel"   },
-              ].map(f => (
-                <div key={f.label} className="flex flex-col gap-1">
-                  <label className="text-xs font-bold opacity-50">{f.label}</label>
-                  <input type={f.type} defaultValue={f.val} className="input input-sm bg-base-200 border-base-300 focus:outline-none" />
-                </div>
-              ))}
-              <div className="md:col-span-2 flex flex-col gap-1">
-                <label className="text-xs font-bold opacity-50">Bio</label>
-                <textarea defaultValue="Web developer with expertise in modern technologies." rows={3} className="textarea bg-base-200 border-base-300 text-sm focus:outline-none resize-none" />
-              </div>
-            </div>
-
-            {/* Education */}
-            {role !== "admin" && (
-              <>
-                <div className="divider my-4" />
-                <p className="text-xs font-bold uppercase tracking-wider opacity-50 mb-3">Education</p>
-                {education.map((_, i) => (
-                  <div key={i} className="grid grid-cols-2 md:grid-cols-4 gap-2 mb-2">
-                    {["Degree", "University", "From", "To"].map((ph, j) => (
-                      <div key={ph} className="relative">
-                        <input placeholder={ph} className="input input-xs bg-base-200 border-base-300 w-full focus:outline-none" />
-                        {j === 3 && (
-                          <button onClick={() => setEducation(e => e.filter((_, k) => k !== i))} className="absolute -right-2 -top-2 btn btn-xs btn-circle btn-ghost cursor-pointer">
-                            <X size={10} />
-                          </button>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                ))}
-                <button onClick={() => setEducation(e => [...e, { degree: "", university: "", from: "", to: "" }])} className="btn btn-xs btn-ghost gap-1 cursor-pointer mt-1" style={{ color: "#832388" }}>
-                  <Plus size={12} /> Add Education
-                </button>
-              </>
-            )}
-
-            <div className="mt-5"><SaveBtn label="Update Profile" /></div>
-          </div>
-
-          {/* Danger Zone */}
-          <div className="rounded-2xl bg-base-100 border-2 border-error/30 p-6">
-            <p className="text-xs font-bold uppercase tracking-wider text-error mb-1">Danger Zone</p>
-            <p className="text-xs opacity-50 mb-4">Permanently delete your account. This cannot be undone.</p>
-            <button className="btn btn-xs btn-error gap-1 cursor-pointer"><Trash2 size={12} /> Delete Account</button>
-          </div>
-        </div>
-      )}
-
       {/* ── SECURITY ── */}
       {activeTab === "Security" && (
         <div className="space-y-6">
@@ -184,8 +186,8 @@ export default function SettingsPage() {
           <div className="rounded-2xl bg-base-100 border border-base-300 p-6">
             <p className="text-xs font-bold uppercase tracking-wider opacity-50 mb-4">Two-Factor Authentication</p>
             {[
-              { key: "app" as const,  icon: Smartphone, title: "Authenticator App", sub: "Use Google Authenticator or Authy" },
-              { key: "sms" as const,  icon: Shield,      title: "SMS Authentication", sub: "Receive OTP on your mobile" },
+              { key: "app" as const, icon: Smartphone, title: "Authenticator App", sub: "Use Google Authenticator or Authy" },
+              { key: "sms" as const, icon: Shield, title: "SMS Authentication", sub: "Receive OTP on your mobile" },
             ].map(({ key, icon: Icon, title, sub }) => (
               <div key={key} className="flex items-center justify-between p-4 rounded-xl bg-base-200 mb-2">
                 <div className="flex items-center gap-3">
@@ -215,10 +217,10 @@ export default function SettingsPage() {
         <div className="rounded-2xl bg-base-100 border border-base-300 p-6">
           <p className="text-xs font-bold uppercase tracking-wider opacity-50 mb-4">Notification Preferences</p>
           {[
-            { key: "email" as const, label: "Email Notifications",  sub: "Receive updates via email"        },
-            { key: "push"  as const, label: "Push Notifications",   sub: "Browser push notifications"       },
-            { key: "assign"as const, label: "Assignment Updates",   sub: "New submissions and grades"       },
-            { key: "msg"   as const, label: "Direct Messages",      sub: "Notifications for new messages"   },
+            { key: "email" as const, label: "Email Notifications", sub: "Receive updates via email" },
+            { key: "push" as const, label: "Push Notifications", sub: "Browser push notifications" },
+            { key: "assign" as const, label: "Assignment Updates", sub: "New submissions and grades" },
+            { key: "msg" as const, label: "Direct Messages", sub: "Notifications for new messages" },
           ].map(({ key, label, sub }) => (
             <div key={key} className="flex items-center justify-between py-3 border-b border-base-300 last:border-0">
               <div>
@@ -238,34 +240,13 @@ export default function SettingsPage() {
         </div>
       )}
 
-      {/* ── SOCIAL ── */}
-      {activeTab === "Social" && (
-        <div className="rounded-2xl bg-base-100 border border-base-300 p-6">
-          <p className="text-xs font-bold uppercase tracking-wider opacity-50 mb-4">Social Profiles</p>
-          <div className="space-y-3 max-w-md">
-            {[
-              { label: "Website",  emoji: "🌐", ph: "https://yoursite.com"         },
-              { label: "LinkedIn", emoji: "💼", ph: "https://linkedin.com/in/..."  },
-              { label: "Twitter",  emoji: "🐦", ph: "https://twitter.com/..."      },
-              { label: "GitHub",   emoji: "🐙", ph: "https://github.com/..."       },
-            ].map(({ label, emoji, ph }) => (
-              <div key={label} className="flex flex-col gap-1">
-                <label className="text-xs font-bold opacity-50">{emoji} {label}</label>
-                <input type="url" placeholder={ph} className="input input-sm bg-base-200 border-base-300 focus:outline-none" />
-              </div>
-            ))}
-          </div>
-          <div className="mt-5"><SaveBtn label="Save Links" /></div>
-        </div>
-      )}
-
       {/* ── PLANS (instructor) ── */}
       {activeTab === "Plans" && role === "instructor" && (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {[
-            { name: "Free",       price: "$0",     features: ["3 courses", "Basic analytics"],                                   current: false },
-            { name: "Pro",        price: "$19/mo", features: ["Unlimited courses", "Advanced analytics", "Priority support"],    current: true  },
-            { name: "Enterprise", price: "$49/mo", features: ["Everything in Pro", "White labeling", "API access"],              current: false },
+            { name: "Free", price: "$0", features: ["3 courses", "Basic analytics"], current: false },
+            { name: "Pro", price: "$19/mo", features: ["Unlimited courses", "Advanced analytics", "Priority support"], current: true },
+            { name: "Enterprise", price: "$49/mo", features: ["Everything in Pro", "White labeling", "API access"], current: false },
           ].map(p => (
             <div key={p.name} className={`rounded-2xl bg-base-100 p-6 border-2 ${p.current ? "" : "border-base-300"}`}
               style={p.current ? { borderColor: "#832388" } : {}}>
@@ -296,8 +277,8 @@ export default function SettingsPage() {
           <div className="grid grid-cols-3 gap-4">
             {[
               { label: "Available", value: "৳1,248", color: "#00C48C" },
-              { label: "Pending",   value: "৳340",   color: "#F89B29" },
-              { label: "Total",     value: "৳8,920", color: "#832388" },
+              { label: "Pending", value: "৳340", color: "#F89B29" },
+              { label: "Total", value: "৳8,920", color: "#832388" },
             ].map(({ label, value, color }) => (
               <div key={label} className="rounded-2xl bg-base-100 border border-base-300 p-5 text-center">
                 <p className="text-xs font-bold uppercase opacity-50 mb-1">{label}</p>
@@ -333,6 +314,49 @@ export default function SettingsPage() {
               </button>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* ── SYSTEM (admin) ── */}
+      {activeTab === "System" && role === "admin" && (
+        <div className="space-y-6">
+
+          {/* Demo Login Control */}
+          <div className="rounded-2xl bg-base-100 border border-base-300 p-6">
+            <p className="text-xs font-bold uppercase tracking-wider opacity-50 mb-1">Demo Login</p>
+            <p className="text-xs opacity-50 mb-4">Control demo login buttons visibility on login page</p>
+
+            <div className="flex items-center justify-between p-4 rounded-xl bg-base-200">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-lg flex items-center justify-center" style={{ backgroundColor: "#832388", opacity: 0.8 }}>
+                  <User size={18} color="#fff" />
+                </div>
+                <div>
+                  <p className="text-sm font-bold">Show Demo Login Buttons</p>
+                  <p className="text-xs opacity-50">Enable quick demo access for Admin, Instructor, Student</p>
+                </div>
+              </div>
+              <input
+                type="checkbox"
+                className="toggle toggle-md cursor-pointer"
+                checked={showDemoLogin}
+                onChange={(e) => updateSystemSetting("showDemoLogin", e.target.checked)}
+                disabled={settingsLoading}
+                style={showDemoLogin ? { backgroundColor: "#832388", borderColor: "#832388" } : {}}
+              />
+            </div>
+
+            {settingsLoading && (
+              <p className="text-xs text-center mt-3 opacity-50">Updating...</p>
+            )}
+          </div>
+
+          {/* Future Settings Placeholder */}
+          <div className="rounded-2xl bg-base-100 border border-base-300 p-6 opacity-50">
+            <p className="text-xs font-bold uppercase tracking-wider mb-1">More Settings Coming Soon</p>
+            <p className="text-xs opacity-50">Maintenance mode, registration control, and more...</p>
+          </div>
+
         </div>
       )}
 

@@ -122,7 +122,19 @@ export async function GET(req: NextRequest) {
     const instructorId = searchParams.get("instructorId");
     const status       = searchParams.get("status");
     const mine         = searchParams.get("mine") === "true";
+    const approvedBy   = searchParams.get("approvedBy");
+    const rejectedBy   = searchParams.get("rejectedBy");
+    const getCategories = searchParams.get("categories") === "true";
     const limit        = parseInt(searchParams.get("limit") || "50");
+
+    // ✅ Special case: Return unique categories only
+    if (getCategories) {
+      const categories = await Course.distinct("category");
+      const validCategories = categories
+        .filter((cat) => cat && typeof cat === "string" && cat.trim() !== "")
+        .sort((a, b) => a.localeCompare(b));
+      return NextResponse.json({ success: true, categories: validCategories });
+    }
 
     const query: any = {};
 
@@ -138,6 +150,16 @@ export async function GET(req: NextRequest) {
     }
 
     if (status) query.status = status;
+    
+    // ✅ Filter by admin who approved
+    if (approvedBy && mongoose.Types.ObjectId.isValid(approvedBy)) {
+      query.approvedBy = approvedBy;
+    }
+    
+    // ✅ Filter by admin who rejected
+    if (rejectedBy && mongoose.Types.ObjectId.isValid(rejectedBy)) {
+      query.rejectedBy = rejectedBy;
+    }
 
     const courses = await Course.find(query)
       .sort({ createdAt: -1 })

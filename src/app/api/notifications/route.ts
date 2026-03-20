@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { connectDB } from "@/db/connect";
-import { Notification } from "@/models";
+import { Notification, User } from "@/models";
 import mongoose from "mongoose";
 import jwt from "jsonwebtoken";
 
@@ -16,118 +16,121 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: "Unauthorized - Please login" }, { status: 401 });
     }
 
-    const decoded: any = jwt.verify(token, JWT_SECRET);
+    let decoded: any;
+    try {
+      decoded = jwt.verify(token, JWT_SECRET);
+    } catch (err) {
+      return NextResponse.json({ error: "Session expired" }, { status: 401 });
+    }
+
     const { searchParams } = new URL(req.url);
     const limit         = parseInt(searchParams.get("limit") || "20");
-    const unreadOnly    = searchParams.get("unreadOnly") === "true";
     const type          = searchParams.get("type");
 
-    // ✅ Get user's enrolled/related courses for course-specific notifications
-    let userEnrolledCourses: string[] = [];
+    // ✅ Get user's read notification IDs
+    const currentUser = await User.findById(decoded.userId).select('readNotifications').lean();
+    const readIds = currentUser?.readNotifications?.map((id: any) => id.toString()) || [];
+
+    // ✅ Get user's enrolled/related courses and their instructors
+    let userEnrolledCourses: mongoose.Types.ObjectId[] = [];
+    let myInstructors: mongoose.Types.ObjectId[] = [];
+
     if (decoded.role === "student") {
       const enrollments = await mongoose.connection.collection("enrollments")
         .find({ studentId: new mongoose.Types.ObjectId(decoded.userId) })
         .toArray();
-      userEnrolledCourses = enrollments.map((e: any) => e.courseId?.toString()).filter(Boolean);
+      userEnrolledCourses = enrollments.map((e: any) => new mongoose.Types.ObjectId(e.courseId)).filter(Boolean);
+      
+      if (userEnrolledCourses.length > 0) {
+        const courses = await mongoose.connection.collection("courses")
+          .find({ _id: { $in: userEnrolledCourses } })
+          .project({ instructorId: 1 })
+          .toArray();
+        myInstructors = courses.map((c: any) => new mongoose.Types.ObjectId(c.instructorId)).filter(Boolean);
+      }
     } else if (decoded.role === "instructor") {
-      // ✅ Get instructor's courses
       const courses = await mongoose.connection.collection("courses")
         .find({ instructorId: new mongoose.Types.ObjectId(decoded.userId) })
         .toArray();
-      userEnrolledCourses = courses.map((c: any) => c._id?.toString()).filter(Boolean);
+      userEnrolledCourses = courses.map((c: any) => new mongoose.Types.ObjectId(c._id)).filter(Boolean);
     }
 
-    // ✅ Role-based notification query
+    const broadcastCriteria: any[] = [
+      { targetRole: "all" },
+      { targetRole: decoded.role },
+      ...(userEnrolledCourses.length > 0 ? [{ targetCourseId: { $in: userEnrolledCourses } }] : []),
+      // ✅ Handle "all-my-students"
+      ...(decoded.role === "student" && myInstructors.length > 0 ? [{
+        targetRole: "all-my-students",
+        createdBy: { $in: myInstructors }
+      }] : [])
+    ];
+
     let query: any;
-    
+    const expirationCriteria = {
+      $or: [
+        { expiresAt: { $exists: false } },
+        { expiresAt: { $gt: new Date() } },
+      ]
+    };
+
     if (type === "announcement") {
-      // ✅ For announcements page - show creator's own + received broadcasts
       query = {
-        $or: [
-          // Individual notifications (creator's drafts and own announcements)
-          { 
-            userId: new mongoose.Types.ObjectId(decoded.userId),
-            type: "announcement"
-          },
-          // Own created broadcast announcements (creator নিজের published announcements)
-          { 
-            createdBy: new mongoose.Types.ObjectId(decoded.userId),
-            isBroadcast: true,
-            type: "announcement"
-          },
-          // Received broadcast notifications (others' published announcements)
-          { 
-            isBroadcast: true,
-            type: "announcement",
-            createdBy: { $ne: new mongoose.Types.ObjectId(decoded.userId) }, // নিজের না
-            $or: [
-              { targetRole: "all" },                    // All users
-              { targetRole: decoded.role },             // Role-specific
-              // Course-specific notifications
-              ...(userEnrolledCourses.length > 0 ? [{
-                targetCourseId: { $in: userEnrolledCourses.map(id => new mongoose.Types.ObjectId(id)) }
-              }] : [])
-            ]
-          }
-        ],
+        type: "announcement",
         $and: [
           {
             $or: [
-              { expiresAt: { $exists: false } },
-              { expiresAt: { $gt: new Date() } },
+              { userId: new mongoose.Types.ObjectId(decoded.userId) },
+              { createdBy: new mongoose.Types.ObjectId(decoded.userId) },
+              {
+                isBroadcast: true,
+                createdBy: { $ne: new mongoose.Types.ObjectId(decoded.userId) },
+                $or: broadcastCriteria
+              }
             ]
-          }
+          },
+          expirationCriteria
         ]
       };
     } else {
-      // ✅ For other notifications - original logic
       query = {
-        $or: [
-          // Individual notifications
-          { 
-            userId: new mongoose.Types.ObjectId(decoded.userId),
-            isBroadcast: { $ne: true }
-          },
-          // Broadcast notifications
-          { 
-            isBroadcast: true,
-            createdBy: { $ne: new mongoose.Types.ObjectId(decoded.userId) },
-            $or: [
-              { targetRole: "all" },
-              { targetRole: decoded.role },
-              ...(decoded.role === "student" && userEnrolledCourses.length > 0 ? [{
-                targetCourseId: { $in: userEnrolledCourses.map(id => new mongoose.Types.ObjectId(id)) }
-              }] : [])
-            ]
-          }
-        ],
         $and: [
           {
             $or: [
-              { expiresAt: { $exists: false } },
-              { expiresAt: { $gt: new Date() } },
+              { 
+                userId: new mongoose.Types.ObjectId(decoded.userId),
+                type: { $ne: "announcement" },
+                isBroadcast: { $ne: true },
+                isRead: false 
+              },
+              {
+                isBroadcast: true,
+                createdBy: { $ne: new mongoose.Types.ObjectId(decoded.userId) },
+                _id: { $nin: readIds.map((id: string) => new mongoose.Types.ObjectId(id)) },
+                $or: broadcastCriteria
+              }
             ]
-          }
+          },
+          expirationCriteria
         ]
       };
     }
 
-    if (unreadOnly) query.isRead = false;
-    // type filter already handled above
-
     const notifications = await Notification.find(query)
-      .populate('createdBy', 'name email role photoURL') // ✅ Populate creator info
+      .populate('createdBy', 'name email role photoURL')
       .sort({ createdAt: -1 })
       .limit(limit)
       .lean();
 
-    // ✅ Enhanced response with status field and duplicate removal
     const enriched = notifications.map((n: any) => {
+      const isRead = n.isBroadcast 
+        ? readIds.includes(n._id.toString())
+        : n.isRead;
+      
       const status = parseStatusFromActionUrl(n.actionUrl);
-      return { ...n, status };
+      return { ...n, isRead, status };
     });
 
-    // ✅ Remove duplicates based on title, message, and createdBy
     const uniqueAnnouncements = enriched.filter((item, index, self) => {
       return index === self.findIndex(t => (
         t.title === item.title && 
@@ -136,78 +139,14 @@ export async function GET(req: NextRequest) {
       ));
     });
 
-    // ✅ Updated unread count calculation - same logic as query
-    let unreadQuery: any;
-    if (type === "announcement") {
-      unreadQuery = {
-        $or: [
-          // Individual notifications (creator's drafts and own announcements)
-          { 
-            userId: new mongoose.Types.ObjectId(decoded.userId),
-            type: "announcement",
-            isRead: false
-          },
-          // Received broadcast notifications (others' published announcements) - নিজের না
-          { 
-            isBroadcast: true,
-            type: "announcement",
-            isRead: false,
-            createdBy: { $ne: new mongoose.Types.ObjectId(decoded.userId) }, // নিজের না
-            $or: [
-              { targetRole: "all" },
-              { targetRole: decoded.role }
-              // ✅ Removed course-specific to match dashboard API
-            ]
-          }
-        ],
-        $and: [
-          {
-            $or: [
-              { expiresAt: { $exists: false } },
-              { expiresAt: { $gt: new Date() } },
-            ]
-          }
-        ]
-      };
-    } else {
-      unreadQuery = {
-        $or: [
-          { 
-            userId: new mongoose.Types.ObjectId(decoded.userId),
-            isBroadcast: { $ne: true },
-            isRead: false
-          },
-          { 
-            isBroadcast: true,
-            isRead: false,
-            createdBy: { $ne: new mongoose.Types.ObjectId(decoded.userId) },
-            $or: [
-              { targetRole: "all" },
-              { targetRole: decoded.role },
-              ...(decoded.role === "student" && userEnrolledCourses.length > 0 ? [{
-                targetCourseId: { $in: userEnrolledCourses.map(id => new mongoose.Types.ObjectId(id)) }
-              }] : [])
-            ]
-          }
-        ],
-        $and: [
-          {
-            $or: [
-              { expiresAt: { $exists: false } },
-              { expiresAt: { $gt: new Date() } },
-            ]
-          }
-        ]
-      };
-    }
-
-    const unreadCount = await Notification.countDocuments(unreadQuery);
+    // Calculate unread count reliably
+    const unreadCount = enriched.filter(n => !n.isRead).length;
 
     return NextResponse.json({ success: true, notifications: uniqueAnnouncements, unreadCount }, { status: 200 });
 
   } catch (error: any) {
-    console.error("GET /api/notifications error:", error);
-    return NextResponse.json({ error: "Failed to fetch notifications" }, { status: 500 });
+    console.error("GET error:", error);
+    return NextResponse.json({ error: error.message || "Failed to fetch notifications" }, { status: 500 });
   }
 }
 
@@ -215,371 +154,145 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   try {
     await connectDB();
-
     const token = req.cookies.get("token")?.value;
-    if (!token) {
-      return NextResponse.json({ error: "Unauthorized - Please login" }, { status: 401 });
-    }
+    if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     const decoded: any = jwt.verify(token, JWT_SECRET);
     const body = await req.json();
 
     const {
-      type     = "announcement",
+      type       = "announcement",
       title,
       message,
-      priority = "medium",
-      status   = "Draft",
+      priority   = "medium",
+      status     = "Draft",
       courseId,
       expiresAt,
-      targetRole = "all", // ✅ New field for broadcast
+      targetRole = "all",
     } = body;
 
     if (!title || !message) {
       return NextResponse.json({ error: "Title and message are required." }, { status: 400 });
     }
 
-    // ✅ Only published announcements create broadcast notifications
-    if (status === "Published" && type === "announcement") {
-      // ✅ Check if this user already has a similar announcement to prevent duplicates
-      const existingAnnouncement = await Notification.findOne({
-        createdBy: new mongoose.Types.ObjectId(decoded.userId),
-        type: "announcement",
-        title: title.trim(),
-        message: message.trim(),
-        isBroadcast: true,
-        createdAt: { $gte: new Date(Date.now() - 10000) } // Within last 10 seconds
-      });
-
-      if (existingAnnouncement) {
-        return NextResponse.json({
-          success: true,
-          message: "Announcement already published",
-          notification: existingAnnouncement
-        }, { status: 200 });
-      }
-
-      // ✅ First create individual notification for creator
-      const actionUrl = buildActionUrl(status, null);
-      const individualNotification = await Notification.create({
-        userId: new mongoose.Types.ObjectId(decoded.userId),
-        type,
-        title: title.trim(),
-        message: message.trim(),
-        priority,
-        isRead: false,
-        actionUrl,
-        isBroadcast: false,
-        createdBy: new mongoose.Types.ObjectId(decoded.userId),
-        ...(courseId && mongoose.isValidObjectId(courseId) && {
-          courseId: new mongoose.Types.ObjectId(courseId),
-        }),
-        ...(expiresAt && { expiresAt: new Date(expiresAt) }),
-      });
-
-      // ✅ Then create broadcast notifications
-      await createBroadcastNotification({
-        createdBy: decoded.userId,
-        title: title.trim(),
-        message: message.trim(),
-        priority,
-        targetRole,
-        courseId: courseId && mongoose.isValidObjectId(courseId) ? courseId : null,
-      });
-
-      return NextResponse.json({
-        success: true,
-        message: "Announcement published and notifications sent!",
-        notification: {
-          ...individualNotification.toObject(),
-          status,
-          courseId: individualNotification.courseId,
-        },
-      }, { status: 201 });
-    }
-
-    // ✅ Draft announcements - শুধু creator এর জন্য individual notification
-    const actionUrl = buildActionUrl(status, null);
-
-    const notificationData: any = {
-      userId   : new mongoose.Types.ObjectId(decoded.userId),
+    const actionUrl = `status:${status}`;
+    
+    const notification = await Notification.create({
+      userId: new mongoose.Types.ObjectId(decoded.userId),
       type,
-      title    : title.trim(),
-      message  : message.trim(),
+      title: title.trim(),
+      message: message.trim(),
       priority,
-      isRead   : false,
+      isRead: false,
       actionUrl,
-      isBroadcast: false, // Individual notification
+      isBroadcast: status === "Published" && type === "announcement",
+      targetRole,
+      targetCourseId: courseId && mongoose.isValidObjectId(courseId) ? new mongoose.Types.ObjectId(courseId) : undefined,
       createdBy: new mongoose.Types.ObjectId(decoded.userId),
-      ...(courseId && mongoose.isValidObjectId(courseId) && {
-        courseId: new mongoose.Types.ObjectId(courseId),
-      }),
+      ...(courseId && mongoose.isValidObjectId(courseId) && { courseId: new mongoose.Types.ObjectId(courseId) }),
       ...(expiresAt && { expiresAt: new Date(expiresAt) }),
-    };
+    });
 
-    const notification = await Notification.create(notificationData);
+    await notification.populate('createdBy', 'name email role photoURL');
 
     return NextResponse.json({
-      success     : true,
-      message     : "Draft saved successfully",
-      notification: {
-        ...notification.toObject(),
-        status,
-        courseId: notification.courseId,
-      },
+      success: true,
+      message: status === "Published" ? "Announcement published!" : "Draft saved!",
+      notification: { ...notification.toObject(), status },
     }, { status: 201 });
 
   } catch (error: any) {
-    console.error("POST /api/notifications error:", error);
-
-    if (error.name === "CastError") {
-      return NextResponse.json({ error: `Invalid ID: ${error.path}` }, { status: 400 });
-    }
-    if (error.name === "ValidationError") {
-      const msg = Object.values(error.errors).map((e: any) => e.message).join(", ");
-      return NextResponse.json({ error: `Validation: ${msg}` }, { status: 400 });
-    }
-
-    return NextResponse.json({ error: `Server error: ${error.message}` }, { status: 500 });
-  }
-}
-
-// ✅ Helper function to create broadcast notifications
-async function createBroadcastNotification({
-  createdBy,
-  title,
-  message,
-  priority,
-  targetRole,
-  courseId,
-}: {
-  createdBy: string;
-  title: string;
-  message: string;
-  priority: string;
-  targetRole: string;
-  courseId?: string | null;
-}) {
-  const { User, Enrollment } = await import("@/models");
-
-  if (targetRole === "all") {
-    // ✅ All users
-    const users = await User.find({ status: "active" }, { _id: 1 }).lean();
-    const notifications = users.map((user: any) => ({
-      userId: user._id,
-      type: "announcement",
-      title,
-      message,
-      priority,
-      isRead: false,
-      isBroadcast: true,
-      targetRole: "all",
-      createdBy: new mongoose.Types.ObjectId(createdBy),
-      actionUrl: "status:Published",
-    }));
-    await Notification.insertMany(notifications);
-    
-  } else if (targetRole === "student" || targetRole === "instructor" || targetRole === "admin") {
-    // ✅ Role-specific users
-    const users = await User.find({ role: targetRole, status: "active" }, { _id: 1 }).lean();
-    const notifications = users.map((user: any) => ({
-      userId: user._id,
-      type: "announcement",
-      title,
-      message,
-      priority,
-      isRead: false,
-      isBroadcast: true,
-      targetRole,
-      createdBy: new mongoose.Types.ObjectId(createdBy),
-      actionUrl: "status:Published",
-    }));
-    await Notification.insertMany(notifications);
-    
-  } else if (courseId && mongoose.isValidObjectId(courseId)) {
-    // ✅ Course-specific students
-    const enrollments = await Enrollment.find(
-      { courseId: new mongoose.Types.ObjectId(courseId) },
-      { studentId: 1 }
-    ).lean();
-    
-    if (enrollments.length > 0) {
-      const notifications = enrollments.map((enrollment: any) => ({
-        userId: enrollment.studentId,
-        type: "announcement",
-        title,
-        message,
-        priority,
-        isRead: false,
-        isBroadcast: true,
-        targetCourseId: new mongoose.Types.ObjectId(courseId),
-        createdBy: new mongoose.Types.ObjectId(createdBy),
-        actionUrl: "status:Published",
-      }));
-      await Notification.insertMany(notifications);
-    }
+    console.error("POST error:", error);
+    return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
 
 // ─── PUT ──────────────────────────────────────────────────────────────────────
-// দুই ধরনের request handle করে:
-//   1) Announcement edit  → body: { title, message, priority, status, courseId }
-//                           query: ?id=<notificationId>
-//   2) Mark as read       → body: { id } বা { markAll: true }
 export async function PUT(req: NextRequest) {
   try {
     await connectDB();
-
     const token = req.cookies.get("token")?.value;
     if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     const decoded: any = jwt.verify(token, JWT_SECRET);
-
-    // ── query string থেকে id নাও (announcement edit এর ক্ষেত্রে) ─────────────
     const { searchParams } = new URL(req.url);
     const queryId = searchParams.get("id");
-
     const body = await req.json();
 
-    // ── Case 1: markAll → সব notification read mark করো ───────────────────────
-    if (body.markAll) {
-      const result = await Notification.updateMany(
-        { userId: decoded.userId, isRead: false },
-        { $set: { isRead: true, readAt: new Date() } }
-      );
-      return NextResponse.json({ success: true, modifiedCount: result.modifiedCount });
-    }
-
-    // ── Case 2: Announcement full edit (title, message, status, etc.) ──────────
-    const targetId = queryId || body.id;
-    if (!targetId) {
-      return NextResponse.json({ error: "Notification ID required" }, { status: 400 });
-    }
-
-    if (!mongoose.isValidObjectId(targetId)) {
-      return NextResponse.json({ error: "Invalid notification ID" }, { status: 400 });
-    }
-
-    // body তে কী কী এসেছে সেটা দিয়ে $set তৈরি করো
-    const {
-      title,
-      message,
-      priority,
-      status,   // ← "Published" | "Draft"
-      courseId,
-      isRead,   // ← backward compat: simple read mark
-    } = body;
-
-    // ── Simple read mark (body তে শুধু isRead আছে) ────────────────────────────
-    if (isRead !== undefined && !title && !message && !status) {
-      const notification = await Notification.findOneAndUpdate(
-        {
-          $or: [
-            { _id: targetId, userId: decoded.userId }, // Individual notification
-            { _id: targetId, createdBy: decoded.userId } // Broadcast notification (creator)
-          ]
-        },
-        { $set: { isRead: true, readAt: new Date() } },
-        { new: true }
-      );
-      if (!notification) return NextResponse.json({ error: "Not found" }, { status: 404 });
-      return NextResponse.json({ success: true, notification });
-    }
-
-    // ── Announcement edit ─────────────────────────────────────────────────────
-    const updateFields: any = {};
-
-    if (title)    updateFields.title   = title.trim();
-    if (message)  updateFields.message = message.trim();
-    if (priority) updateFields.priority = priority;
-
-    // status → actionUrl এ store করো
-    if (status) {
-      updateFields.actionUrl = buildActionUrl(status, null);
-    }
-
-    // courseId → schema তে ObjectId field হিসেবে আছে
-    if (courseId !== undefined) {
-      if (courseId && mongoose.isValidObjectId(courseId)) {
-        updateFields.courseId = new mongoose.Types.ObjectId(courseId);
-      } else if (!courseId) {
-        updateFields.courseId = null; // clear করো
+    // ── CASE 1: Mark as Read ──────────────────────────────────────────────────
+    if (body.markAll || body.isRead || (queryId && body.isRead)) {
+      if (body.markAll) {
+        // 1. Mark individual unread notifications as read
+        await Notification.updateMany({ userId: decoded.userId, isRead: false }, { $set: { isRead: true, readAt: new Date() } });
+        
+        // 2. Add all currently visible unread broadcast IDs to user's readNotifications array
+        // (Note: This is a bit limited but covers most cases for the bell icon)
+        const unreadBroadcasts = await Notification.find({
+          isBroadcast: true,
+          createdBy: { $ne: new mongoose.Types.ObjectId(decoded.userId) }
+        }).select('_id');
+        
+        if (unreadBroadcasts.length > 0) {
+          await User.findByIdAndUpdate(decoded.userId, {
+            $addToSet: { readNotifications: { $each: unreadBroadcasts.map(b => b._id) } }
+          });
+        }
+        return NextResponse.json({ success: true });
       }
+
+      const targetId = queryId || body.id;
+      if (!mongoose.isValidObjectId(targetId)) return NextResponse.json({ error: "Invalid ID" }, { status: 400 });
+
+      const notif = await Notification.findById(targetId);
+      if (!notif) return NextResponse.json({ error: "Not found" }, { status: 404 });
+
+      if (notif.isBroadcast) {
+        await User.findByIdAndUpdate(decoded.userId, {
+          $addToSet: { readNotifications: new mongoose.Types.ObjectId(targetId) }
+        });
+      } else {
+        notif.isRead = true;
+        notif.readAt = new Date();
+        await notif.save();
+      }
+      return NextResponse.json({ success: true });
     }
 
-    if (Object.keys(updateFields).length === 0) {
-      return NextResponse.json({ error: "No fields to update" }, { status: 400 });
-    }
+    // ── CASE 2: Edit Announcement ─────────────────────────────────────────────
+    if (!queryId) return NextResponse.json({ error: "ID required" }, { status: 400 });
 
-    // ✅ Check if status is changing from Draft to Published
-    const existingNotification = await Notification.findOne({
-      $or: [
-        { _id: targetId, userId: decoded.userId }, // Individual notification
-        { _id: targetId, createdBy: decoded.userId } // Broadcast notification (creator)
-      ]
-    });
+    const updateFields: any = {};
+    if (body.title)    updateFields.title   = body.title.trim();
+    if (body.message)  updateFields.message = body.message.trim();
+    if (body.priority) updateFields.priority = body.priority;
+    if (body.status)   updateFields.actionUrl = `status:${body.status}`;
+    if (body.targetRole) updateFields.targetRole = body.targetRole;
+    if (body.courseId) {
+       updateFields.targetCourseId = new mongoose.Types.ObjectId(body.courseId);
+       updateFields.courseId = new mongoose.Types.ObjectId(body.courseId);
+    }
     
-    if (!existingNotification) {
-      return NextResponse.json({ error: "Notification not found or unauthorized" }, { status: 404 });
-    }
-
-    const oldStatus = parseStatusFromActionUrl(existingNotification.actionUrl);
-    const newStatus = status ? status : oldStatus;
-
-    // ✅ If changing from Draft to Published, create broadcast notifications
-    if (oldStatus === "Draft" && newStatus === "Published" && existingNotification.type === "announcement") {
-      await createBroadcastNotification({
-        createdBy: decoded.userId,
-        title: updateFields.title || existingNotification.title,
-        message: updateFields.message || existingNotification.message,
-        priority: updateFields.priority || existingNotification.priority,
-        targetRole: "all", // Default to all users for now
-        courseId: updateFields.courseId || existingNotification.courseId?.toString() || null,
-      });
-    }
+    if (body.status === "Published") updateFields.isBroadcast = true;
 
     const notification = await Notification.findOneAndUpdate(
-      {
-        $or: [
-          { _id: targetId, userId: decoded.userId }, // Individual notification
-          { _id: targetId, createdBy: decoded.userId } // Broadcast notification (creator)
-        ]
-      },
+      { _id: queryId, createdBy: decoded.userId },
       { $set: updateFields },
       { new: true }
-    );
+    ).populate('createdBy', 'name email role photoURL');
 
-    if (!notification) {
-      return NextResponse.json({ error: "Notification not found or unauthorized" }, { status: 404 });
-    }
-
-    // ✅ If this is an individual announcement, update all related broadcast notifications
-    if (!notification.isBroadcast && notification.type === "announcement") {
-      await Notification.updateMany(
-        {
-          createdBy: decoded.userId,
-          isBroadcast: true,
-          type: "announcement",
-          title: existingNotification.title, // Match original title
-          message: existingNotification.message // Match original message
-        },
-        { $set: updateFields }
-      );
-    }
+    if (!notification) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
     return NextResponse.json({
-      success     : true,
-      message     : "Updated successfully",
+      success: true,
       notification: {
         ...notification.toObject(),
-        status  : parseStatusFromActionUrl(notification.actionUrl), // ← inject
-        courseId: notification.courseId,
-      },
+        status: body.status || parseStatusFromActionUrl(notification.actionUrl)
+      }
     });
 
   } catch (error: any) {
-    console.error("PUT /api/notifications error:", error);
-    return NextResponse.json({ error: `Failed to update: ${error.message}` }, { status: 500 });
+    console.error("PUT error:", error);
+    return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
 
@@ -587,69 +300,26 @@ export async function PUT(req: NextRequest) {
 export async function DELETE(req: NextRequest) {
   try {
     await connectDB();
-
     const token = req.cookies.get("token")?.value;
     if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     const decoded: any = jwt.verify(token, JWT_SECRET);
-    const { searchParams } = new URL(req.url);
-    const id = searchParams.get("id");
-
-    if (!id) return NextResponse.json({ error: "ID required" }, { status: 400 });
-
-    if (!mongoose.isValidObjectId(id)) {
-      return NextResponse.json({ error: "Invalid notification ID" }, { status: 400 });
-    }
+    const id = new URL(req.url).searchParams.get("id");
 
     const notification = await Notification.findOneAndDelete({
-      $or: [
-        { _id: id, userId: decoded.userId }, // Individual notification
-        { _id: id, createdBy: decoded.userId } // Broadcast notification (creator)
-      ]
+      _id: id,
+      createdBy: decoded.userId
     });
 
     if (!notification) return NextResponse.json({ error: "Not found" }, { status: 404 });
-
-    // ✅ If this was a broadcast announcement, delete all related broadcast notifications
-    if (notification.isBroadcast && notification.type === "announcement") {
-      await Notification.deleteMany({
-        createdBy: decoded.userId,
-        title: notification.title,
-        message: notification.message,
-        isBroadcast: true,
-        type: "announcement"
-      });
-    }
-
-    return NextResponse.json({ success: true, message: "Deleted successfully" });
-
+    return NextResponse.json({ success: true });
   } catch (error: any) {
-    console.error("DELETE /api/notifications error:", error);
-    return NextResponse.json({ error: "Failed to delete" }, { status: 500 });
+    return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
-
-/**
- * actionUrl এ status store করো — format: "status:Published"
- * courseId এখন schema তে ObjectId হিসেবে আছে, তাই actionUrl এ রাখার দরকার নেই
- */
-function buildActionUrl(status: string, _unused: null): string {
-  return `status:${status}`;
-}
-
-/**
- * actionUrl থেকে status parse করো
- * format: "status:Published" বা "status:Draft"
- */
 function parseStatusFromActionUrl(actionUrl?: string): 'Published' | 'Draft' {
-  if (!actionUrl) return 'Draft';
-  const parts: Record<string, string> = {};
-  actionUrl.split("|").forEach(part => {
-    const idx = part.indexOf(":");
-    if (idx !== -1) parts[part.slice(0, idx).trim()] = part.slice(idx + 1).trim();
-  });
-  const s = parts["status"];
-  return s === "Published" ? "Published" : "Draft";
+  if (!actionUrl || !actionUrl.startsWith("status:")) return 'Draft';
+  return actionUrl.replace("status:", "") as 'Published' | 'Draft';
 }

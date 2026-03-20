@@ -19,7 +19,7 @@ export interface INotificationDocument extends Document {
   
   // ✅ Broadcast/Announcement fields
   isBroadcast: boolean;
-  targetRole?: "all" | "student" | "instructor" | "admin";
+  targetRole?: "all" | "student" | "instructor" | "admin" | "all-my-students";
   targetCourseId?: mongoose.Types.ObjectId;
   createdBy: mongoose.Types.ObjectId;
   
@@ -99,7 +99,7 @@ const NotificationSchema = new Schema<INotificationDocument>(
     },
     targetRole: {
       type: String,
-      enum: ["all", "student", "instructor", "admin"],
+      enum: ["all", "student", "instructor", "admin", "all-my-students"],
     },
     targetCourseId: {
       type: mongoose.Schema.Types.ObjectId,

@@ -39,8 +39,7 @@ export async function GET(req: NextRequest) {
           Enrollment.find({ studentId: user._id })
             .populate({
               path: "courseId",
-              select: "title thumbnail coverImage",
-              options: { virtuals: false }, // ✅ Disable virtuals to avoid modules.reduce error
+              select: "title thumbnail",
             })
             .sort({ enrolledAt: -1 })
             .limit(5)
@@ -59,18 +58,17 @@ export async function GET(req: NextRequest) {
               { 
                 userId: user._id, 
                 isRead: false, 
-                type: "announcement"
+                type: { $ne: "announcement" }
               },
               // Broadcast notifications (others' published announcements)
               { 
                 isBroadcast: true,
                 type: "announcement",
-                isRead: false,
-                createdBy: { $ne: user._id }, // নিজের না
+                createdBy: { $ne: user._id }, // Not my own
+                _id: { $nin: user.readNotifications || [] }, // Not already read
                 $or: [
                   { targetRole: "all" },
                   { targetRole: "student" }
-                  // ✅ Removed course-specific for now to match notifications API
                 ]
               }
             ],
@@ -82,8 +80,6 @@ export async function GET(req: NextRequest) {
                 ]
               }
             ]
-          }).then(count => {
-            return count;
           }),
         ]);
 
@@ -121,8 +117,9 @@ export async function GET(req: NextRequest) {
 
       const [courses, recentEnrollments, monthlyEarnings, unreadCount] = await Promise.all([
         Course.find({ instructorId: user._id })
-          .select("title coverImage stats status createdAt")
-          .sort({ createdAt: -1 }),
+          .select("title thumbnail stats status createdAt")
+          .sort({ createdAt: -1 })
+          .lean(),
 
         Enrollment.find({ courseId: { $in: instructorCourses } })
           .sort({ enrolledAt: -1 })
@@ -154,14 +151,14 @@ export async function GET(req: NextRequest) {
             { 
               userId: user._id, 
               isRead: false, 
-              type: "announcement"
+              type: { $ne: "announcement" }
             },
             // Broadcast notifications (others' published announcements)
             { 
               isBroadcast: true,
               type: "announcement",
-              isRead: false,
-              createdBy: { $ne: user._id }, // নিজের না
+              createdBy: { $ne: user._id }, // Not my own
+              _id: { $nin: user.readNotifications || [] }, // Not already read
               $or: [
                 { targetRole: "all" },
                 { targetRole: "instructor" }
@@ -229,14 +226,14 @@ export async function GET(req: NextRequest) {
             { 
               userId: user._id, 
               isRead: false, 
-              type: "announcement"
+              type: { $ne: "announcement" }
             },
             // Broadcast notifications (others' published announcements)
             { 
               isBroadcast: true,
               type: "announcement",
-              isRead: false,
-              createdBy: { $ne: user._id }, // নিজের না
+              createdBy: { $ne: user._id }, // Not my own
+              _id: { $nin: user.readNotifications || [] }, // Not already read
               $or: [
                 { targetRole: "all" },
                 { targetRole: "admin" }

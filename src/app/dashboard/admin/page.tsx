@@ -49,7 +49,15 @@ export default function AdminDashboard() {
   const fetchAll = useCallback(async () => {
     setLoading(true);
     try {
-      const coursesRes  = await fetch("/api/courses");
+      const token = localStorage.getItem("token");
+      const headers = token ? { Authorization: `Bearer ${token}` } : undefined;
+
+      // ✅ Get profile stats
+      const profileRes = await fetch("/api/profile", { headers });
+      const profileData = await profileRes.json();
+      const adminStats = profileData.user?.stats || {};
+
+      const coursesRes  = await fetch("/api/courses", { headers });
       const coursesData = await coursesRes.json();
       const courses     = coursesData.courses || [];
 
@@ -61,12 +69,8 @@ export default function AdminDashboard() {
       // ✅ Enrollment count (DB field: enrollmentCount)
       const totalEnroll = courses.reduce((a: number, c: any) => a + (c.enrollmentCount || 0), 0);
 
-      // ✅ Revenue (use originalPrice if exists, else price)
-      const revenue = courses.reduce((a: number, c: any) => {
-        const price = c.originalPrice || c.price || 0;
-        const enrolled = c.enrollmentCount || 0;
-        return a + (price * enrolled);
-      }, 0);
+      // ✅ Revenue (from real adminStats)
+      const revenue = adminStats.totalRevenue || 0;
 
       // ✅ Pending courses - show all if pending, else show first 4 published
       let pendingList: IPendingCourse[] = courses
@@ -90,22 +94,21 @@ export default function AdminDashboard() {
       }
       setPending(pendingList);
 
-      // ✅ Recent transactions (from enrollments fallback)
+      // ✅ Recent transactions (fetch from real payments)
       let txList: IRecentTransaction[] = [];
       try {
-        const txRes = await fetch("/api/enrollments?limit=5");
+        const txRes = await fetch("/api/admin/earnings", { headers });
         if (txRes.ok) {
           const txData = await txRes.json();
-          txList = (txData.enrollments || [])
-            .map((e: any) => ({
-              _id:       e._id,
-              studentId: e.studentId,
-              courseName: e.courseName,
-              amount:    0,
-              createdAt: e.enrolledAt || new Date().toISOString(),
-              status:    "completed",
-            }))
-            .slice(0, 4);
+          const statements = txData.statements || [];
+          txList = statements.slice(0, 4).map((t: any) => ({
+            _id:        t._id,
+            studentId:  { name: t.student, photoURL: t.studentPhoto },
+            courseName: t.course,
+            amount:     t.amount,
+            createdAt:  t.date,
+            status:     t.status,
+          }));
         }
       } catch (_) {}
       setTrans(txList);
@@ -118,7 +121,7 @@ export default function AdminDashboard() {
         }
       });
       const totalInstructors = instructorSet.size;
-      const totalStudents = Math.max(totalEnroll * 2, instructorSet.size * 5); // Estimate
+      const totalStudents = adminStats.totalUsers || 0; // Fetched directly from profile stats
 
       setStats({
         totalStudents,

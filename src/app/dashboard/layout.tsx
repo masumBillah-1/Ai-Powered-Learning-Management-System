@@ -197,7 +197,7 @@ function TopNavbar({ role, items, theme, toggleTheme, user, onLogout, onMobileMe
     // ✅ Always fetch fresh notifications
     try {
       const token = localStorage.getItem("token");
-      const res = await fetch("/api/notifications?type=announcement&limit=10", { headers: { Authorization: `Bearer ${token}` } });
+      const res = await fetch("/api/notifications?limit=10&unreadOnly=true", { headers: { Authorization: `Bearer ${token}` } });
       const data = await res.json();
       if (data.notifications) {
         // ✅ Only show unread notifications
@@ -263,7 +263,7 @@ function TopNavbar({ role, items, theme, toggleTheme, user, onLogout, onMobileMe
                         body: JSON.stringify({ markAll: true }),
                       });
                       // Clear all notifications after marking all as read
-                      const res = await fetch("/api/notifications?type=announcement&limit=10", { credentials: "include" });
+                      const res = await fetch("/api/notifications?limit=10&unreadOnly=true", { credentials: "include" });
                       const data = await res.json();
                       if (data.notifications) {
                         // ✅ Only show unread notifications
@@ -513,7 +513,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
       // ✅ Get accurate unread count by fetching actual notifications
       try {
-        const notifRes = await fetch("/api/notifications?type=announcement&limit=10", {
+        const notifRes = await fetch("/api/notifications?limit=10&unreadOnly=true", {
           headers: { Authorization: `Bearer ${token}` }
         });
         const notifData = await notifRes.json();

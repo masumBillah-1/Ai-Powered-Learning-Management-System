@@ -66,6 +66,15 @@ export interface IUserDocument extends Document {
   loginAttempts?: number;
   lockUntil?: Date;
   
+  // ✅ Read tracking for broadcast notifications
+  readNotifications: mongoose.Types.ObjectId[];
+  
+  // ✅ Admin action tracking
+  deletedBy?: mongoose.Types.ObjectId;
+  deletedAt?: Date;
+  bannedBy?: mongoose.Types.ObjectId;
+  bannedAt?: Date;
+  
   createdAt: Date;
   updatedAt: Date;
 }
@@ -145,6 +154,13 @@ const UserSchema = new Schema<IUserDocument>(
     resetTokenExpiry: { type: Date },
     loginAttempts:    { type: Number, default: 0 },
     lockUntil:        { type: Date },
+    
+    // Admin action tracking
+    bannedBy:  { type: Schema.Types.ObjectId, ref: "User" },
+    bannedAt:  { type: Date },
+
+    // ✅ Read tracking for broadcast notifications
+    readNotifications: [{ type: Schema.Types.ObjectId, ref: "Notification" }],
   },
   { 
     timestamps: true,

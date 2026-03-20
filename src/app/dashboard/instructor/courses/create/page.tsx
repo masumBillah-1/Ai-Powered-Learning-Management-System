@@ -51,10 +51,10 @@ const STEPS = [
 ];
 
 const DB_TO_FORM_LEVEL: Record<string, string> = {
-  beginner:     "Basic",
-  basic:        "Basic",
+  beginner: "Basic",
+  basic: "Basic",
   intermediate: "Intermediate",
-  advanced:     "Advanced",
+  advanced: "Advanced",
 };
 
 function extractCoverUrl(c: any): string {
@@ -80,33 +80,50 @@ function extractVideoUrl(c: any): string {
 function extractPricing(c: any) {
   const hasPrice = c.price !== undefined && c.price !== null;
   return {
-    type:            hasPrice && c.price > 0 ? "paid" : (c.pricing?.type || "paid"),
-    price:           String(c.pricing?.price ?? c.price ?? ""),
-    discountPrice:   String(c.pricing?.discountPrice ?? c.originalPrice ?? ""),
+    type: hasPrice && c.price > 0 ? "paid" : (c.pricing?.type || "paid"),
+    price: String(c.pricing?.price ?? c.price ?? ""),
+    discountPrice: String(c.pricing?.discountPrice ?? c.originalPrice ?? ""),
     enrollmentLimit: String(c.pricing?.enrollmentLimit ?? ""),
-    accessDuration:  c.pricing?.accessDuration ?? "lifetime",
+    accessDuration: c.pricing?.accessDuration ?? "lifetime",
   };
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
 export default function CreateCoursePage() {
-  const router       = useRouter();
+  const router = useRouter();
   const searchParams = useSearchParams();
-  const editId       = searchParams.get("id");
+  const editId = searchParams.get("id");
 
-  const [step, setStep]               = useState(1);
-  const [loading, setLoading]         = useState(false);
+  const [step, setStep] = useState(1);
+  const [loading, setLoading] = useState(false);
   const [loadingEdit, setLoadingEdit] = useState(false);
-  const [theme, setTheme]             = useState("light");
+  const [theme, setTheme] = useState("light");
   const [instructorId, setInstructorId] = useState("");
+  const [customCategory, setCustomCategory] = useState(false);
+  const [dbCategories, setDbCategories] = useState<string[]>([]);
 
   const [coverFile, setCoverFile] = useState<File | null>(null);
   const [videoFile, setVideoFile] = useState<File | null>(null);
   const coverRef = useRef<HTMLInputElement>(null);
   const videoRef = useRef<HTMLInputElement>(null);
 
-  const [modules, setModules]     = useState<ModuleItem[]>([]);
+  const [modules, setModules] = useState<ModuleItem[]>([]);
   const [moduleErr, setModuleErr] = useState("");
+
+  // ✅ Fetch categories from database
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await fetch("/api/courses?categories=true");
+        const data = await res.json();
+        if (data.success && Array.isArray(data.categories)) {
+          setDbCategories(data.categories);
+        }
+      } catch (err) {
+        console.error("Failed to fetch categories:", err);
+      }
+    })();
+  }, []);
 
   useEffect(() => {
     const saved = localStorage.getItem("theme") || "light";
@@ -114,7 +131,7 @@ export default function CreateCoursePage() {
     try {
       const u = JSON.parse(localStorage.getItem("user") || "{}");
       setInstructorId(u?._id || u?.id || "");
-    } catch (_) {}
+    } catch (_) { }
     const iv = setInterval(() => {
       const cur = localStorage.getItem("theme") || "light";
       if (cur !== theme) setTheme(cur);
@@ -143,37 +160,42 @@ export default function CreateCoursePage() {
     (async () => {
       setLoadingEdit(true);
       try {
-        const res  = await fetch(`/api/courses/${editId}`);
-        const ct   = res.headers.get("content-type") || "";
+        const res = await fetch(`/api/courses/${editId}`);
+        const ct = res.headers.get("content-type") || "";
         if (!ct.includes("application/json")) throw new Error(`Server error (${res.status})`);
         const data = await res.json();
         if (!res.ok) throw new Error(data.error || "Failed to load");
         const c = data.course || data;
 
-        setValue("title",       c.title       || "");
+        setValue("title", c.title || "");
         setValue("description", c.description || "");
-        setValue("visibility",  c.visibility  || "public");
-        setValue("category",    c.category    || "");
+        setValue("visibility", c.visibility || "public");
+        setValue("category", c.category || "");
+
+        // ✅ Check if category is custom (not in database categories)
+        if (c.category && dbCategories.length > 0 && !dbCategories.includes(c.category)) {
+          setCustomCategory(true);
+        }
 
         const mappedLevel = DB_TO_FORM_LEVEL[c.level?.toLowerCase() || ""] || c.level || "";
         setValue("level", mappedLevel);
 
         const p = extractPricing(c);
-        setValue("priceType",       p.type as "paid" | "free");
-        setValue("price",           p.price);
-        setValue("discountPrice",   p.discountPrice);
+        setValue("priceType", p.type as "paid" | "free");
+        setValue("price", p.price);
+        setValue("discountPrice", p.discountPrice);
         setValue("enrollmentLimit", p.enrollmentLimit);
-        setValue("accessDuration",  p.accessDuration);
+        setValue("accessDuration", p.accessDuration);
 
         // Cover Image
         const coverUrl = extractCoverUrl(c);
         setValue("coverMode", coverUrl ? "url" : "upload");
-        setValue("coverUrl",  coverUrl);
+        setValue("coverUrl", coverUrl);
 
         // ✅ Sales Video — salesVideoUrl field থেকে load
         const videoUrl = extractVideoUrl(c);
         setValue("videoMode", "url");
-        setValue("videoUrl",  videoUrl);
+        setValue("videoUrl", videoUrl);
 
         // FAQs
         const faqData = c.faq || c.faqs || [];
@@ -182,16 +204,16 @@ export default function CreateCoursePage() {
         // Modules
         if (Array.isArray(c.modules) && c.modules.length > 0) {
           setModules(c.modules.map((m: any, i: number) => ({
-            id:    Date.now() + i,
+            id: Date.now() + i,
             title: m.title || `Module ${i + 1}`,
             lessons: (m.lessons || []).map((l: any, j: number) => ({
-              id:              Date.now() + i * 1000 + j,
-              title:           l.title           || "",
-              type:            l.type            || "video",
-              duration:        String(l.duration || ""),
-              videoUrl:        l.videoUrl || l.url || "",
-              textContent:     l.textContent     || "",
-              assignmentDesc:  l.assignmentDesc  || "",
+              id: Date.now() + i * 1000 + j,
+              title: l.title || "",
+              type: l.type || "video",
+              duration: String(l.duration || ""),
+              videoUrl: l.videoUrl || l.url || "",
+              textContent: l.textContent || "",
+              assignmentDesc: l.assignmentDesc || "",
               assignmentMarks: String(l.marks || l.assignmentMarks || ""),
               assignmentDueDate: l.dueDate
                 ? new Date(l.dueDate).toISOString().split("T")[0]
@@ -211,36 +233,36 @@ export default function CreateCoursePage() {
 
   const coverMode = watch("coverMode");
   const videoMode = watch("videoMode");
-  const coverUrl  = watch("coverUrl");
-  const videoUrl  = watch("videoUrl");
+  const coverUrl = watch("coverUrl");
+  const videoUrl = watch("videoUrl");
   const priceType = watch("priceType");
-  const price     = watch("price");
+  const price = watch("price");
   const discountP = watch("discountPrice");
   const accessDur = watch("accessDuration");
-  const title     = watch("title");
-  const category  = watch("category");
-  const level     = watch("level");
-  const desc      = watch("description");
+  const title = watch("title");
+  const category = watch("category");
+  const level = watch("level");
+  const desc = watch("description");
 
   const validateStep = async (): Promise<boolean> => {
     if (step === 1) {
       const ok = await trigger(["title", "category", "level", "description"]);
       if (!ok) return false;
-      if (coverMode === "upload" && !coverFile)                     { toast.error("⚠️ Please upload a Cover Image", tErr); return false; }
-      if (coverMode === "url"    && !getValues("coverUrl")?.trim()) { toast.error("⚠️ Please enter a Cover Image URL", tErr); return false; }
-      if (videoMode === "upload" && !videoFile)                     { toast.error("⚠️ Please upload a Sales Video", tErr); return false; }
-      if (videoMode === "url"    && !getValues("videoUrl")?.trim()) { toast.error("⚠️ Please enter a Sales Video URL", tErr); return false; }
+      if (coverMode === "upload" && !coverFile) { toast.error("⚠️ Please upload a Cover Image", tErr); return false; }
+      if (coverMode === "url" && !getValues("coverUrl")?.trim()) { toast.error("⚠️ Please enter a Cover Image URL", tErr); return false; }
+      if (videoMode === "upload" && !videoFile) { toast.error("⚠️ Please upload a Sales Video", tErr); return false; }
+      if (videoMode === "url" && !getValues("videoUrl")?.trim()) { toast.error("⚠️ Please enter a Sales Video URL", tErr); return false; }
       return true;
     }
     if (step === 2) {
-      if (!modules.length)                          { setModuleErr("Add at least 1 module"); toast.error("⚠️ Add at least 1 module", tErr); return false; }
+      if (!modules.length) { setModuleErr("Add at least 1 module"); toast.error("⚠️ Add at least 1 module", tErr); return false; }
       if (!modules.some(m => m.lessons.length > 0)) { setModuleErr("Add at least 1 lesson"); toast.error("⚠️ Add at least 1 lesson", tErr); return false; }
       setModuleErr(""); return true;
     }
     if (step === 3) {
       const vals = getValues();
       if (vals.priceType === "paid") {
-        if (!vals.price || Number(vals.price) <= 0)                                 { toast.error("⚠️ Enter a valid price", tErr); return false; }
+        if (!vals.price || Number(vals.price) <= 0) { toast.error("⚠️ Enter a valid price", tErr); return false; }
         if (vals.discountPrice && Number(vals.discountPrice) >= Number(vals.price)) { toast.error("⚠️ Discount must be less than price", tErr); return false; }
       }
       return true;
@@ -251,14 +273,14 @@ export default function CreateCoursePage() {
   const handleNext = async () => { if (await validateStep()) setStep(s => Math.min(s + 1, 4)); };
   const handleBack = () => setStep(s => Math.max(s - 1, 1));
 
-  const addModule      = () => { setModules(p => [...p, { id: Date.now(), title: `Module ${p.length + 1}`, lessons: [] }]); setModuleErr(""); };
-  const removeModule   = (id: number) => setModules(p => p.filter(m => m.id !== id));
+  const addModule = () => { setModules(p => [...p, { id: Date.now(), title: `Module ${p.length + 1}`, lessons: [] }]); setModuleErr(""); };
+  const removeModule = (id: number) => setModules(p => p.filter(m => m.id !== id));
   const updateModTitle = (id: number, t: string) => setModules(p => p.map(m => m.id === id ? { ...m, title: t } : m));
-  const addLesson      = (mid: number) => setModules(p => p.map(m => m.id === mid ? {
+  const addLesson = (mid: number) => setModules(p => p.map(m => m.id === mid ? {
     ...m, lessons: [...m.lessons, { id: Date.now(), title: "", type: "video", duration: "", videoUrl: "", textContent: "", assignmentDesc: "", assignmentMarks: "", assignmentDueDate: "" }]
   } : m));
-  const removeLesson   = (mid: number, lid: number) => setModules(p => p.map(m => m.id === mid ? { ...m, lessons: m.lessons.filter(l => l.id !== lid) } : m));
-  const updateLesson   = (mid: number, lid: number, field: string, value: string) =>
+  const removeLesson = (mid: number, lid: number) => setModules(p => p.map(m => m.id === mid ? { ...m, lessons: m.lessons.filter(l => l.id !== lid) } : m));
+  const updateLesson = (mid: number, lid: number, field: string, value: string) =>
     setModules(p => p.map(m => m.id === mid ? { ...m, lessons: m.lessons.map(l => l.id === lid ? { ...l, [field]: value } : l) } : m));
 
   const submitCourse = async (status: "draft" | "published") => {
@@ -269,9 +291,9 @@ export default function CreateCoursePage() {
     if (status === "published") {
       if (!(await trigger(["title", "category", "level", "description"]))) { setStep(1); return; }
       if (coverMode === "upload" && !coverFile && !vals.coverUrl?.trim()) { toast.error("⚠️ Cover Image required", tErr); setStep(1); return; }
-      if (coverMode === "url"    && !vals.coverUrl?.trim())               { toast.error("⚠️ Cover Image URL required", tErr); setStep(1); return; }
+      if (coverMode === "url" && !vals.coverUrl?.trim()) { toast.error("⚠️ Cover Image URL required", tErr); setStep(1); return; }
       if (videoMode === "upload" && !videoFile && !vals.videoUrl?.trim()) { toast.error("⚠️ Sales Video required", tErr); setStep(1); return; }
-      if (videoMode === "url"    && !vals.videoUrl?.trim())               { toast.error("⚠️ Sales Video URL required", tErr); setStep(1); return; }
+      if (videoMode === "url" && !vals.videoUrl?.trim()) { toast.error("⚠️ Sales Video URL required", tErr); setStep(1); return; }
       if (!modules.length || !modules.some(m => m.lessons.length > 0)) { toast.error("⚠️ Add at least 1 module with lesson", tErr); setStep(2); return; }
     }
 
@@ -298,7 +320,7 @@ export default function CreateCoursePage() {
       }
 
       const mappedModules = modules.map(m => ({
-        title:   m.title,
+        title: m.title,
         lessons: m.lessons.map(l => ({
           title: l.title, type: l.type, duration: l.duration,
           videoUrl: l.videoUrl || "",
@@ -312,22 +334,22 @@ export default function CreateCoursePage() {
         instructorId,
         title: vals.title, category: vals.category, level: vals.level,
         description: vals.description,
-        coverImage:  coverPayload,
-        salesVideo:  videoPayload,
+        coverImage: coverPayload,
+        salesVideo: videoPayload,
         // ✅ salesVideoUrl — string হিসেবে directly DB তে save হয়
         salesVideoUrl: vals.videoUrl?.trim() || "",
-        faqs:        vals.faqs,
-        modules:     mappedModules,
+        faqs: vals.faqs,
+        modules: mappedModules,
         pricing: {
-          type:            vals.priceType,
-          price:           Number(vals.price) || 0,
-          discountPrice:   vals.discountPrice ? Number(vals.discountPrice) : null,
+          type: vals.priceType,
+          price: Number(vals.price) || 0,
+          discountPrice: vals.discountPrice ? Number(vals.discountPrice) : null,
           enrollmentLimit: vals.enrollmentLimit ? Number(vals.enrollmentLimit) : null,
-          accessDuration:  vals.accessDuration,
+          accessDuration: vals.accessDuration,
         },
-        price:         Number(vals.price) || 0,
+        price: Number(vals.price) || 0,
         originalPrice: vals.discountPrice ? Number(vals.discountPrice) : undefined,
-        visibility:    vals.visibility,
+        visibility: vals.visibility,
         status,
       };
 
@@ -356,14 +378,14 @@ export default function CreateCoursePage() {
   };
 
   const totalLessons = modules.reduce((a, m) => a + m.lessons.length, 0);
-  const coverSrc     = coverFile ? URL.createObjectURL(coverFile) : coverUrl || null;
+  const coverSrc = coverFile ? URL.createObjectURL(coverFile) : coverUrl || null;
   const checks = [
-    { label: "Course title added",      done: !!title },
-    { label: "Description written",     done: desc.length >= 20 },
-    { label: "Cover image provided",    done: !!(coverFile || coverUrl) },
-    { label: "Sales video provided",    done: !!(videoFile || videoUrl) },
+    { label: "Course title added", done: !!title },
+    { label: "Description written", done: desc.length >= 20 },
+    { label: "Cover image provided", done: !!(coverFile || coverUrl) },
+    { label: "Sales video provided", done: !!(videoFile || videoUrl) },
     { label: "At least 1 module added", done: modules.length > 0 },
-    { label: "Pricing configured",      done: priceType === "free" || (priceType === "paid" && Number(price) > 0) },
+    { label: "Pricing configured", done: priceType === "free" || (priceType === "paid" && Number(price) > 0) },
   ];
   const allDone = checks.every(c => c.done);
 
@@ -424,15 +446,31 @@ export default function CreateCoursePage() {
                 <div className="grid grid-cols-2 gap-4">
                   <div className="form-control">
                     <label className="label pb-1"><span className="label-text font-semibold">Category <span className="text-error">*</span></span></label>
-                    <select {...register("category", { required: "Please select a category" })}
-                      className={`select select-bordered bg-base-200 w-full focus:outline-none cursor-pointer ${errors.category ? "border-error" : ""}`}>
-                      <option value="">— Select —</option>
-                      <option value="Data Management">Data Management</option>
-                      <option value="Web Development">Web Development</option>
-                      <option value="Design">Design</option>
-                      <option value="Marketing">Marketing</option>
-                      <option value="Business">Business</option>
-                    </select>
+                    {customCategory ? (
+                      <div className="space-y-2">
+                        <input {...register("category", { required: "Category is required" })} type="text"
+                          placeholder="Enter custom category..."
+                          className={`input input-bordered bg-base-200 w-full focus:outline-none ${errors.category ? "border-error" : "focus:border-purple-500"}`} />
+                        <button type="button" onClick={() => { setCustomCategory(false); setValue("category", ""); }}
+                          className="text-xs opacity-60 hover:opacity-100 hover:underline" style={{ color: "#832388" }}>
+                          ← Back to list
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="space-y-2">
+                        <select {...register("category", { required: "Please select a category" })}
+                          className={`select select-bordered bg-base-200 w-full focus:outline-none cursor-pointer ${errors.category ? "border-error" : ""}`}>
+                          <option value="">— Select —</option>
+                          {dbCategories.map((cat) => (
+                            <option key={cat} value={cat}>{cat}</option>
+                          ))}
+                        </select>
+                        <button type="button" onClick={() => setCustomCategory(true)}
+                          className="text-xs font-semibold hover:underline flex items-center gap-1" style={{ color: "#832388" }}>
+                          <span>+</span> Add custom category
+                        </button>
+                      </div>
+                    )}
                     <ErrMsg msg={errors.category?.message} />
                   </div>
                   <div className="form-control">
@@ -519,7 +557,7 @@ export default function CreateCoursePage() {
                       <div className="border-2 border-dashed rounded-xl h-40 overflow-hidden flex items-center justify-center bg-base-200 border-base-300">
                         {coverUrl
                           ? <img src={coverUrl} alt="preview" className="h-full w-full object-cover"
-                              onError={e => { (e.target as HTMLImageElement).style.display = "none"; }} />
+                            onError={e => { (e.target as HTMLImageElement).style.display = "none"; }} />
                           : <p className="text-sm opacity-40">Image preview will appear here</p>}
                       </div>
                       <input {...register("coverUrl")} type="url" placeholder="https://example.com/image.jpg"

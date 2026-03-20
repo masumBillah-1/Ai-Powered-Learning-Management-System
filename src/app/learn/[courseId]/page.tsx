@@ -152,6 +152,17 @@ export default function LearnPage() {
   const initialFetch = async () => {
     try {
       setInitialLoading(true);
+
+      // ✅ Get user info from localStorage
+      const userStr = localStorage.getItem("user");
+      const user = userStr ? JSON.parse(userStr) : null;
+
+      if (!user) {
+        toast.error("Please login to access this course", toastErr);
+        router.push("/login");
+        return;
+      }
+
       const [courseRes, enrollRes] = await Promise.all([
         fetch(`/api/courses/${courseId}`),
         fetch(`/api/enrollments?courseId=${courseId}`),
@@ -159,22 +170,62 @@ export default function LearnPage() {
       const courseData = await courseRes.json();
       const enrollData = await enrollRes.json();
 
-      if (courseData.success) {
-        setCourse(courseData.course);
-        setExpandedModules(courseData.course.modules.map((m: Module) => m._id));
-        const firstLesson = courseData.course.modules?.[0]?.lessons?.[0];
-        if (firstLesson) { setActiveLesson(firstLesson); activeLessonRef.current = firstLesson; }
+      if (!courseData.success || !courseData.course) {
+        toast.error("Course not found", toastErr);
+        router.push("/courses");
+        return;
       }
 
-      if (enrollData.success && enrollData.enrollments?.length > 0) {
+      // ✅ Access Control Check
+      const course = courseData.course;
+      const userRole = user.role;
+      const userId = user._id || user.id;
+
+      // Admin: Full access to all courses
+      if (userRole === "admin") {
+        setCourse(course);
+        setExpandedModules(course.modules.map((m: Module) => m._id));
+        const firstLesson = course.modules?.[0]?.lessons?.[0];
+        if (firstLesson) { setActiveLesson(firstLesson); activeLessonRef.current = firstLesson; }
+        setInitialLoading(false);
+        return;
+      }
+
+      // Instructor: Only their own courses
+      if (userRole === "instructor") {
+        const instructorId = course.instructorId?._id || course.instructorId;
+        if (instructorId !== userId) {
+          toast.error("You can only access your own courses", toastErr);
+          router.push("/dashboard/instructor/courses");
+          return;
+        }
+        setCourse(course);
+        setExpandedModules(course.modules.map((m: Module) => m._id));
+        const firstLesson = course.modules?.[0]?.lessons?.[0];
+        if (firstLesson) { setActiveLesson(firstLesson); activeLessonRef.current = firstLesson; }
+        setInitialLoading(false);
+        return;
+      }
+
+      // Student: Must be enrolled
+      if (userRole === "student") {
+        if (!enrollData.success || !enrollData.enrollments || enrollData.enrollments.length === 0) {
+          toast.error("You must enroll in this course first", toastErr);
+          router.push(`/courses/${courseId}`);
+          return;
+        }
+
         const enroll = enrollData.enrollments[0];
         setEnrollment(enroll);
+        setCourse(course);
+        setExpandedModules(course.modules.map((m: Module) => m._id));
+
         const serverCompleted: string[] = enroll.progress?.completedLessons ?? [];
         setLocalCompleted(serverCompleted);
         localCompletedRef.current = serverCompleted;
 
         const lastLessonId = enroll.progress?.currentLesson;
-        const allLessons = courseData.course.modules.flatMap((m: Module) => m.lessons);
+        const allLessons = course.modules.flatMap((m: Module) => m.lessons);
         const validIds = new Set(allLessons.map((l: Lesson) => l._id));
         const firstIncomplete = allLessons.find((l: Lesson) => !serverCompleted.includes(l._id));
 
@@ -183,9 +234,15 @@ export default function LearnPage() {
           if (last) { setActiveLesson(last); activeLessonRef.current = last; }
         } else if (firstIncomplete) {
           setActiveLesson(firstIncomplete); activeLessonRef.current = firstIncomplete;
+        } else {
+          const firstLesson = allLessons[0];
+          if (firstLesson) { setActiveLesson(firstLesson); activeLessonRef.current = firstLesson; }
         }
       }
-    } catch (err) { console.error("Failed to load:", err); }
+    } catch (err) {
+      console.error("Failed to load:", err);
+      toast.error("Failed to load course", toastErr);
+    }
     finally { setInitialLoading(false); }
   };
 
@@ -342,7 +399,7 @@ export default function LearnPage() {
 
   const isCompleted = (id: string) => localCompleted.includes(id) && validLessonIds.has(id);
 
-  const totalLessons = course?.modules?.reduce((a, m) => a + m.lessons.length, 0) ?? 0;
+  const totalLessons = course?.modules?.reduce((a, m) => a + (m.lessons?.length || 0), 0) ?? 0;
   const completedCount = localCompleted.filter(id => validLessonIds.has(id)).length;
   const progressPct = totalLessons > 0 ? Math.min(Math.round((completedCount / totalLessons) * 100), 100) : 0;
 

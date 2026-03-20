@@ -44,6 +44,7 @@ export async function middleware(req: NextRequest) {
 
   const isAuthRoute = authRoutes.includes(pathname);
   const isDashboardRoute = pathname.startsWith("/dashboard");
+  const isLearnRoute = pathname.startsWith("/learn");
 
   if (isAuthRoute) {
     if (token) {
@@ -59,6 +60,26 @@ export async function middleware(req: NextRequest) {
       }
     }
     return NextResponse.next();
+  }
+
+  // ✅ Learn route security - Must be logged in
+  if (isLearnRoute) {
+    if (!token) {
+      const loginUrl = new URL("/login", req.url);
+      loginUrl.searchParams.set("redirect", pathname);
+      return NextResponse.redirect(loginUrl);
+    }
+
+    try {
+      const secret = new TextEncoder().encode(process.env.JWT_SECRET!);
+      await jwtVerify(token, secret);
+      // ✅ Token valid - allow access (detailed access check will be in page)
+      return NextResponse.next();
+    } catch {
+      const loginUrl = new URL("/login", req.url);
+      loginUrl.searchParams.set("redirect", pathname);
+      return NextResponse.redirect(loginUrl);
+    }
   }
 
   if (isDashboardRoute) {
@@ -101,5 +122,6 @@ export const config = {
     "/dashboard/:path*",
     "/login",
     "/register",
+    "/learn/:path*", // ✅ Learn pages security
   ],
 };

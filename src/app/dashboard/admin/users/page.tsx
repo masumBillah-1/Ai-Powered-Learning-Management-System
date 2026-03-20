@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect, useCallback } from "react";
-import { Search, UserCheck, UserX, Trash2, Shield, GraduationCap, BookOpen, RefreshCw, AlertCircle } from "lucide-react";
+import { Search, UserCheck, UserX, Trash2, Shield, GraduationCap, BookOpen, RefreshCw, AlertCircle, Eye, EyeOff } from "lucide-react";
 import toast, { Toaster } from "react-hot-toast";
 
 type Role = "student" | "instructor" | "admin";
@@ -17,6 +17,7 @@ interface User {
   stats?: {
     enrolledCourses?: number;
     totalCourses?: number;
+    approvedCourses?: number;
   };
 }
 
@@ -35,6 +36,10 @@ export default function AdminUsersPage() {
   const [deleting, setDeleting] = useState(false);
   const [banning, setBanning] = useState(false);
   const [adminPassword, setAdminPassword] = useState(""); // ✅ Admin password for verification
+  const [showPassword, setShowPassword] = useState(false); // ✅ Password visibility toggle
+  const [historyUser, setHistoryUser] = useState<User | null>(null);
+  const [historyLoading, setHistoryLoading] = useState(false);
+  const [historyData, setHistoryData] = useState<any[]>([]);
 
   // ── Dark/Light sync ──
   useEffect(() => {
@@ -117,6 +122,7 @@ export default function AdminUsersPage() {
       });
       setDeleteTarget(null);
       setAdminPassword(""); // ✅ Clear password
+      setShowPassword(false); // ✅ Reset visibility
     } catch (err: any) {
       toast.error(err.message || "Delete failed", {
         icon: "❌",
@@ -171,6 +177,34 @@ export default function AdminUsersPage() {
     }
   };
 
+  // ✅ Fetch admin history from AdminLog
+  const handleViewHistory = async (user: User) => {
+    if (user.role !== "admin") return;
+    setHistoryUser(user);
+    setHistoryLoading(true);
+    setHistoryData([]);
+    openModal("history_modal");
+
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch(`/api/admin/history/${user._id}`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+
+      if (!res.ok) {
+        throw new Error("Failed to fetch history");
+      }
+
+      const data = await res.json();
+      setHistoryData(data.history || []);
+    } catch (err) {
+      console.error("Failed to fetch history:", err);
+      toast.error("Failed to load history");
+    } finally {
+      setHistoryLoading(false);
+    }
+  };
+
   // ── Helpers ──
   const formatDate = (iso: string) => {
     try {
@@ -178,8 +212,10 @@ export default function AdminUsersPage() {
     } catch { return "—"; }
   };
 
-  const getCourseCount = (u: User) =>
-    u.role === "instructor" ? (u.stats?.totalCourses ?? 0) : (u.stats?.enrolledCourses ?? 0);
+  const getCourseCount = (u: User) => {
+    if (u.role === "admin") return u.stats?.approvedCourses ?? 0; // Admin approved courses
+    return u.role === "instructor" ? (u.stats?.totalCourses ?? 0) : (u.stats?.enrolledCourses ?? 0);
+  };
 
   const filtered = users
     .filter(u => filter === "all" || u.role === filter)
@@ -202,7 +238,7 @@ export default function AdminUsersPage() {
   };
 
   return (
-    <div className="min-h-screen p-4 md:p-6 lg:p-8">
+    <div className="min-h-screen">
 
       {/* ── react-hot-toast (top-right, navbar নিচে) ── */}
       <Toaster
@@ -373,6 +409,16 @@ export default function AdminUsersPage() {
                     {/* Actions */}
                     <td>
                       <div className="flex gap-1.5">
+                        {u.role === "admin" && (
+                          <button
+                            onClick={() => handleViewHistory(u)}
+                            className="btn btn-xs btn-square border-0 text-white cursor-pointer tooltip"
+                            data-tip="View History"
+                            style={{ backgroundColor: "#832388" }}
+                          >
+                            📜
+                          </button>
+                        )}
                         <button
                           onClick={() => { setBanTarget(u); openModal("ban_user_modal"); }}
                           className="btn btn-xs btn-square border-0 text-white cursor-pointer tooltip"
@@ -455,19 +501,31 @@ export default function AdminUsersPage() {
                   <label className="block text-sm font-bold mb-2 opacity-70">
                     🔒 Enter your admin password to confirm
                   </label>
-                  <input
-                    type="password"
-                    value={adminPassword}
-                    onChange={(e) => setAdminPassword(e.target.value)}
-                    placeholder="Your password"
-                    className="input input-bordered w-full bg-base-200 focus:outline-none focus:border-error"
-                    disabled={deleting}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter" && !deleting) {
-                        handleDeleteConfirm();
-                      }
-                    }}
-                  />
+                  <div className="relative">
+                    <input
+                      type={showPassword ? "text" : "password"}
+                      value={adminPassword}
+                      onChange={(e) => setAdminPassword(e.target.value)}
+                      placeholder="Your password"
+                      className="input input-bordered w-full bg-base-200 focus:outline-none focus:border-error pr-12"
+                      disabled={deleting}
+                      autoComplete="new-password"
+                      name="admin-delete-password"
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" && !deleting) {
+                          handleDeleteConfirm();
+                        }
+                      }}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 opacity-50 hover:opacity-100 transition-opacity cursor-pointer"
+                      disabled={deleting}
+                    >
+                      {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                    </button>
+                  </div>
                   <p className="text-xs opacity-40 mt-1.5">
                     Security verification required for user deletion
                   </p>
@@ -477,7 +535,7 @@ export default function AdminUsersPage() {
 
             <div className="flex justify-end gap-3">
               <form method="dialog">
-                <button className="btn btn-ghost cursor-pointer" onClick={() => { setDeleteTarget(null); setAdminPassword(""); }}>
+                <button className="btn btn-ghost cursor-pointer" onClick={() => { setDeleteTarget(null); setAdminPassword(""); setShowPassword(false); }}>
                   বাতিল
                 </button>
               </form>
@@ -496,7 +554,7 @@ export default function AdminUsersPage() {
           </div>
         </div>
         <form method="dialog" className="modal-backdrop">
-          <button onClick={() => { setDeleteTarget(null); setAdminPassword(""); }}>close</button>
+          <button onClick={() => { setDeleteTarget(null); setAdminPassword(""); setShowPassword(false); }}>close</button>
         </form>
       </dialog>
 
@@ -587,6 +645,87 @@ export default function AdminUsersPage() {
         })()}
         <form method="dialog" className="modal-backdrop">
           <button onClick={() => setBanTarget(null)}>close</button>
+        </form>
+      </dialog>
+
+      {/* ══════════════════════════════════
+          HISTORY MODAL
+      ══════════════════════════════════ */}
+      <dialog id="history_modal" className="modal">
+        <div className="modal-box w-11/12 max-w-4xl p-0 overflow-hidden rounded-2xl"
+          style={{ border: "1px solid rgba(131,35,136,0.2)" }}>
+          <div className="h-1.5 w-full" style={{ background: "linear-gradient(90deg,#832388,#C81D77)" }} />
+          <div className="p-6">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 rounded-xl flex items-center justify-center text-2xl flex-shrink-0"
+                  style={{ backgroundColor: "rgba(131,35,136,0.1)" }}>📜</div>
+                <div>
+                  <h3 className="font-bold text-lg leading-tight">Admin Activity History</h3>
+                  <p className="text-sm opacity-50 mt-0.5">{historyUser?.name}</p>
+                </div>
+              </div>
+              <form method="dialog">
+                <button className="btn btn-sm btn-circle btn-ghost">✕</button>
+              </form>
+            </div>
+
+            {historyLoading ? (
+              <div className="flex justify-center py-12">
+                <span className="loading loading-spinner loading-lg" style={{ color: "#832388" }} />
+              </div>
+            ) : historyData.length === 0 ? (
+              <div className="text-center py-12 opacity-40">
+                <p className="text-sm font-semibold">No activity history found</p>
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="table table-sm w-full">
+                  <thead>
+                    <tr className="border-b border-base-300">
+                      <th className="text-xs font-bold uppercase opacity-40">Action</th>
+                      <th className="text-xs font-bold uppercase opacity-40">Type</th>
+                      <th className="text-xs font-bold uppercase opacity-40">Target</th>
+                      <th className="text-xs font-bold uppercase opacity-40">Date</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {historyData.map((item, i) => (
+                      <tr key={i} className="hover border-b border-base-200 last:border-0">
+                        <td>
+                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold"
+                            style={{ backgroundColor: `${item.color}15`, color: item.color }}>
+                            {item.icon} {item.action}
+                          </span>
+                        </td>
+                        <td className="text-xs opacity-60 font-semibold">{item.type}</td>
+                        <td className="text-sm font-bold max-w-xs truncate">{item.target}</td>
+                        <td className="text-xs opacity-50 whitespace-nowrap">
+                          {new Date(item.date).toLocaleDateString("en-US", {
+                            month: "short", day: "numeric", year: "numeric",
+                            hour: "2-digit", minute: "2-digit"
+                          })}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+
+            <div className="mt-4 pt-4 border-t border-base-300 flex justify-between items-center text-xs opacity-50">
+              <span>Total activities: <strong>{historyData.length}</strong></span>
+              <span>
+                ✅ {historyData.filter(h => h.action === "Approved").length} ·
+                ❌ {historyData.filter(h => h.action === "Rejected").length} ·
+                🗑️ {historyData.filter(h => h.action === "Deleted").length} ·
+                🚫 {historyData.filter(h => h.action === "Banned").length}
+              </span>
+            </div>
+          </div>
+        </div>
+        <form method="dialog" className="modal-backdrop">
+          <button>close</button>
         </form>
       </dialog>
 

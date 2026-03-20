@@ -29,14 +29,14 @@ interface ICourse {
   coverImage?: { type?: string; url?: string } | string | null;
 }
 
-const tOk  = { position: "top-right" as const, style: { borderRadius: "10px", background: "#1e1e2e", color: "#fff", fontWeight: "600" } };
+const tOk = { position: "top-right" as const, style: { borderRadius: "10px", background: "#1e1e2e", color: "#fff", fontWeight: "600" } };
 const tErr = { position: "top-right" as const, style: { borderRadius: "10px", background: "#dc2626", color: "#fff", fontWeight: "600" } };
 
 const STATUS_CFG: Record<Status, { bg: string; text: string; label: string }> = {
-  published: { bg: "rgba(0,196,140,0.12)",  text: "#00C48C", label: "Published" },
-  pending:   { bg: "rgba(245,158,11,0.12)", text: "#F59E0B", label: "Pending"   },
-  rejected:  { bg: "rgba(239,68,68,0.12)",  text: "#EF4444", label: "Rejected"  },
-  draft:     { bg: "rgba(107,114,128,0.12)",text: "#6B7280", label: "Draft"     },
+  published: { bg: "rgba(0,196,140,0.12)", text: "#00C48C", label: "Published" },
+  pending: { bg: "rgba(245,158,11,0.12)", text: "#F59E0B", label: "Pending" },
+  rejected: { bg: "rgba(239,68,68,0.12)", text: "#EF4444", label: "Rejected" },
+  draft: { bg: "rgba(107,114,128,0.12)", text: "#6B7280", label: "Draft" },
 };
 
 const FILTERS = ["all", "published", "pending", "rejected"] as const;
@@ -75,7 +75,7 @@ const DIALOG_CFG: Record<ActionType, {
   },
 };
 
-const getInstructorName  = (inst: ICourse["instructorId"]) =>
+const getInstructorName = (inst: ICourse["instructorId"]) =>
   typeof inst === "object" && inst !== null ? (inst as any).name || "Unknown" : "Unknown";
 const getInstructorPhoto = (inst: ICourse["instructorId"]) =>
   typeof inst === "object" && inst !== null ? (inst as any).photoURL || "" : "";
@@ -100,9 +100,9 @@ const getCoverUrl = (course: ICourse): string => {
 
 const InstructorAvatar = ({ inst, size = "sm" }: { inst: ICourse["instructorId"]; size?: "sm" | "md" }) => {
   const [imgError, setImgError] = useState(false);
-  const name  = getInstructorName(inst);
+  const name = getInstructorName(inst);
   const photo = getInstructorPhoto(inst);
-  const dim   = size === "sm" ? "w-7 h-7 text-xs" : "w-8 h-8 text-sm";
+  const dim = size === "sm" ? "w-7 h-7 text-xs" : "w-8 h-8 text-sm";
   return (
     <div className={`${dim} rounded-full overflow-hidden flex-shrink-0 flex items-center justify-center text-white font-black`}
       style={{ background: "linear-gradient(135deg,#C81D77,#832388)" }}>
@@ -115,23 +115,20 @@ const InstructorAvatar = ({ inst, size = "sm" }: { inst: ICourse["instructorId"]
 
 const CourseImage = ({ url, title }: { url: string; title: string }) => {
   const [imgError, setImgError] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
-  
-  useEffect(() => { 
+
+  useEffect(() => {
     setImgError(false);
-    setIsLoading(true);
   }, [url]);
 
   if (url && !imgError) {
     return (
-      <Image 
-        src={url} 
-        alt={title} 
+      <Image
+        src={url}
+        alt={title}
         width={400}
         height={144}
         className="w-full h-full object-cover"
         onError={() => setImgError(true)}
-        onLoadingComplete={() => setIsLoading(false)}
         priority={false}
         unoptimized={false}
       />
@@ -147,24 +144,24 @@ const CourseImage = ({ url, title }: { url: string; title: string }) => {
 
 // ═══════════════════════════════════════════════════════════════════════════════
 export default function AdminCoursesPage() {
-  const [filter, setFilter]               = useState("all");
-  const [viewMode, setViewMode]           = useState<"table" | "card">("table");
-  const [courses, setCourses]             = useState<ICourse[]>([]);
-  const [loading, setLoading]             = useState(true);
+  const [filter, setFilter] = useState("all");
+  const [viewMode, setViewMode] = useState<"table" | "card">("table");
+  const [courses, setCourses] = useState<ICourse[]>([]);
+  const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
 
   const [dialog, setDialog] = useState<{
     open: boolean; courseId: string; courseTitle: string; action: ActionType;
   }>({ open: false, courseId: "", courseTitle: "", action: "delete" });
 
-  const openDialog  = (courseId: string, courseTitle: string, action: ActionType) =>
+  const openDialog = (courseId: string, courseTitle: string, action: ActionType) =>
     setDialog({ open: true, courseId, courseTitle, action });
   const closeDialog = () => setDialog(prev => ({ ...prev, open: false }));
 
   const fetchCourses = useCallback(async (silent = false) => {
     if (!silent) setLoading(true);
     try {
-      const res  = await fetch("/api/courses");
+      const res = await fetch("/api/courses");
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed to fetch");
       setCourses(data.courses || []);
@@ -181,7 +178,7 @@ export default function AdminCoursesPage() {
     setActionLoading(id + "_approve");
     const tid = toast.loading("Approving...", { position: "top-right" });
     try {
-      const res  = await fetch(`/api/courses/${id}`, {
+      const res = await fetch(`/api/courses/${id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ status: "published", _adminAction: true }),
@@ -201,7 +198,7 @@ export default function AdminCoursesPage() {
     setActionLoading(id + "_reject");
     const tid = toast.loading("Rejecting...", { position: "top-right" });
     try {
-      const res  = await fetch(`/api/courses/${id}`, {
+      const res = await fetch(`/api/courses/${id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ status: "rejected", _adminAction: true }),
@@ -221,7 +218,7 @@ export default function AdminCoursesPage() {
     setActionLoading(id + "_delete");
     const tid = toast.loading("Deleting...", { position: "top-right" });
     try {
-      const res  = await fetch(`/api/courses/${id}`, { method: "DELETE" });
+      const res = await fetch(`/api/courses/${id}`, { method: "DELETE" });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);
       setCourses(prev => prev.filter(c => c._id !== id));
@@ -240,21 +237,21 @@ export default function AdminCoursesPage() {
 
   const filtered = filter === "all" ? courses : courses.filter(c => c.status === filter);
   const counts = {
-    all:       courses.length,
+    all: courses.length,
     published: courses.filter(c => c.status === "published").length,
-    pending:   courses.filter(c => c.status === "pending").length,
-    rejected:  courses.filter(c => c.status === "rejected").length,
+    pending: courses.filter(c => c.status === "pending").length,
+    rejected: courses.filter(c => c.status === "rejected").length,
   };
 
   // ✅ Handle both DB schema (price/originalPrice) and legacy (pricing object)
   const formatPrice = (c: ICourse): string => {
     // Check if free
     if (c.pricing?.type === "free" || c.price === 0) return "Free";
-    
+
     // Get final price (originalPrice = discount applied, show that)
     const finalPrice = c.originalPrice || c.price || c.pricing?.discountPrice || c.pricing?.price || 0;
     if (finalPrice === 0) return "Free";
-    
+
     return `৳${finalPrice.toLocaleString()}`;
   };
 
@@ -408,10 +405,10 @@ export default function AdminCoursesPage() {
       {/* ── Stats ── */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
         {[
-          { label: "Published", count: counts.published, color: "#00C48C", glow: "rgba(0,196,140,0.12)",  icon: TrendingUp, key: "published" },
-          { label: "Pending",   count: counts.pending,   color: "#F59E0B", glow: "rgba(245,158,11,0.12)", icon: RefreshCw,  key: "pending"   },
-          { label: "Rejected",  count: counts.rejected,  color: "#EF4444", glow: "rgba(239,68,68,0.12)",  icon: XCircle,    key: "rejected"  },
-          { label: "Total",     count: counts.all,       color: "#832388", glow: "rgba(131,35,136,0.12)", icon: BookOpen,   key: "all"       },
+          { label: "Published", count: counts.published, color: "#00C48C", glow: "rgba(0,196,140,0.12)", icon: TrendingUp, key: "published" },
+          { label: "Pending", count: counts.pending, color: "#F59E0B", glow: "rgba(245,158,11,0.12)", icon: RefreshCw, key: "pending" },
+          { label: "Rejected", count: counts.rejected, color: "#EF4444", glow: "rgba(239,68,68,0.12)", icon: XCircle, key: "rejected" },
+          { label: "Total", count: counts.all, color: "#832388", glow: "rgba(131,35,136,0.12)", icon: BookOpen, key: "all" },
         ].map(s => (
           <div key={s.label} onClick={() => setFilter(s.key)}
             className="rounded-2xl bg-base-100 border border-base-300 p-4 cursor-pointer hover:shadow-md transition-all relative overflow-hidden"
@@ -479,9 +476,9 @@ export default function AdminCoursesPage() {
                       <td>
                         {(c.rating || 0) > 0
                           ? <div className="flex items-center gap-1">
-                              <Star size={12} fill="#F59E0B" color="#F59E0B" />
-                              <span className="text-sm font-bold" style={{ color: "#F59E0B" }}>{c.rating}</span>
-                            </div>
+                            <Star size={12} fill="#F59E0B" color="#F59E0B" />
+                            <span className="text-sm font-bold" style={{ color: "#F59E0B" }}>{c.rating}</span>
+                          </div>
                           : <span className="text-xs opacity-30 font-bold">—</span>}
                       </td>
                       <td>
@@ -538,13 +535,15 @@ export default function AdminCoursesPage() {
           {!loading && filtered.length > 0 && (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
               {filtered.map(c => {
-                const s        = STATUS_CFG[c.status] || STATUS_CFG.draft;
+                const s = STATUS_CFG[c.status] || STATUS_CFG.draft;
                 const coverUrl = getCoverUrl(c);
                 return (
                   <div key={c._id}
-                    className="rounded-2xl bg-base-100 border border-base-300 overflow-hidden hover:shadow-lg transition-all duration-300 hover:-translate-y-0.5 flex flex-col">
+                    className="rounded-2xl bg-base-100 border border-base-300 overflow-hidden hover:shadow-lg transition-all duration-300 hover:-translate-y-0.5 flex flex-col group cursor-pointer"
+                    onClick={() => window.open(`/courses/${c._id}`, '_blank')}>
                     <div className="relative h-36 bg-base-200 flex-shrink-0 overflow-hidden">
                       <CourseImage url={coverUrl} title={c.title} />
+                      <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-all" />
                       <span className="absolute top-3 left-3 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold backdrop-blur-sm"
                         style={{ backgroundColor: s.bg, color: s.text, border: `1px solid ${s.text}30` }}>
                         <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: s.text }} />{s.label}
@@ -555,7 +554,7 @@ export default function AdminCoursesPage() {
                       </span>
                     </div>
                     <div className="p-4 flex flex-col flex-1 gap-3">
-                      <p className="font-black text-sm leading-snug line-clamp-2">{c.title}</p>
+                      <p className="font-black text-sm leading-snug line-clamp-2 group-hover:text-[#832388] transition-colors">{c.title}</p>
                       <div className="flex items-center justify-between text-xs">
                         <div className="flex items-center gap-1.5">
                           <InstructorAvatar inst={c.instructorId} size="sm" />
@@ -572,7 +571,9 @@ export default function AdminCoursesPage() {
                           </div>
                         )}
                       </div>
-                      <div className="mt-auto pt-2 border-t border-base-200"><CardActionButtons c={c} /></div>
+                      <div className="mt-auto pt-2 border-t border-base-200" onClick={(e) => e.stopPropagation()}>
+                        <CardActionButtons c={c} />
+                      </div>
                     </div>
                   </div>
                 );

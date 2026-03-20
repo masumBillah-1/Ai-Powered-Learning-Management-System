@@ -1,522 +1,337 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
-import { Send, CheckCheck, Circle, Search, Users, Headphones } from "lucide-react";
-import { io, Socket } from "socket.io-client";
+import React, { useState, useEffect, useRef, useMemo } from 'react';
+import axios from 'axios';
 
-// ─── Types ────────────────────────────────────────────────────────────────────
-interface UserData {
-  _id?: string;
-  name: string;
-  email: string;
-  photoURL?: string;
-  role: string;
-}
+// --- Emojis ---
+const EMOJIS = ["😀", "😂", "😍", "🥰", "😎", "🤩", "😭", "😤", "🥺", "😏", "👍", "👎", "❤️", "🔥", "🎉", "✅", "💯", "🙏", "💪", "👏", "😊", "🤔", "😴", "🤣", "😇", "🤗", "😈", "👀", "💀", "🫡", "🌟", "💫", "⚡", "🎯", "🚀", "💥", "🌈", "🎊", "🏆", "🎁"];
 
+// --- Interfaces ---
 interface Message {
-  _id?: string;
-  roomId: string;
-  senderId: string;
-  senderName: string;
-  senderRole: string;
+  _id: string;
+  senderId: { _id: string; name: string; photoURL: string; role: string } | string;
+  receiverId: string;
   content: string;
-  createdAt?: string;
-  read: boolean;
-}
-
-interface OnlineUser {
-  userId: string;
-  socketId: string;
-  role: string;
-  name: string;
+  messageType: "text" | "image" | "file" | "link";
+  roomId: string;
+  createdAt: string;
 }
 
 interface Conversation {
-  userId: string;
-  userName: string;
-  userRole: string;
+  _id: string;
   roomId: string;
   lastMessage: string;
-  lastTime: string;
-  unread: number;
-  online: boolean;
+  participants: any[];
+  unreadCount: Record<string, number>;
+  updatedAt: string;
 }
 
-// ─── Config ───────────────────────────────────────────────────────────────────
-const SOCKET_URL = process.env.NEXT_PUBLIC_SOCKET_URL || "http://localhost:4000";
-const STAFF_ROLES = ["admin", "instructor"];
+// --- Link Clickable Helper Function ---
+const formatMessageWithLinks = (text: string) => {
+  const urlRegex = /(https?:\/\/[^\s]+)/g;
+  return text.split(urlRegex).map((part, index) => {
+    if (part.match(urlRegex)) {
+      return (
+        <a
+          key={index}
+          href={part}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="hover:underline text-black-400 dark:text-whit-400 hover:text-white-300 break-all"
+        >
+          {part}
+        </a>
+      );
+    }
+    return part;
+  });
+};
 
-const getRoomId = (userId: string) => `support_${userId}`;
-const getAvatar = (name: string, bg = "FF0F7B") =>
-  `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=${bg}&color=fff`;
-
-// ─── Typing dots ──────────────────────────────────────────────────────────────
-function TypingBubble({ src, name }: { src: string; name: string }) {
-  return (
-    <div className="chat chat-start">
-      <div className="chat-image avatar">
-        <div className="w-9 rounded-full overflow-hidden">
-          <img src={src} alt="" className="w-full h-full object-cover" />
-        </div>
-      </div>
-      <div className="chat-bubble bg-base-100 shadow-sm">
-        <span className="flex gap-1 items-center h-4">
-          {[0, 150, 300].map(d => (
-            <span key={d} className="w-2 h-2 rounded-full bg-current opacity-50 animate-bounce"
-              style={{ animationDelay: `${d}ms` }} />
-          ))}
-        </span>
-      </div>
-      <div className="chat-footer opacity-40 text-xs">{name} is typing...</div>
-    </div>
-  );
-}
-
-// ─── Message bubble ───────────────────────────────────────────────────────────
-function MsgBubble({ msg, fromMe, avatar, name, gradientStyle }:
-  { msg: Message; fromMe: boolean; avatar: string; name: string; gradientStyle: React.CSSProperties }) {
-  return (
-    <div className={`chat ${fromMe ? "chat-end" : "chat-start"}`}>
-      <div className="chat-image avatar">
-        <div className="w-9 rounded-full overflow-hidden">
-          <img src={avatar} alt={name} className="w-full h-full object-cover" />
-        </div>
-      </div>
-      <div className="chat-header text-xs opacity-50 mb-0.5">
-        {name}
-        {msg.createdAt && (
-          <time className="ml-1 opacity-60">
-            {new Date(msg.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
-          </time>
-        )}
-      </div>
-      <div className="chat-bubble text-sm font-medium shadow-sm" style={fromMe ? gradientStyle : {}}>
-        {msg.content}
-      </div>
-      <div className="chat-footer opacity-40 text-xs mt-0.5 flex items-center gap-1">
-        {fromMe && <CheckCheck size={12} className={msg.read ? "text-blue-400" : ""} />}
-        {fromMe ? (msg.read ? "Seen" : "Delivered") : ""}
-      </div>
-    </div>
-  );
-}
-
-// ─── Main ─────────────────────────────────────────────────────────────────────
-export default function MessagesPage() {
-  const [user, setUser] = useState<UserData | null>(null);
-  const [theme, setTheme] = useState("light");
-  const [ready, setReady] = useState(false);
-  const [connected, setConnected] = useState(false);
-  const [messages, setMessages] = useState<Message[]>([]);
-  const [input, setInput] = useState("");
-  const [isTyping, setIsTyping] = useState(false);
-  const [typingUser, setTypingUser] = useState("");
-
-  // staff only
+export default function SupportChatPage() {
+  const [currentUser, setCurrentUser] = useState<{ id: string, role: string, photoURL?: string } | null>(null);
   const [conversations, setConversations] = useState<Conversation[]>([]);
-  const [activeConv, setActiveConv] = useState<Conversation | null>(null);
-  const [onlineUsers, setOnlineUsers] = useState<OnlineUser[]>([]);
-  const [search, setSearch] = useState("");
-  const [showSidebar, setShowSidebar] = useState(true);
+  const [enrolledInstructors, setEnrolledInstructors] = useState<any[]>([]);
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [activeRoomId, setActiveRoomId] = useState<string | null>(null);
+  const [activeUser, setActiveUser] = useState<any>(null);
+  const [input, setInput] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [showEmoji, setShowEmoji] = useState(false);
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const emojiRef = useRef<HTMLDivElement>(null);
 
-  const socketRef = useRef<Socket | null>(null);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
-  const typingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const joinedRooms = useRef<Set<string>>(new Set());
-
-  // ── Theme sync ────────────────────────────────────────────────────────────
   useEffect(() => {
-    const t = localStorage.getItem("theme") || "light";
-    setTheme(t);
-    document.documentElement.setAttribute("data-theme", t);
-    const iv = setInterval(() => {
-      const cur = localStorage.getItem("theme") || "light";
-      if (cur !== theme) { setTheme(cur); document.documentElement.setAttribute("data-theme", cur); }
-    }, 100);
-    return () => clearInterval(iv);
-  }, [theme]);
-
-  // ── Load user + connect ───────────────────────────────────────────────────
-  useEffect(() => {
-    const saved = localStorage.getItem("user");
-    if (!saved) return;
-    const u: UserData = JSON.parse(saved);
-    setUser(u);
-    setReady(true);
-
-    const myId = u._id || u.email;
-    const isStaff = STAFF_ROLES.includes(u.role);
-    const socket = io(SOCKET_URL, { withCredentials: true });
-    socketRef.current = socket;
-
-    socket.on("connect", () => {
-      setConnected(true);
-      socket.emit("user:join", { userId: myId, userName: u.name, userRole: u.role });
-      // student auto-joins their own room
-      if (!isStaff) {
-        const room = getRoomId(myId);
-        socket.emit("room:join", { roomId: room, userId: myId });
-        joinedRooms.current.add(room);
-      }
-    });
-
-    socket.on("disconnect", () => setConnected(false));
-
-    socket.on("room:history", (history: Message[]) => {
-      setMessages(history);
-      if (history.length > 0) {
-        const last = history[history.length - 1];
-        setConversations(prev => prev.map(c =>
-          c.roomId === last.roomId ? {
-            ...c,
-            lastMessage: last.content,
-            lastTime: last.createdAt
-              ? new Date(last.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
-              : "",
-          } : c
-        ));
-      }
-    });
-
-    socket.on("message:receive", (msg: Message) => {
-      if (!isStaff) {
-        if (msg.roomId === getRoomId(myId)) setMessages(p => [...p, msg]);
-        return;
-      }
-      setActiveConv(prev => {
-        if (prev?.roomId === msg.roomId) setMessages(p => [...p, msg]);
-        return prev;
-      });
-      setConversations(prev => prev.map(c =>
-        c.roomId === msg.roomId
-          ? { ...c, lastMessage: msg.content, lastTime: new Date(msg.createdAt || "").toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }), unread: c.unread + 1 }
-          : c
-      ));
-    });
-
-    socket.on("users:online", (users: OnlineUser[]) => {
-      setOnlineUsers(users);
-      if (!isStaff) return;
-      const students = users.filter(u2 => u2.role === "student" && u2.userId !== myId);
-      setConversations(prev => {
-        const map = new Map(prev.map(c => [c.userId, c]));
-        students.forEach(s => {
-          if (!map.has(s.userId)) {
-            map.set(s.userId, { userId: s.userId, userName: s.name, userRole: s.role, roomId: getRoomId(s.userId), lastMessage: "No messages yet", lastTime: "", unread: 0, online: true });
-          } else { map.get(s.userId)!.online = true; }
-        });
-        prev.forEach(c => { if (!students.find(s => s.userId === c.userId)) map.get(c.userId)!.online = false; });
-        return Array.from(map.values());
-      });
-    });
-
-    socket.on("typing:show", ({ userName }: { userName: string }) => { setIsTyping(true); setTypingUser(userName); });
-    socket.on("typing:hide", () => { setIsTyping(false); setTypingUser(""); });
-
-    return () => { socket.disconnect(); };
+    const userData = localStorage.getItem("user");
+    if (userData) {
+      const parsed = JSON.parse(userData);
+      const userObj = { id: parsed._id || parsed.id, role: parsed.role, photoURL: parsed.photoURL };
+      setCurrentUser(userObj);
+      if (userObj.role === 'student') fetchEnrolledData();
+    }
   }, []);
 
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages, isTyping]);
-
-  const emitTyping = (roomId: string, name: string) => {
-    if (!socketRef.current) return;
-    socketRef.current.emit("typing:start", { roomId, userName: name });
-    if (typingTimerRef.current) clearTimeout(typingTimerRef.current);
-    typingTimerRef.current = setTimeout(() => socketRef.current?.emit("typing:stop", { roomId }), 2000);
+  const fetchEnrolledData = async () => {
+    try {
+      const res = await axios.get('/api/enrollments');
+      if (res.data.success) {
+        const instructors = res.data.enrollments
+          .map((e: any) => e.courseId?.instructorId)
+          .filter((inst: any) => inst && inst._id);
+        const unique = Array.from(new Map(instructors.map((i: any) => [i._id, i])).values());
+        setEnrolledInstructors(unique);
+      }
+    } catch (err) { console.error(err); }
   };
 
-  const sendMessage = () => {
-    if (!input.trim() || !user || !socketRef.current) return;
-    const myId = user._id || user.email;
-    const isStaff = STAFF_ROLES.includes(user.role);
-    const roomId = isStaff ? activeConv?.roomId : getRoomId(myId);
-    if (!roomId) return;
-    socketRef.current.emit("message:send", { roomId, senderId: myId, senderName: user.name, senderRole: user.role, content: input.trim() });
-    socketRef.current.emit("typing:stop", { roomId });
-    if (typingTimerRef.current) clearTimeout(typingTimerRef.current);
-    setInput("");
-  };
-
-  const handleInput = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setInput(e.target.value);
-    if (!user) return;
-    const myId = user._id || user.email;
-    const isStaff = STAFF_ROLES.includes(user.role);
-    const roomId = isStaff ? activeConv?.roomId : getRoomId(myId);
-    if (roomId) emitTyping(roomId, user.name);
-  };
-
-  const openConv = (conv: Conversation) => {
-    setActiveConv(conv);
-    setMessages([]);
-    setShowSidebar(false);
-    setConversations(prev => prev.map(c => c.userId === conv.userId ? { ...c, unread: 0 } : c));
-    if (socketRef.current && !joinedRooms.current.has(conv.roomId)) {
-      socketRef.current.emit("room:join", { roomId: conv.roomId, userId: user?._id || user?.email });
-      joinedRooms.current.add(conv.roomId);
+  const fetchConversations = async () => {
+    try {
+      const res = await axios.get('/api/messages', { timeout: 10000 }); // 10s timeout
+      if (res.data.success) setConversations(res.data.conversations);
+    } catch (err: any) {
+      console.error(err);
+      if (err.code === 'ECONNABORTED' || err.response?.status === 500) {
+        setConversations([]); // Show empty state on timeout
+      }
+    } finally {
+      setLoading(false);
     }
   };
 
-  if (!ready) return null;
+  const sidebarList = useMemo(() => {
+    if (!currentUser) return [];
+    return conversations.filter(conv => {
+      const other = conv.participants.find(p => p._id !== currentUser.id);
+      if (!other) return false;
 
-  const isStaff = STAFF_ROLES.includes(user?.role || "");
-  const myId = user?._id || user?.email || "";
-  const myAvatar = user?.photoURL || getAvatar(user?.name || "Me", isStaff ? "832388" : "FF0F7B");
-  const supportAvatar = getAvatar("Support Team", "832388");
-  const totalUnread = conversations.reduce((a, c) => a + c.unread, 0);
-  const filteredConvs = conversations.filter(c => c.userName.toLowerCase().includes(search.toLowerCase()));
+      if (currentUser.role === 'student') {
+        const isMyInstructor = enrolledInstructors.some(inst => inst._id === other._id);
+        return other.role === 'admin' || isMyInstructor;
+      }
 
-  // ── Input bar shared component ────────────────────────────────────────────
-  const InputBar = ({ placeholder, gradient }: { placeholder: string; gradient: string }) => (
-    <div className="px-4 py-3 bg-base-100 border-t border-base-300 flex-shrink-0">
-      <div className="flex items-center gap-3">
-        <div className="w-9 h-9 rounded-full overflow-hidden flex-shrink-0 hidden sm:block">
-          <img src={myAvatar} alt={user?.name} className="w-full h-full object-cover" />
-        </div>
-        <input
-          type="text"
-          placeholder={placeholder}
-          value={input}
-          onChange={handleInput}
-          onKeyDown={e => e.key === "Enter" && sendMessage()}
-          className="input input-sm flex-1 bg-base-200 border-base-300 rounded-xl text-sm h-10"
-        />
-        <button
-          onClick={sendMessage}
-          disabled={!input.trim() || !connected}
-          className="btn btn-sm btn-circle border-0 text-white disabled:opacity-30 hover:scale-110 transition-all"
-          style={{ background: gradient }}
-        >
-          <Send size={15} />
-        </button>
-      </div>
-      {!isStaff && (
-        <p className="text-center text-xs opacity-25 mt-2 font-medium">🔒 Your messages are secure and encrypted</p>
-      )}
-    </div>
-  );
+      if (currentUser.role === 'instructor') {
+        return other.role === 'admin' || (other.role === 'student' && conv.lastMessage);
+      }
 
-  // ══════════════════════════════════════════════════════
-  // STUDENT VIEW
-  // ══════════════════════════════════════════════════════
-  if (!isStaff) {
-    return (
-      <div className="min-h-screen p-4 md:p-6 lg:p-8 flex items-start justify-center">
-        <div className="w-full max-w-2xl flex flex-col bg-base-100 border border-base-300 rounded-2xl shadow-xl overflow-hidden"
-          style={{ height: "calc(100vh - 130px)" }}>
+      if (currentUser.role === 'admin') {
+        return other.role === 'instructor' || other.role === 'student' || other.role === 'admin';
+      }
 
-          {/* Header */}
-          <div className="flex items-center justify-between px-5 py-4 border-b border-base-300 flex-shrink-0">
-            <div className="flex items-center gap-3">
-              <div className="relative">
-                <div className="w-11 h-11 rounded-full overflow-hidden ring-2 ring-[#832388]">
-                  <img src={supportAvatar} alt="Support" className="w-full h-full object-cover" />
-                </div>
-                {connected && <span className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-base-100" />}
-              </div>
-              <div>
-                <p className="font-black text-sm flex items-center gap-1.5">
-                  <Headphones size={14} style={{ color: "#832388" }} /> Support Team
-                </p>
-                <p className="text-xs opacity-50 flex items-center gap-1">
-                  {connected ? <><Circle size={7} className="fill-green-500 text-green-500" /> Online — replies within minutes</> : "Connecting..."}
-                </p>
-              </div>
-            </div>
-            <div className="badge badge-sm font-bold border-0 text-white"
-              style={{ backgroundColor: connected ? "#00C48C" : "#999" }}>
-              {connected ? "Live" : "Offline"}
-            </div>
-          </div>
+      return true;
+    });
+  }, [conversations, currentUser, enrolledInstructors]);
 
-          {/* Empty state */}
-          {messages.length === 0 && (
-            <div className="flex flex-col items-center justify-center flex-1 gap-4 p-8 text-center">
-              <div className="w-16 h-16 rounded-2xl flex items-center justify-center text-3xl" style={{ backgroundColor: "#FF0F7B15" }}>💬</div>
-              <div>
-                <p className="font-black text-base mb-1">How can we help you?</p>
-                <p className="text-sm opacity-50">Send a message and our support team will reply shortly.</p>
-              </div>
-              <div className="flex flex-wrap gap-2 justify-center">
-                {["Question about my course", "Payment issue", "Technical problem"].map(p => (
-                  <button key={p} onClick={() => setInput(p)}
-                    className="btn btn-xs rounded-full border border-base-300 bg-base-200 font-semibold hover:text-[#FF0F7B] hover:border-[#FF0F7B] transition-colors">
-                    {p}
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
+  useEffect(() => {
+    fetchConversations();
+    const interval = setInterval(fetchConversations, 10000);
+    return () => clearInterval(interval);
+  }, []);
 
-          {/* Messages */}
-          {messages.length > 0 && (
-            <div className="flex-1 overflow-y-auto px-4 py-4 bg-base-200 space-y-1">
-              {messages.map((msg, i) => (
-                <MsgBubble key={msg._id || i} msg={msg} fromMe={msg.senderId === myId}
-                  avatar={msg.senderId === myId ? myAvatar : supportAvatar}
-                  name={msg.senderId === myId ? (user?.name || "You") : msg.senderName}
-                  gradientStyle={{ background: "linear-gradient(135deg, #FF0F7B, #F89B29)", color: "#fff" }}
-                />
-              ))}
-              {isTyping && <TypingBubble src={supportAvatar} name={typingUser} />}
-              <div ref={messagesEndRef} />
-            </div>
-          )}
+  useEffect(() => {
+    if (activeRoomId) {
+      const fetchMsgs = async () => {
+        try {
+          const res = await axios.get(`/api/messages/${activeRoomId}`);
+          if (res.data.success) setMessages(res.data.messages);
+        } catch (err) { console.error(err); }
+      };
+      fetchMsgs();
+      const interval = setInterval(fetchMsgs, 4000);
+      return () => clearInterval(interval);
+    }
+  }, [activeRoomId]);
 
-          <InputBar placeholder="Type your message..." gradient="linear-gradient(135deg, #FF0F7B, #F89B29)" />
-        </div>
-      </div>
-    );
-  }
+  useEffect(() => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+    }
+  }, [messages]);
 
-  // ══════════════════════════════════════════════════════
-  // STAFF VIEW (admin / instructor)
-  // ══════════════════════════════════════════════════════
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (emojiRef.current && !emojiRef.current.contains(event.target as Node)) {
+        setShowEmoji(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const handleSend = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!input.trim() || !activeRoomId || !currentUser) return;
+    const currentConv = conversations.find(c => c.roomId === activeRoomId);
+    const otherParticipant = currentConv?.participants.find(p => p._id !== currentUser.id);
+    try {
+      const res = await axios.post('/api/messages', {
+        content: input,
+        roomId: activeRoomId,
+        receiverId: otherParticipant?._id || null,
+        messageType: "text"
+      });
+      if (res.data.success) {
+        setMessages(prev => [...prev, res.data.message]);
+        setInput("");
+        setShowEmoji(false);
+        fetchConversations();
+      }
+    } catch (err) { console.error(err); }
+  };
+
+  const handleEmojiClick = (emoji: string) => {
+    setInput(prev => prev + emoji);
+  };
+
+  const theme = useMemo(() => {
+    switch (currentUser?.role) {
+      case 'admin': return { btn: 'bg-secondary', text: 'text-secondary', border: 'border-secondary/30', badge: 'badge-secondary' };
+      case 'instructor': return { btn: 'bg-warning', text: 'text-warning', border: 'border-warning/30', badge: 'badge-warning' };
+      default: return { btn: 'bg-primary', text: 'text-primary', border: 'border-primary/30', badge: 'badge-primary' };
+    }
+  }, [currentUser]);
+
   return (
-    <div className="min-h-screen p-4 md:p-6 lg:p-8">
-      <div className="flex bg-base-100 border border-base-300 rounded-2xl shadow-xl overflow-hidden"
-        style={{ height: "calc(100vh - 130px)" }}>
-
-        {/* Sidebar */}
-        <div className={`${showSidebar ? "flex" : "hidden"} md:flex flex-col w-full md:w-[300px] lg:w-[320px] bg-base-100 border-r border-base-300 flex-shrink-0`}>
-          <div className="p-4 border-b border-base-300 flex-shrink-0">
-            <div className="flex items-center justify-between mb-3">
-              <h2 className="text-base font-black flex items-center gap-2">
-                <Users size={16} style={{ color: "#FF0F7B" }} />
-                Student Messages
-                {totalUnread > 0 && (
-                  <span className="badge badge-sm text-white font-bold border-0" style={{ backgroundColor: "#FF0F7B" }}>{totalUnread}</span>
-                )}
-              </h2>
-              <div className="badge badge-sm font-bold border-0 text-white" style={{ backgroundColor: connected ? "#00C48C" : "#999" }}>
-                {connected ? "Live" : "Off"}
-              </div>
-            </div>
-            <div className="relative">
-              <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 opacity-40" />
-              <input type="text" placeholder="Search students..." value={search}
-                onChange={e => setSearch(e.target.value)}
-                className="input input-sm w-full pl-9 bg-base-200 border-base-300 rounded-xl text-sm" />
-            </div>
-          </div>
-
-          <div className="flex-1 overflow-y-auto">
-            {filteredConvs.length === 0 && (
-              <div className="flex flex-col items-center justify-center h-full gap-3 opacity-40 p-6 text-center">
-                <Users size={32} />
-                <p className="text-xs font-semibold">{conversations.length === 0 ? "Waiting for students..." : "No results"}</p>
-              </div>
-            )}
-            {filteredConvs.map(conv => (
-              <button key={conv.userId} onClick={() => openConv(conv)}
-                className={`w-full flex items-center gap-3 px-4 py-3.5 text-left hover:bg-base-200 transition-colors border-b border-base-200 ${activeConv?.userId === conv.userId ? "bg-base-200 border-l-[3px]" : ""}`}
-                style={activeConv?.userId === conv.userId ? { borderLeftColor: "#FF0F7B" } : {}}>
-                <div className="relative flex-shrink-0">
-                  <div className="w-11 h-11 rounded-full overflow-hidden ring-2 ring-base-300">
-                    <img src={getAvatar(conv.userName)} alt={conv.userName} className="w-full h-full object-cover" />
-                  </div>
-                  {conv.online && <span className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-base-100" />}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center justify-between mb-0.5">
-                    <span className="text-sm font-bold truncate">{conv.userName}</span>
-                    <span className="text-xs opacity-40 ml-1 flex-shrink-0">{conv.lastTime}</span>
-                  </div>
-                  <div className="flex items-center justify-between gap-1">
-                    <span className="text-xs opacity-50 truncate">{conv.lastMessage}</span>
-                    {conv.unread > 0 && (
-                      <span className="flex-shrink-0 w-5 h-5 rounded-full text-white text-xs font-bold flex items-center justify-center" style={{ backgroundColor: "#FF0F7B" }}>{conv.unread}</span>
-                    )}
-                  </div>
-                </div>
-              </button>
-            ))}
-          </div>
+    <div className={`flex h-[85vh] bg-base-100 text-base-content overflow-hidden rounded-2xl border ${theme.border} shadow-xl mx-auto`}>
+      <aside className="w-60 bg-base-200 border-r border-base-300 flex flex-col">
+        <div className="p-5 border-b border-base-300">
+          <h2 className={`text-lg font-bold ${theme.text}`}>Message Center</h2>
+          <div className={`badge ${theme.badge} badge-sm text-white uppercase font-bold`}>{currentUser?.role}</div>
         </div>
 
-        {/* Chat area */}
-        <div className="flex-1 flex flex-col min-w-0">
-          {!activeConv && (
-            <div className="flex-1 flex flex-col items-center justify-center gap-4 p-8 text-center bg-base-200">
-              <div className="w-16 h-16 rounded-2xl flex items-center justify-center" style={{ backgroundColor: "#83238820" }}>
-                <Headphones size={28} style={{ color: "#832388" }} />
+        <div className="flex-1 overflow-y-auto p-2 space-y-1">
+          {loading ? (
+            <div className="flex justify-center p-4"><span className="loading loading-spinner text-primary"></span></div>
+          ) : sidebarList.length > 0 ? (
+            sidebarList.map((conv) => {
+              const user = conv.participants.find(p => p._id !== currentUser?.id) || { name: "User", photoURL: "", role: "student" };
+              const isSelected = activeRoomId === conv.roomId;
+              return (
+                <div
+                  key={conv._id}
+                  onClick={() => { setActiveRoomId(conv.roomId); setActiveUser(user); }}
+                  className={`flex items-center gap-3 p-3 rounded-xl cursor-pointer transition-all border ${isSelected ? `bg-base-100 ${theme.border}` : 'hover:bg-base-300 border-transparent'}`}
+                >
+                  <div className="avatar">
+                    <div className="w-10 rounded-full ring ring-base-300">
+                      <img src={user.photoURL || `https://ui-avatars.com/api/?name=${user.name}`} alt="avatar" />
+                    </div>
+                  </div>
+                  <div className="flex-1 overflow-hidden">
+                    <div className="flex items-center gap-2 overflow-hidden mb-0.5">
+                      <h4 className={`text-xs font-bold truncate ${isSelected ? theme.text : ''}`}>{user.name}</h4>
+                      <span className="px-1.5 py-0.5 rounded-md bg-base-300 text-[10px] capitalize font-bold opacity-70 flex-shrink-0">{user.role}</span>
+                    </div>
+                    <p className="text-[10px] opacity-60 truncate font-medium">{conv.lastMessage || "No messages yet"}</p>
+                  </div>
+                </div>
+              );
+            })
+          ) : (
+            <div className="text-center p-4 opacity-40 text-xs italic">No conversations.</div>
+          )}
+        </div>
+      </aside>
+
+      <main className="flex-1 flex flex-col bg-base-100">
+        {activeRoomId ? (
+          <>
+            <header className="p-4 border-b border-base-300 flex items-center gap-3 bg-base-100">
+              <div className="avatar online w-10">
+                <img className="rounded-full ring-1 ring-base-300" src={activeUser?.photoURL || "https://ui-avatars.com/api/?name=User"} alt="" />
               </div>
               <div>
-                <p className="font-black text-base mb-1 capitalize">{user?.role} Support Dashboard</p>
-                <p className="text-sm opacity-50">Select a student conversation to start replying.</p>
+                <h3 className="text-sm font-bold">{activeUser?.name}</h3>
+                <p className="text-[10px] opacity-50 uppercase font-bold">{activeUser?.role}</p>
               </div>
-              <div className="flex gap-6 mt-2">
-                {[
-                  { label: "Conversations", value: conversations.length, color: "#FF0F7B" },
-                  { label: "Online Now", value: onlineUsers.filter(u => u.role === "student").length, color: "#00C48C" },
-                  { label: "Unread", value: totalUnread, color: "#F89B29" },
-                ].map(s => (
-                  <div key={s.label} className="text-center">
-                    <p className="text-2xl font-black" style={{ color: s.color }}>{s.value}</p>
-                    <p className="text-xs opacity-50 font-semibold">{s.label}</p>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
+            </header>
 
-          {activeConv && (
-            <>
-              {/* Chat header */}
-              <div className="flex items-center justify-between px-5 py-3.5 bg-base-100 border-b border-base-300 flex-shrink-0">
-                <div className="flex items-center gap-3">
-                  <button className="md:hidden btn btn-ghost btn-sm btn-circle" onClick={() => setShowSidebar(true)}>←</button>
-                  <div className="relative">
-                    <div className="w-10 h-10 rounded-full overflow-hidden ring-2 ring-[#FF0F7B]">
-                      <img src={getAvatar(activeConv.userName)} alt={activeConv.userName} className="w-full h-full object-cover" />
+            <div ref={scrollRef} className="flex-1 overflow-y-auto p-6 space-y-6">
+              {messages.map((msg) => {
+                const sender = typeof msg.senderId === 'object' ? msg.senderId : null;
+                const isMe = (sender?._id || msg.senderId) === currentUser?.id;
+                const avatarUrl = isMe ? (currentUser?.photoURL || `https://ui-avatars.com/api/?name=Me`) : (activeUser?.photoURL || `https://ui-avatars.com/api/?name=${activeUser?.name}`);
+
+                // Check if message is only emoji (no text)
+                const isOnlyEmoji = /^[\p{Emoji}\s]+$/u.test(msg.content.trim()) && msg.content.trim().length <= 10;
+
+                return (
+                  <div key={msg._id} className={`flex gap-2 ${isMe ? 'flex-row-reverse' : 'flex-row'} items-end`}>
+                    <div className="avatar flex-shrink-0">
+                      <div className="w-8 rounded-full ring-1 ring-base-300 ring-offset-base-100 ring-offset-1">
+                        <img src={avatarUrl} alt="avatar" />
+                      </div>
                     </div>
-                    {activeConv.online && <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-green-500 rounded-full border-2 border-base-100" />}
+                    <div className={`flex flex-col ${isMe ? 'items-end' : 'items-start'}`}>
+                      <div className="opacity-40 text-[9px] mb-1 font-bold mx-1">
+                        {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      </div>
+                      {isOnlyEmoji ? (
+                        <div className="text-4xl leading-none">
+                          {msg.content}
+                        </div>
+                      ) : (
+                        <div className={`shadow-sm py-2.5 px-4 text-[13px] leading-relaxed rounded-2xl max-w-md
+                          ${isMe ? `${theme.btn} text-white font-medium rounded-br-sm` : 'bg-slate-200 dark:bg-neutral-800 text-neutral-800 dark:text-neutral-100 border border-base-300 rounded-bl-sm'}`}
+                        >
+                          {formatMessageWithLinks(msg.content)}
+                        </div>
+                      )}
+                    </div>
                   </div>
-                  <div>
-                    <p className="font-bold text-sm">{activeConv.userName}</p>
-                    <p className="text-xs opacity-50 flex items-center gap-1">
-                      {activeConv.online ? <><Circle size={7} className="fill-green-500 text-green-500" /> Online</> : "Offline"}
-                    </p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2 opacity-70">
-                  <div className="w-7 h-7 rounded-full overflow-hidden">
-                    <img src={myAvatar} alt={user?.name} className="w-full h-full object-cover" />
-                  </div>
-                  <span className="text-xs font-bold hidden sm:block">{user?.name}</span>
-                  <span className="badge badge-xs font-bold border-0 text-white capitalize"
-                    style={{ backgroundColor: user?.role === "admin" ? "#832388" : "#F89B29" }}>
-                    {user?.role}
-                  </span>
-                </div>
-              </div>
+                );
+              })}
+            </div>
 
-              {/* Messages */}
-              <div className="flex-1 overflow-y-auto px-4 py-4 bg-base-200 space-y-1">
-                {messages.length === 0 && (
-                  <div className="flex flex-col items-center justify-center h-full gap-2 opacity-40">
-                    <span className="text-4xl">💬</span>
-                    <p className="text-sm font-semibold">No messages yet. Be the first to reply!</p>
-                  </div>
-                )}
-                {messages.map((msg, i) => (
-                  <MsgBubble key={msg._id || i} msg={msg} fromMe={msg.senderId === myId}
-                    avatar={msg.senderId === myId ? myAvatar : getAvatar(activeConv.userName)}
-                    name={msg.senderId === myId ? (user?.name || "Support") : activeConv.userName}
-                    gradientStyle={{ background: "linear-gradient(135deg, #832388, #FF0F7B)", color: "#fff" }}
-                  />
-                ))}
-                {isTyping && <TypingBubble src={getAvatar(activeConv.userName)} name={typingUser} />}
-                <div ref={messagesEndRef} />
+            <form onSubmit={handleSend} className="p-4 border-t border-base-300 bg-base-100 pr-30 relative">
+              <div className="flex gap-2 items-center">
+                <div className="relative" ref={emojiRef}>
+                  <button
+                    type="button"
+                    onClick={() => setShowEmoji(!showEmoji)}
+                    className="btn btn-circle btn-ghost h-11 w-11 text-xl "
+                  >
+                    😊
+                  </button>
+                  {showEmoji && (
+                    <div className="absolute bottom-14 left-0 bg-base-100 border border-base-300 rounded-2xl shadow-2xl p-3 w-80 max-h-64 overflow-y-auto z-50">
+                      <div className="grid grid-cols-8 gap-1">
+                        {EMOJIS.map((emoji, idx) => (
+                          <button
+                            key={idx}
+                            type="button"
+                            onClick={() => handleEmojiClick(emoji)}
+                            className="text-2xl rounded-lg cursor-pointer p-2 transition-all hover:scale-125"
+                          >
+                            {emoji}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+                <input
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  type="text"
+                  placeholder="Type here..."
+                  className="input input-bordered flex-1 rounded-full bg-base-200 focus:bg-base-100 transition-all border-none ring-1 ring-base-300 h-11 text-sm"
+                />
+                <button
+                  disabled={!input.trim()}
+                  type="submit"
+                  className={`btn btn-circle border-none ${theme.btn} text-white shadow-md h-11 w-11 -rotate-90`}
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5 rotate-90"><path d="M3.478 2.405a.75.75 0 00-.926.94l2.432 7.905H13.5a.75.75 0 010 1.5H4.984l-2.432 7.905a.75.75 0 00.926.94 60.519 60.519 0 0018.445-8.986.75.75 0 000-1.218A60.517 60.517 0 003.478 2.405z" /></svg>
+                </button>
               </div>
-
-              <InputBar placeholder={`Reply to ${activeConv.userName}...`} gradient="linear-gradient(135deg, #832388, #FF0F7B)" />
-            </>
-          )}
-        </div>
-      </div>
+            </form>
+          </>
+        ) : (
+          <div className="flex-1 flex flex-col items-center justify-center opacity-30 text-center p-10">
+            <h3 className="text-xl font-bold">LMS Support</h3>
+            <p className="text-sm">Select a contact to start messaging.</p>
+          </div>
+        )}
+      </main>
     </div>
   );
 }

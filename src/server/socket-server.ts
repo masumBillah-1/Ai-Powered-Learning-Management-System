@@ -3,22 +3,28 @@ import { Server } from "socket.io";
 import mongoose from "mongoose";
 import dns from "dns";
 
+
 // ✅ Force IPv4 — connect.ts এর মতোই
 dns.setDefaultResultOrder("ipv4first");
+
 
 const PORT = process.env.SOCKET_PORT || 4000;
 const MONGODB_URI = process.env.MONGODB_URI as string;
 const CLIENT_URL = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
 
+
 if (!MONGODB_URI) {
   throw new Error("MONGODB_URI missing in .env.local");
 }
 
+
 // ── MongoDB connect (connect.ts এর মতো same logic) ──────
 let isConnected = false;
 
+
 async function connectDB() {
   if (isConnected) return;
+
 
   await mongoose.connect(MONGODB_URI, {
     bufferCommands: false,
@@ -28,9 +34,11 @@ async function connectDB() {
     dbName: "learning-management", // ✅ Database name specify
   });
 
+
   isConnected = true;
   console.log("✅ MongoDB connected (Socket Server)");
 }
+
 
 // ── Live Message Schema ──────────────────────────────────
 const MessageSchema = new mongoose.Schema(
@@ -45,9 +53,29 @@ const MessageSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+
 const LiveMessage =
   mongoose.models.LiveMessage ||
   mongoose.model("LiveMessage", MessageSchema);
+
+
+// ── User Schema (MongoDB users collection) ───────────────
+const UserSchema = new mongoose.Schema(
+  {
+    name:     String,
+    email:    String,
+    photoURL: String,
+    role:     String,
+    status:   String,
+  },
+  { collection: "users" }
+);
+
+
+const UserModel =
+  mongoose.models.UserSocket ||
+  mongoose.model("UserSocket", UserSchema, "users");
+
 
 // ── Online users track ───────────────────────────────────
 const onlineUsers = new Map<
@@ -55,9 +83,11 @@ const onlineUsers = new Map<
   { socketId: string; role: string; name: string }
 >();
 
+
 // ── Main ─────────────────────────────────────────────────
 async function main() {
   await connectDB();
+
 
   const httpServer = createServer();
   const io = new Server(httpServer, {
@@ -68,16 +98,19 @@ async function main() {
     },
   });
 
+
   io.on("connection", (socket) => {
     console.log("🔌 Connected:", socket.id);
 
+
     // ── User join ──────────────────────────────────────
-    socket.on("user:join", ({ userId, userName, userRole }) => {
+    socket.on("user:join", async ({ userId, userName, userRole }) => {
       onlineUsers.set(userId, {
         socketId: socket.id,
         role: userRole,
         name: userName,
       });
+
 
       io.emit(
         "users:online",
@@ -87,12 +120,40 @@ async function main() {
         }))
       );
 
+
       console.log(`👤 ${userName} (${userRole}) joined`);
+
+
+      // ✅ নতুন: MongoDB থেকে সব active user পাঠাও (self ছাড়া)
+      try {
+        const allUsers = await UserModel.find(
+          { status: "active" },
+          { name: 1, email: 1, photoURL: 1, role: 1 }
+        ).lean();
+
+
+        socket.emit(
+          "users:list",
+          allUsers
+            .filter((u: any) => u._id.toString() !== userId)
+            .map((u: any) => ({
+              _id:      u._id.toString(),
+              name:     u.name     || "",
+              email:    u.email    || "",
+              photoURL: u.photoURL || "",
+              role:     u.role     || "student",
+            }))
+        );
+      } catch (err) {
+        console.error("users:list error:", err);
+      }
     });
+
 
     // ── Room join ──────────────────────────────────────
     socket.on("room:join", async ({ roomId, userId }) => {
       socket.join(roomId);
+
 
       // পুরনো messages load
       const history = await LiveMessage.find({ roomId })
@@ -100,7 +161,9 @@ async function main() {
         .limit(50)
         .lean();
 
+
       socket.emit("room:history", history);
+
 
       // Unread mark as read
       await LiveMessage.updateMany(
@@ -109,9 +172,11 @@ async function main() {
       );
     });
 
+
     // ── Message send ───────────────────────────────────
     socket.on("message:send", async (data) => {
       const { roomId, senderId, senderName, senderRole, content } = data;
+
 
       const msg = await LiveMessage.create({
         roomId,
@@ -120,6 +185,7 @@ async function main() {
         senderRole,
         content,
       });
+
 
       io.to(roomId).emit("message:receive", {
         _id: msg._id,
@@ -132,14 +198,17 @@ async function main() {
       });
     });
 
+
     // ── Typing indicator ───────────────────────────────
     socket.on("typing:start", ({ roomId, userName }) => {
       socket.to(roomId).emit("typing:show", { userName });
     });
 
+
     socket.on("typing:stop", ({ roomId }) => {
       socket.to(roomId).emit("typing:hide");
     });
+
 
     // ── Disconnect ─────────────────────────────────────
     socket.on("disconnect", () => {
@@ -150,6 +219,7 @@ async function main() {
         }
       }
 
+
       io.emit(
         "users:online",
         Array.from(onlineUsers.entries()).map(([id, data]) => ({
@@ -158,13 +228,18 @@ async function main() {
         }))
       );
 
+
       console.log("❌ Disconnected:", socket.id);
     });
   });
+
 
   httpServer.listen(PORT, () => {
     console.log(`🚀 Socket.io server running on port ${PORT}`);
   });
 }
 
+
 main().catch(console.error);
+
+

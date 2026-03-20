@@ -47,7 +47,43 @@ export async function POST(req: NextRequest) {
     user.loginAttempts = 0;
     user.lockUntil = undefined;
 
-    // ✅ OTP তৈরি করো এবং save করো
+    // ✅ Demo accounts bypass OTP (direct login)
+    const demoEmails = ["admin@demo.com", "instructor@demo.com", "student@demo.com"];
+    if (demoEmails.includes(email.toLowerCase())) {
+      await user.save();
+      
+      // Generate JWT token directly - Include role for authorization
+      const jwt = require("jsonwebtoken");
+      const token = jwt.sign(
+        { userId: user._id, role: user.role }, 
+        process.env.JWT_SECRET!, 
+        { expiresIn: "7d" }
+      );
+      
+      const response = NextResponse.json({
+        success: true,
+        requireOtp: false,
+        token,
+        user: {
+          _id: user._id,
+          name: user.name,
+          email: user.email,
+          role: user.role,
+          photoURL: user.photoURL,
+        },
+      });
+      
+      response.cookies.set("token", token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "lax",
+        maxAge: 7 * 24 * 60 * 60,
+      });
+      
+      return response;
+    }
+
+    // ✅ OTP তৈরি করো এবং save করো (non-demo accounts)
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
     console.log("🔢 Generated OTP:", otp, "for", email);
     

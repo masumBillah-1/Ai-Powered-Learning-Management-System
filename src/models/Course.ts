@@ -51,6 +51,10 @@ export interface ICourseDocument extends Document {
   tags?: string[];
   faq?: IFAQ[];
   status: string;
+  approvedBy?: mongoose.Types.ObjectId;
+  approvedAt?: Date;
+  rejectedBy?: mongoose.Types.ObjectId;
+  rejectedAt?: Date;
   isPublished: boolean;
   publishedAt?: Date;
   enrollmentCount: number;
@@ -143,6 +147,18 @@ const CourseSchema = new Schema<ICourseDocument>(
       type:    String,
       default: "draft",
     },
+    
+    approvedBy: {
+      type: Schema.Types.ObjectId,
+      ref:  "User",
+    },
+    approvedAt: { type: Date },
+    
+    rejectedBy: {
+      type: Schema.Types.ObjectId,
+      ref:  "User",
+    },
+    rejectedAt: { type: Date },
 
     isPublished: { type: Boolean, default: false },
     publishedAt: { type: Date },

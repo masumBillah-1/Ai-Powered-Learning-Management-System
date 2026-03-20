@@ -7,7 +7,8 @@ export interface IMessageDocument extends Document {
   conversationId?: mongoose.Types.ObjectId;
   
   content: string;
-  messageType: "text" | "image" | "file" | "system";
+  roomId: string;
+  messageType: "text" | "image" | "file" | "system" | "voice";
   
   // File/Image specific fields
   fileUrl?: string;
@@ -38,7 +39,6 @@ const MessageSchema = new Schema<IMessageDocument>(
     receiverId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
-      required: true,
     },
     conversationId: {
       type: mongoose.Schema.Types.ObjectId,
@@ -51,9 +51,14 @@ const MessageSchema = new Schema<IMessageDocument>(
       trim: true,
       maxlength: 2000,
     },
+    roomId: {
+      type: String,
+      required: true,
+      index: true,
+    },
     messageType: {
       type: String,
-      enum: ["text", "image", "file", "system"],
+      enum: ["text", "image", "file", "system", "voice"],
       default: "text",
     },
     

@@ -1,7 +1,7 @@
 // src/app/api/courses/[id]/route.ts
 import { NextResponse } from "next/server";
 import { connectDB } from "@/db/connect";
-import { Course } from "@/models";
+import { Course, AdminLog } from "@/models";
 import mongoose from "mongoose";
 
 const normalizeLevel = (level: string): string => {
@@ -87,6 +87,26 @@ export async function PATCH(
 
     const body = await request.json();
     const isAdminAction = body._adminAction === true;
+    
+    // ✅ Get admin ID from JWT token if admin action
+    let adminId: string | null = null;
+    if (isAdminAction) {
+      const jwt = await import("jsonwebtoken");
+      const cookieHeader = request.headers.get("cookie") || "";
+      const tokenMatch = cookieHeader.match(/token=([^;]+)/);
+      const token = tokenMatch ? tokenMatch[1] : null;
+      
+      if (token) {
+        try {
+          const decoded: any = jwt.verify(token, process.env.JWT_SECRET!);
+          if (decoded.role === "admin") {
+            adminId = decoded.userId;
+          }
+        } catch (err) {
+          console.error("JWT verification failed:", err);
+        }
+      }
+    }
 
     // Extract & remove non-schema fields
     const {
@@ -140,8 +160,18 @@ export async function PATCH(
       if (body.status === "published") {
         updateData.isPublished = true;
         updateData.publishedAt = new Date();
+        // ✅ Save admin ID who approved
+        if (adminId) {
+          updateData.approvedBy = adminId;
+          updateData.approvedAt = new Date();
+        }
       } else if (body.status === "rejected") {
         updateData.isPublished = false;
+        // ✅ Save admin ID who rejected
+        if (adminId) {
+          updateData.rejectedBy = adminId;
+          updateData.rejectedAt = new Date();
+        }
       }
     }
 
@@ -151,6 +181,40 @@ export async function PATCH(
     }).populate("instructorId", "name email photoURL");
 
     if (!course) return NextResponse.json({ error: "Course not found" }, { status: 404 });
+    
+    // ✅ Log admin action to AdminLog
+    if (isAdminAction && adminId) {
+      try {
+        if (body.status === "published") {
+          await AdminLog.create({
+            adminId,
+            action: "approve_course",
+            targetType: "course",
+            targetId: course._id,
+            targetName: course.title,
+            metadata: {
+              instructorId: course.instructorId,
+              category: course.category,
+            },
+          });
+        } else if (body.status === "rejected") {
+          await AdminLog.create({
+            adminId,
+            action: "reject_course",
+            targetType: "course",
+            targetId: course._id,
+            targetName: course.title,
+            metadata: {
+              instructorId: course.instructorId,
+              category: course.category,
+            },
+          });
+        }
+      } catch (logErr) {
+        console.error("Failed to create admin log:", logErr);
+      }
+    }
+    
     return NextResponse.json({ success: true, course });
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 });
@@ -168,8 +232,57 @@ export async function DELETE(
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return NextResponse.json({ error: "Invalid course ID" }, { status: 400 });
     }
-    const course = await Course.findByIdAndDelete(id);
+    
+    // ✅ Get admin ID from JWT token
+    let adminId: string | null = null;
+    const jwt = await import("jsonwebtoken");
+    const cookieHeader = request.headers.get("cookie") || "";
+    const tokenMatch = cookieHeader.match(/token=([^;]+)/);
+    const token = tokenMatch ? tokenMatch[1] : null;
+    
+    if (token) {
+      try {
+        const decoded: any = jwt.verify(token, process.env.JWT_SECRET!);
+        if (decoded.role === "admin") {
+          adminId = decoded.userId;
+        }
+      } catch (err) {
+        console.error("JWT verification failed:", err);
+      }
+    }
+    
+    const course = await Course.findById(id);
     if (!course) return NextResponse.json({ error: "Course not found" }, { status: 404 });
+    
+    // ✅ Save course info before deleting
+    const courseInfo = {
+      title: course.title,
+      instructorId: course.instructorId,
+      category: course.category,
+    };
+    
+    // Delete course
+    await Course.findByIdAndDelete(id);
+    
+    // ✅ Log admin action to AdminLog
+    if (adminId) {
+      try {
+        await AdminLog.create({
+          adminId,
+          action: "delete_course",
+          targetType: "course",
+          targetId: id,
+          targetName: courseInfo.title,
+          metadata: {
+            instructorId: courseInfo.instructorId,
+            category: courseInfo.category,
+          },
+        });
+      } catch (logErr) {
+        console.error("Failed to create admin log:", logErr);
+      }
+    }
+    
     return NextResponse.json({ success: true, message: "Course deleted" });
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 });

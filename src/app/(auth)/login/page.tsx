@@ -44,6 +44,14 @@ const LoginPage = () => {
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   const [checking, setChecking] = useState(true); // checking existing session
+  const [showDemoButtons, setShowDemoButtons] = useState(true); // demo buttons visibility
+
+  // Demo credentials
+  const demoCredentials = {
+    admin: { email: "admin@demo.com", password: "demo123" },
+    instructor: { email: "instructor@demo.com", password: "demo123" },
+    student: { email: "student@demo.com", password: "demo123" },
+  };
 
   // ── If already logged in → redirect immediately ──────
   useEffect(() => {
@@ -60,6 +68,23 @@ const LoginPage = () => {
     }
     setChecking(false);
   }, [router, redirectUrl]);
+
+  // ── Fetch demo login visibility setting ──────
+  useEffect(() => {
+    const fetchDemoSetting = async () => {
+      try {
+        const res = await fetch("/api/admin/settings");
+        const data = await res.json();
+        if (data.success && data.settings) {
+          setShowDemoButtons(data.settings.showDemoLogin ?? true);
+        }
+      } catch (error) {
+        // Default to true if fetch fails
+        setShowDemoButtons(true);
+      }
+    };
+    fetchDemoSetting();
+  }, []);
 
   const doRedirect = (role: string) => {
     const dest = redirectUrl || roleDashboard[role] || "/dashboard/student";
@@ -126,8 +151,59 @@ const LoginPage = () => {
         return;
       }
 
+      // ✅ Direct login (for demo accounts manual entry)
+      if (result.token && result.user) {
+        localStorage.setItem("token", result.token);
+        localStorage.setItem("user", JSON.stringify(result.user));
+        toast.success(`🎉 Welcome ${result.user.name}!`);
+        setTimeout(() => doRedirect(result.user.role), 500);
+        return;
+      }
+
     } catch (err: any) {
       toast.error("⚠️ " + (err.message || "Something went wrong"));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // ── Demo Login Handler ──────────────────────────────
+  const handleDemoLogin = async (role: "admin" | "instructor" | "student") => {
+    const credentials = demoCredentials[role];
+    setLoading(true);
+
+    try {
+      const res = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: credentials.email, password: credentials.password }),
+      });
+      const result = await res.json();
+
+      if (!res.ok) {
+        toast.error("❌ Demo login failed. Please create demo users first.");
+        return;
+      }
+
+      if (result.requireOtp) {
+        toast.success("📧 OTP পাঠানো হয়েছে! Email চেক করুন।");
+        setTimeout(() => {
+          router.push(`/verify-otp?email=${encodeURIComponent(credentials.email)}&mode=login${redirectUrl ? `&redirect=${encodeURIComponent(redirectUrl)}` : ""}`);
+        }, 600);
+        return;
+      }
+
+      // Direct login (demo account bypass)
+      if (result.token && result.user) {
+        localStorage.setItem("token", result.token);
+        localStorage.setItem("user", JSON.stringify(result.user));
+        toast.success(`🎉 Welcome ${result.user.name}!`);
+        setTimeout(() => doRedirect(result.user.role), 500);
+        return;
+      }
+
+    } catch (err: any) {
+      toast.error("⚠️ Demo login failed");
     } finally {
       setLoading(false);
     }
@@ -231,7 +307,7 @@ const LoginPage = () => {
                 onClick={handleGoogleLogin}
                 disabled={googleLoading}
                 type="button"
-                className="flex items-center justify-center gap-2 py-2.5 rounded-lg border border-gray-300 dark:border-white/20 bg-white dark:bg-white/5 text-gray-800 dark:text-white hover:bg-gray-50 dark:hover:bg-white/10 transition disabled:opacity-50 shadow-sm text-sm font-medium"
+                className="flex items-center justify-center gap-2 py-2.5 rounded-lg border border-gray-300 dark:border-white/20 bg-white dark:bg-white/5 text-gray-800 dark:text-white hover:bg-gray-50 dark:hover:bg-white/10 transition disabled:opacity-50 shadow-sm text-sm font-medium cursor-pointer"
               >
                 {googleLoading
                   ? <span className="w-4 h-4 border-2 border-gray-400 border-t-transparent rounded-full animate-spin" />
@@ -253,6 +329,46 @@ const LoginPage = () => {
               Don&apos;t have an account?{" "}
               <Link href="/register" className="text-purple-600 dark:text-purple-400 ml-1 hover:underline font-semibold">Sign Up</Link>
             </p>
+
+            {/* Demo Login Buttons - Conditional */}
+            {showDemoButtons && (
+              <div className="mt-6 pt-6 border-t border-gray-200 dark:border-white/10">
+                <p className="text-center text-xs text-gray-600 dark:text-gray-400 mb-3 font-medium">
+                  Quick Demo Login
+                </p>
+                <div className="grid grid-cols-3 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => handleDemoLogin("admin")}
+                    disabled={loading}
+                    className="flex flex-col items-center justify-center gap-1 py-3 px-2 rounded-lg border border-purple-300 dark:border-purple-500/30 bg-purple-50 dark:bg-purple-500/10 hover:bg-purple-100 dark:hover:bg-purple-500/20 transition text-purple-700 dark:text-purple-300 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <span className="text-2xl">👨‍💼</span>
+                    <span className="text-xs font-semibold">Admin</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => handleDemoLogin("instructor")}
+                    disabled={loading}
+                    className="flex flex-col items-center justify-center gap-1 py-3 px-2 rounded-lg border border-blue-300 dark:border-blue-500/30 bg-blue-50 dark:bg-blue-500/10 hover:bg-blue-100 dark:hover:bg-blue-500/20 transition text-blue-700 dark:text-blue-300 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <span className="text-2xl">👨‍�</span>
+                    <span className="text-xs font-semibold">Instructor</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => handleDemoLogin("student")}
+                    disabled={loading}
+                    className="flex flex-col items-center justify-center gap-1 py-3 px-2 rounded-lg border border-orange-300 dark:border-orange-500/30 bg-orange-50 dark:bg-orange-500/10 hover:bg-orange-100 dark:hover:bg-orange-500/20 transition text-orange-700 dark:text-orange-300 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <span className="text-2xl">👨‍🎓</span>
+                    <span className="text-xs font-semibold">Student</span>
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>

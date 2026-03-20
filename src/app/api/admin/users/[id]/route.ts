@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { connectDB } from "@/db/connect";
-import User from "@/models/User";
+import { User, AdminLog } from "@/models";
 import jwt from "jsonwebtoken";
 
 // ✅ Auth helper
@@ -15,8 +15,9 @@ async function getAuthUser(req: NextRequest) {
 }
 
 // ✅ PATCH - Update user status (ban/unban)
-export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
+export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const { id } = await params;
     const auth = await getAuthUser(req);
     if (!auth || auth.role !== "admin") {
       return NextResponse.json({ error: "Unauthorized - Admin only" }, { status: 403 });
@@ -29,14 +30,40 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
       return NextResponse.json({ error: "Invalid status" }, { status: 400 });
     }
 
+    const updateData: any = { status };
+    
+    // ✅ Save admin ID who banned/unbanned
+    if (status === "suspended" || status === "banned") {
+      updateData.bannedBy = auth.userId;
+      updateData.bannedAt = new Date();
+    }
+
     const user = await User.findByIdAndUpdate(
-      params.id,
-      { status },
+      id,
+      updateData,
       { new: true, select: "-password -resetToken -resetTokenExpiry" }
     );
 
     if (!user) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
+    }
+
+    // ✅ Log admin action to AdminLog
+    try {
+      const action = (status === "suspended" || status === "banned") ? "ban_user" : "unban_user";
+      await AdminLog.create({
+        adminId: auth.userId,
+        action,
+        targetType: "user",
+        targetId: user._id,
+        targetName: user.name,
+        metadata: {
+          email: user.email,
+          role: user.role,
+        },
+      });
+    } catch (logErr) {
+      console.error("Failed to create admin log:", logErr);
     }
 
     return NextResponse.json({ success: true, user });
@@ -47,8 +74,9 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
 }
 
 // ✅ DELETE - Remove user
-export async function DELETE(req: NextRequest, { params }: { params: { id: string } }) {
+export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const { id } = await params;
     const auth = await getAuthUser(req);
     if (!auth || auth.role !== "admin") {
       return NextResponse.json({ error: "Unauthorized - Admin only" }, { status: 403 });
@@ -93,14 +121,40 @@ export async function DELETE(req: NextRequest, { params }: { params: { id: strin
     }
 
     // ⚠️ Prevent deleting yourself
-    if (params.id === auth.userId) {
+    if (id === auth.userId) {
       return NextResponse.json({ error: "Cannot delete yourself" }, { status: 400 });
     }
 
-    const user = await User.findByIdAndDelete(params.id);
+    // ✅ Mark as deleted instead of hard delete (soft delete)
+    const user = await User.findByIdAndUpdate(
+      id,
+      {
+        deletedBy: auth.userId,
+        deletedAt: new Date(),
+        status: "suspended" // Also suspend the account
+      },
+      { new: true }
+    );
 
     if (!user) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
+    }
+
+    // ✅ Log admin action to AdminLog
+    try {
+      await AdminLog.create({
+        adminId: auth.userId,
+        action: "delete_user",
+        targetType: "user",
+        targetId: user._id,
+        targetName: user.name,
+        metadata: {
+          email: user.email,
+          role: user.role,
+        },
+      });
+    } catch (logErr) {
+      console.error("Failed to create admin log:", logErr);
     }
 
     // TODO: Also delete related data (enrollments, courses if instructor, etc.)

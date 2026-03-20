@@ -280,7 +280,7 @@ function CreateModal({ isOpen, onClose, theme, onSuccess, courses, coursesLoadin
         message: form.description.trim(),
         priority: form.priority,
         status: publishNow ? "Published" : "Draft",
-        targetRole: form.targetType === "all-my-students" ? "student" : form.targetType,
+        targetRole: form.targetType,
       };
 
       // ✅ Add courseId for course-specific announcements
@@ -473,7 +473,7 @@ function EditModal({ item, theme, onClose, onSuccess, courses, coursesLoading, r
         message: form.description.trim(),
         priority: form.priority,
         status: publishNow ? "Published" : "Draft",
-        targetRole: form.targetType === "all-my-students" ? "student" : form.targetType,
+        targetRole: form.targetType,
       };
 
       // ✅ Add courseId for course-specific announcements
@@ -646,25 +646,26 @@ export default function AnnouncementsPage() {
 
   // ── canEdit: শুধু নিজের announcement edit করতে পারবে ──
   const canEdit = (a: Announcement) => {
-    // Individual notification check
-    if (a.userId === userId) return true;
-    // Broadcast notification check (creator can edit)
+    // 1. My own announcement
     if (a.createdBy?._id === userId) return true;
+    // 2. Admin can edit other Admins' work (as requested)
+    if (role === "admin" && a.createdBy?.role === "admin") return true;
     return false;
   };
 
   const canDelete = (a: Announcement) => {
-    // Individual notification check  
-    if (a.userId === userId) return true;
-    // Broadcast notification check (creator can delete)
+    // 1. My own notification
     if (a.createdBy?._id === userId) return true;
+    // 2. Admin can delete other Admins' work 
+    if (role === "admin" && a.createdBy?.role === "admin") return true;
     return false;
   };
 
   const canCreate = role === "admin" || role === "instructor";
   const isOwnAnnouncement = (a: Announcement) => {
-    // Check both userId and createdBy for ownership
-    return a.userId === userId || a.createdBy?._id === userId;
+    const creatorId = a.createdBy?._id || (typeof a.createdBy === 'string' ? a.createdBy : null);
+    if (!creatorId) return false;
+    return creatorId.toString() === userId.toString();
   };
 
   // ── filter ──
@@ -699,7 +700,7 @@ export default function AnnouncementsPage() {
 
   return (
     <div className="min-h-screen">
-      <Toaster position="top-right" containerStyle={{ top: 72, right: 24 }} toastOptions={{ style: { maxWidth: 380 } }} />
+      <Toaster position="top-right" containerStyle={{ top: 72, right: 24, zIndex: 99999 }} toastOptions={{ style: { maxWidth: 380 } }} />
 
       {/* Role indicator */}
       <div className="flex items-center gap-2 mb-5 px-3 py-2 rounded-xl text-xs font-bold w-fit"
@@ -851,13 +852,17 @@ export default function AnnouncementsPage() {
                             {truncateText(item.message, 20)}
                           </p>
                           {/* ✅ Creator info display */}
-                          {item.createdBy && !isOwnAnnouncement(item) && (
-                            <div className="flex items-center gap-1.5 mt-1 max-w-full">
-                              <span className="text-xs opacity-50 flex-shrink-0">By:</span>
-                              <span className="text-xs font-semibold opacity-70" title={item.createdBy.name || 'Unknown'}>
-                                {item.createdBy.name || 'Unknown'}
-                              </span>
-                              <span className="text-xs opacity-40 capitalize flex-shrink-0">({item.createdBy.role || 'user'})</span>
+                          {item.createdBy && (
+                            <div className="text-xs mt-1.5 flex items-center gap-1 opacity-60">
+                              <span>By:</span>
+                              {isOwnAnnouncement(item) ? (
+                                <span className="font-bold text-success">Me (You)</span>
+                              ) : (
+                                <>
+                                  <span className="font-bold">{item.createdBy.name || 'Unknown'}</span>
+                                  <span>({item.createdBy.role || 'user'})</span>
+                                </>
+                              )}
                             </div>
                           )}
                           {/* Mobile এ date, course, priority দেখাও */}

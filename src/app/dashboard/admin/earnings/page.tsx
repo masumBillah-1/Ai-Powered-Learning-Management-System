@@ -342,26 +342,33 @@ export default function AdminEarningsPage() {
                       <tr key={s._id} className="hover">
                         <td className="text-xs font-black opacity-25">{String(i + 1).padStart(2, "0")}</td>
                         <td>
-                          <div className="flex items-center gap-2">
-                            <div className="w-8 h-8 rounded-full overflow-hidden bg-[#832388] flex items-center justify-center flex-shrink-0">
+                          <div className="flex items-center gap-3">
+                            <div className="relative w-8 h-8 flex-shrink-0">
+                              {/* 1) Image Tag */}
                               {s.instructorPhoto ? (
                                 <img
                                   src={s.instructorPhoto}
                                   alt={s.instructor}
-                                  className="w-full h-full object-cover"
+                                  className="w-8 h-8 rounded-full object-cover"
                                   referrerPolicy="no-referrer"
                                   onError={(e) => {
-                                    (e.target as HTMLImageElement).style.display = 'none';
-                                    (e.target as HTMLImageElement).parentElement!.innerHTML = `<span class="text-white text-xs font-bold">${s.instructor.charAt(0).toUpperCase()}</span>`;
+                                    (e.target as HTMLImageElement).style.display = "none";
+                                    (e.target as HTMLImageElement).nextElementSibling?.removeAttribute("style");
                                   }}
                                 />
-                              ) : (
-                                <span className="text-white text-xs font-bold">
-                                  {s.instructor.charAt(0).toUpperCase()}
-                                </span>
-                              )}
+                              ) : null}
+                              {/* 2) Fallback Initials (Hidden by default if photo exists) */}
+                              <div
+                                className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold"
+                                style={{
+                                  backgroundColor: "#832388",
+                                  display: s.instructorPhoto ? "none" : "flex",
+                                }}
+                              >
+                                {s.instructor.charAt(0).toUpperCase()}
+                              </div>
                             </div>
-                            <span className="font-bold text-sm">{s.instructor}</span>
+                            <span className="font-bold text-sm whitespace-nowrap">{s.instructor}</span>
                           </div>
                         </td>
                         <td>
@@ -370,26 +377,33 @@ export default function AdminEarningsPage() {
                           </span>
                         </td>
                         <td>
-                          <div className="flex items-center gap-2">
-                            <div className="w-8 h-8 rounded-full overflow-hidden bg-[#FF0F7B] flex items-center justify-center flex-shrink-0">
+                          <div className="flex items-center gap-3">
+                            <div className="relative w-8 h-8 flex-shrink-0">
+                              {/* 1) Image Tag */}
                               {s.studentPhoto ? (
                                 <img
                                   src={s.studentPhoto}
                                   alt={s.student}
-                                  className="w-full h-full object-cover"
+                                  className="w-8 h-8 rounded-full object-cover"
                                   referrerPolicy="no-referrer"
                                   onError={(e) => {
-                                    (e.target as HTMLImageElement).style.display = 'none';
-                                    (e.target as HTMLImageElement).parentElement!.innerHTML = `<span class="text-white text-xs font-bold">${s.student.charAt(0).toUpperCase()}</span>`;
+                                    (e.target as HTMLImageElement).style.display = "none";
+                                    (e.target as HTMLImageElement).nextElementSibling?.removeAttribute("style");
                                   }}
                                 />
-                              ) : (
-                                <span className="text-white text-xs font-bold">
-                                  {s.student.charAt(0).toUpperCase()}
-                                </span>
-                              )}
+                              ) : null}
+                              {/* 2) Fallback Initials (Hidden by default if photo exists) */}
+                              <div
+                                className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold"
+                                style={{
+                                  backgroundColor: "#FF0F7B",
+                                  display: s.studentPhoto ? "none" : "flex",
+                                }}
+                              >
+                                {s.student.charAt(0).toUpperCase()}
+                              </div>
                             </div>
-                            <span className="text-sm opacity-70">{s.student}</span>
+                            <span className="text-sm opacity-70 whitespace-nowrap">{s.student}</span>
                           </div>
                         </td>
                         <td className="text-xs opacity-50">{formatDate(s.date)}</td>

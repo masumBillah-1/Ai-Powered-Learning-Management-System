@@ -113,22 +113,34 @@ export async function GET(req: NextRequest) {
     const recentStatements = await Transaction.find({ type: "payment", status: "completed" })
       .populate("studentId", "name email photoURL")
       .populate("instructorId", "name email photoURL")
-      .populate("courseId", "title")
+      .populate({
+        path: "courseId",
+        select: "title instructorId",
+        populate: {
+          path: "instructorId",
+          select: "name photoURL",
+        },
+      })
       .sort({ createdAt: -1 })
       .limit(20)
       .lean() as any[];
 
-    let statements = recentStatements.map((t: any) => ({
-      _id: t._id,
-      instructor: t.instructorId?.name || t.instructorName || "Unknown",
-      instructorPhoto: t.instructorId?.photoURL || null,
-      course: t.courseId?.title || t.courseName || "Unknown",
-      student: t.studentId?.name || "Student",
-      studentPhoto: t.studentId?.photoURL || null,
-      date: t.createdAt,
-      amount: t.amount,
-      status: t.status,
-    }));
+    let statements = recentStatements.map((t: any) => {
+      const courseInstructor = t.courseId?.instructorId || {};
+      const txInstructor = t.instructorId || {};
+      
+      return {
+        _id: t._id,
+        instructor: txInstructor.name || courseInstructor.name || t.instructorName || "Unknown",
+        instructorPhoto: txInstructor.photoURL || courseInstructor.photoURL || null,
+        course: t.courseId?.title || t.courseName || "Unknown",
+        student: t.studentId?.name || "Student",
+        studentPhoto: t.studentId?.photoURL || null,
+        date: t.createdAt,
+        amount: t.amount,
+        status: t.status,
+      };
+    });
 
     // If no transactions, create sample data from enrollments
     if (statements.length === 0 && enrollments.length > 0) {
@@ -180,22 +192,6 @@ export async function GET(req: NextRequest) {
         accountDetails: p.accountDetails,
       })),
       statements,
-      debug: {
-        totalCourses: courses.length,
-        totalEnrollments: enrollments.length,
-        totalUsers: users.length,
-        sampleCourse: courses[0] ? {
-          title: courses[0].title,
-          instructorId: typeof courses[0].instructorId === 'object' ? courses[0].instructorId?._id : courses[0].instructorId,
-          instructorName: courses[0].instructorId?.name,
-          instructorPhoto: courses[0].instructorId?.photoURL,
-        } : null,
-        sampleUser: users.find(u => u.role === 'instructor') ? {
-          name: users.find(u => u.role === 'instructor')?.name,
-          photoURL: users.find(u => u.role === 'instructor')?.photoURL,
-        } : null,
-        sampleStatement: statements[0] || null,
-      },
     });
 
   } catch (error: any) {
