@@ -615,6 +615,30 @@ export default function AnnouncementsPage() {
     fetchAnnouncements(role, userId);
   }, [role, userId, fetchCourses, fetchAnnouncements]);
 
+  // ✅ Auto mark-as-read when student visits the page
+  useEffect(() => {
+    if (role === "student" && announcements.length > 0) {
+      const unreadExists = announcements.some(a => !a.isRead);
+      if (unreadExists) {
+        const markAllRead = async () => {
+          try {
+            await fetch("/api/notifications", {
+              method: "PUT",
+              headers: { "Content-Type": "application/json" },
+              credentials: "include",
+              body: JSON.stringify({ markAll: true }),
+            });
+            // ✅ Local state updates to clear unread counts immediately
+            setAnnouncements(prev => prev.map(a => ({ ...a, isRead: true })));
+          } catch (err) {
+            console.error("Failed to auto-mark as read:", err);
+          }
+        };
+        markAllRead();
+      }
+    }
+  }, [role, announcements]);
+
   // ── handlers ──
   const handleCreated = (n: Announcement) => { if (n?._id) setAnnouncements(p => [n, ...p]); else fetchAnnouncements(role, userId); };
   const handleEdited = (u: Announcement) => setAnnouncements(p => p.map(a => a._id === u._id ? u : a));
@@ -693,21 +717,14 @@ export default function AnnouncementsPage() {
 
   // ── Role badge ──
   const roleBadge = {
-    admin: { label: "Admin View — সব announcements", color: "#FF0F7B", bg: "#fff0f7" },
-    instructor: { label: "Instructor View — শুধু আপনার announcements", color: "#F89B29", bg: "#fffbeb" },
-    student: { label: "Student View — Read Only", color: "#00C48C", bg: "#f0fdf4" },
+    admin: { label: "Admin", color: "#FF0F7B", bg: "#fff0f7" },
+    instructor: { label: "Instructor", color: "#F89B29", bg: "#fffbeb" },
+    student: { label: "Student", color: "#00C48C", bg: "#f0fdf4" },
   }[role];
 
   return (
     <div className="min-h-screen">
       <Toaster position="top-right" containerStyle={{ top: 72, right: 24, zIndex: 99999 }} toastOptions={{ style: { maxWidth: 380 } }} />
-
-      {/* Role indicator */}
-      <div className="flex items-center gap-2 mb-5 px-3 py-2 rounded-xl text-xs font-bold w-fit"
-        style={{ backgroundColor: theme === "dark" ? "rgba(255,255,255,0.05)" : roleBadge.bg, color: roleBadge.color, border: `1px solid ${roleBadge.color}33` }}>
-        {isStudent ? <Lock size={12} /> : <CheckCircle size={12} />}
-        {roleBadge.label}
-      </div>
 
       {/* Stats */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mb-8">
