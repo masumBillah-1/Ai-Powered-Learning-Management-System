@@ -37,7 +37,7 @@ const formatMessageWithLinks = (text: string) => {
           href={part}
           target="_blank"
           rel="noopener noreferrer"
-          className="hover:underline text-black-400 dark:text-whit-400 hover:text-white-300 break-all"
+          className="hover:underline text-blue-600 dark:text-blue-400 hover:text-blue-700 break-all"
         >
           {part}
         </a>
@@ -85,12 +85,15 @@ export default function SupportChatPage() {
 
   const fetchConversations = async () => {
     try {
-      const res = await axios.get('/api/messages', { timeout: 10000 }); // 10s timeout
-      if (res.data.success) setConversations(res.data.conversations);
+      const res = await axios.get('/api/messages', { timeout: 30000 }); // Increase to 30s
+      if (res.data.success) {
+        setConversations(res.data.conversations);
+      }
     } catch (err: any) {
-      console.error(err);
-      if (err.code === 'ECONNABORTED' || err.response?.status === 500) {
-        setConversations([]); // Show empty state on timeout
+      console.error("❌ fetchConversations error:", err.message);
+      if (err.code === 'ECONNABORTED' || err.response?.status === 500 || err.response?.status === 504) {
+        // Only reset if we truly lost connectivity
+        if (!conversations.length) setConversations([]); 
       }
     } finally {
       setLoading(false);
@@ -99,7 +102,9 @@ export default function SupportChatPage() {
 
   const sidebarList = useMemo(() => {
     if (!currentUser) return [];
-    return conversations.filter(conv => {
+
+    // 1. Get existing conversations from DB
+    const existingConversations = conversations.filter(conv => {
       const other = conv.participants.find(p => p._id !== currentUser.id);
       if (!other) return false;
 
@@ -107,17 +112,39 @@ export default function SupportChatPage() {
         const isMyInstructor = enrolledInstructors.some(inst => inst._id === other._id);
         return other.role === 'admin' || isMyInstructor;
       }
-
+      
       if (currentUser.role === 'instructor') {
         return other.role === 'admin' || (other.role === 'student' && conv.lastMessage);
       }
 
       if (currentUser.role === 'admin') {
-        return other.role === 'instructor' || other.role === 'student' || other.role === 'admin';
+        return true; // Admin sees everything
       }
-
       return true;
     });
+
+    // 2. If student, add instructors who don't have a conversation yet
+    if (currentUser.role === 'student') {
+      const newInstructorChats = enrolledInstructors
+        .filter(inst => !existingConversations.some(conv => 
+          conv.participants.some(p => p._id === inst._id)
+        ))
+        .map(inst => ({
+          _id: `temp_${inst._id}`,
+          roomId: [currentUser.id, inst._id].sort().join('_'), // Consistent ID for both parties
+          lastMessage: "Start a conversation...",
+          participants: [
+            { _id: currentUser.id, name: "Me", role: "student" },
+            { ...inst }
+          ],
+          unreadCount: {},
+          updatedAt: new Date().toISOString()
+        }));
+
+      return [...existingConversations, ...newInstructorChats];
+    }
+
+    return existingConversations;
   }, [conversations, currentUser, enrolledInstructors]);
 
   useEffect(() => {
@@ -130,9 +157,11 @@ export default function SupportChatPage() {
     if (activeRoomId) {
       const fetchMsgs = async () => {
         try {
-          const res = await axios.get(`/api/messages/${activeRoomId}`);
+          const res = await axios.get(`/api/messages/${activeRoomId}`, { timeout: 15000 });
           if (res.data.success) setMessages(res.data.messages);
-        } catch (err) { console.error(err); }
+        } catch (err: any) { 
+          console.error("❌ fetchMsgs error:", err.response?.data?.error || err.message); 
+        }
       };
       fetchMsgs();
       const interval = setInterval(fetchMsgs, 4000);
@@ -159,7 +188,7 @@ export default function SupportChatPage() {
   const handleSend = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!input.trim() || !activeRoomId || !currentUser) return;
-    const currentConv = conversations.find(c => c.roomId === activeRoomId);
+    const currentConv = sidebarList.find(c => c.roomId === activeRoomId);
     const otherParticipant = currentConv?.participants.find(p => p._id !== currentUser.id);
     try {
       const res = await axios.post('/api/messages', {
