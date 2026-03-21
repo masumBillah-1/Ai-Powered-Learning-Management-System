@@ -31,11 +31,13 @@ const normalizeLevel = (level: string): string => {
 const normalizeModules = (modules: any[]) => {
   if (!Array.isArray(modules)) return [];
   return modules.map((m: any, mi: number) => ({
+    _id:         m._id || m.id,
     title:       m.title || `Module ${mi + 1}`,
     description: m.description || "",
-    order:       mi,
+    order:       m.order !== undefined ? m.order : mi,
     lessons: Array.isArray(m.lessons)
       ? m.lessons.map((l: any, li: number) => ({
+          _id:            l._id || l.id,
           title:          l.title          || "",
           type:           l.type           || "video",
           duration:       l.duration ? Number(l.duration) : 0,
@@ -46,7 +48,7 @@ const normalizeModules = (modules: any[]) => {
           dueDate:        l.dueDate || null,
           resources:      l.resources || [],
           isCompleted:    false,
-          order:          li,
+          order:          l.order !== undefined ? l.order : li,
         }))
       : [],
   }));

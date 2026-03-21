@@ -17,11 +17,13 @@ const normalizeLevel = (level: string): string => {
 const normalizeModules = (modules: any[]) => {
   if (!Array.isArray(modules)) return [];
   return modules.map((m: any, mi: number) => ({
+    _id:         m._id || m.id, // Support both _id and id (some frontends use id)
     title:       m.title || `Module ${mi + 1}`,
     description: m.description || "",
-    order:       mi,
+    order:       m.order !== undefined ? m.order : mi,
     lessons: Array.isArray(m.lessons)
       ? m.lessons.map((l: any, li: number) => ({
+          _id:            l._id || l.id,
           title:          l.title          || "",
           type:           l.type           || "video",
           duration:       l.duration ? Number(l.duration) : 0,
@@ -32,7 +34,7 @@ const normalizeModules = (modules: any[]) => {
           dueDate:        l.dueDate || null,
           resources:      l.resources || [],
           isCompleted:    false,
-          order:          li,
+          order:          l.order !== undefined ? l.order : li,
         }))
       : [],
   }));
@@ -150,11 +152,25 @@ export async function PATCH(
       updateData.salesVideoUrl = salesVideoUrl;
     }
 
+    // Fetch existing course to check current status
+    const existingCourse = await Course.findById(id);
+    if (!existingCourse) {
+      return NextResponse.json({ error: "Course not found" }, { status: 404 });
+    }
+
     // Status logic
     if (!isAdminAction) {
       if (body.status === "published") {
-        updateData.status      = "pending";
-        updateData.isPublished = false;
+        // If course is already published (approved), keep it published.
+        // Once approved, subsequent updates don't need review.
+        if (existingCourse.status === "published" || existingCourse.isPublished) {
+          updateData.status = "published";
+          updateData.isPublished = true;
+        } else {
+          // If first time publishing or previously draft/rejected/pending
+          updateData.status = "pending";
+          updateData.isPublished = false;
+        }
       }
     } else {
       if (body.status === "published") {

@@ -7,11 +7,11 @@ import toast, { Toaster } from "react-hot-toast";
 
 interface FAQItem { question: string; answer: string }
 interface LessonItem {
-  id: number; title: string; type: string; duration: string;
+  id: number; _id?: string; title: string; type: string; duration: string;
   videoUrl: string; textContent: string; assignmentDesc: string;
   assignmentMarks: string; assignmentDueDate: string;
 }
-interface ModuleItem { id: number; title: string; lessons: LessonItem[] }
+interface ModuleItem { id: number; _id?: string; title: string; lessons: LessonItem[] }
 interface FormValues {
   title: string; category: string; level: string; description: string;
   coverMode: "upload" | "url"; coverUrl: string;
@@ -101,6 +101,7 @@ export default function CreateCoursePage() {
   const [instructorId, setInstructorId] = useState("");
   const [customCategory, setCustomCategory] = useState(false);
   const [dbCategories, setDbCategories] = useState<string[]>([]);
+  const [courseStatus, setCourseStatus] = useState<string | null>(null);
 
   const [coverFile, setCoverFile] = useState<File | null>(null);
   const [videoFile, setVideoFile] = useState<File | null>(null);
@@ -171,6 +172,7 @@ export default function CreateCoursePage() {
         setValue("description", c.description || "");
         setValue("visibility", c.visibility || "public");
         setValue("category", c.category || "");
+        setCourseStatus(c.status || null);
 
         // ✅ Check if category is custom (not in database categories)
         if (c.category && dbCategories.length > 0 && !dbCategories.includes(c.category)) {
@@ -205,9 +207,11 @@ export default function CreateCoursePage() {
         if (Array.isArray(c.modules) && c.modules.length > 0) {
           setModules(c.modules.map((m: any, i: number) => ({
             id: Date.now() + i,
+            _id: m._id,
             title: m.title || `Module ${i + 1}`,
             lessons: (m.lessons || []).map((l: any, j: number) => ({
               id: Date.now() + i * 1000 + j,
+              _id: l._id,
               title: l.title || "",
               type: l.type || "video",
               duration: String(l.duration || ""),
@@ -299,8 +303,14 @@ export default function CreateCoursePage() {
 
     setLoading(true);
     const isEdit = !!editId;
+    const isApproved = courseStatus === "published";
+    
     const tid = toast.loading(
-      status === "draft" ? (isEdit ? "💾 Updating..." : "💾 Saving draft...") : (isEdit ? "🚀 Updating..." : "📋 Submitting for review..."),
+      status === "draft" 
+        ? (isEdit ? "💾 Updating..." : "💾 Saving draft...") 
+        : (isEdit 
+            ? (isApproved ? "🚀 Updating..." : "📋 Submitting for review...") 
+            : "📋 Submitting for review..."),
       { position: "top-right", style: { borderRadius: "12px", background: "#1e1e2e", color: "#fff" } }
     );
 
@@ -320,8 +330,10 @@ export default function CreateCoursePage() {
       }
 
       const mappedModules = modules.map(m => ({
+        _id: m._id,
         title: m.title,
         lessons: m.lessons.map(l => ({
+          _id: l._id,
           title: l.title, type: l.type, duration: l.duration,
           videoUrl: l.videoUrl || "",
           textContent: l.textContent || "", assignmentDesc: l.assignmentDesc || "",
@@ -365,7 +377,9 @@ export default function CreateCoursePage() {
 
       toast.success(
         isEdit
-          ? (status === "draft" ? "Draft updated! 📝" : "Course submitted for review! ✅")
+          ? (status === "draft" 
+              ? "Draft updated! 📝" 
+              : (isApproved ? "Course updated! ✅" : "Course submitted for review! ✅"))
           : (status === "draft" ? "Draft saved! 📝" : "✅ Submitted for review!"),
         { id: tid, ...tOk }
       );

@@ -67,7 +67,7 @@ export default function VideoAskAI({
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
-                    message: input.trim(),
+                    message: userMessage.content,
                     context: {
                         type: "video_lesson",
                         videoTitle,
@@ -82,22 +82,49 @@ export default function VideoAskAI({
             const data = await response.json();
 
             if (data.message) {
+                // ✅ Start typing effect character by character
+                const fullMessage = data.message;
+                let currentText = "";
+                
+                // Add an empty assistant message first
                 setMessages(prev => [...prev, {
                     role: "assistant",
-                    content: data.message,
+                    content: "",
                     timestamp: new Date()
                 }]);
+
+                // Disable loading immediately after we get the data
+                setIsLoading(false);
+
+                // Type out characters with a fixed 30ms delay
+                for (let i = 0; i < fullMessage.length; i++) {
+                    currentText += fullMessage[i];
+                    
+                    // Update the last message in the state
+                    setMessages(prev => {
+                        const newMsgs = [...prev];
+                        if (newMsgs.length > 0) {
+                            newMsgs[newMsgs.length - 1] = {
+                                ...newMsgs[newMsgs.length - 1],
+                                content: currentText
+                            };
+                        }
+                        return newMsgs;
+                    });
+                    
+                    // Delay between characters
+                    await new Promise(resolve => setTimeout(resolve, 30));
+                }
             } else {
                 throw new Error(data.error || "Unknown error");
             }
         } catch (error) {
+            setIsLoading(false);
             setMessages(prev => [...prev, {
                 role: "assistant",
                 content: "দুঃখিত, কিছু সমস্যা হয়েছে। আবার চেষ্টা করুন।",
                 timestamp: new Date()
             }]);
-        } finally {
-            setIsLoading(false);
         }
     };
 
@@ -171,7 +198,9 @@ export default function VideoAskAI({
                                     <div className={`max-w-[80%] ${message.role === "user"
                                         ? "bg-gradient-to-r from-violet-500 to-indigo-600 text-white"
                                         : "bg-[#0d1117] border border-white/10 text-gray-200"
-                                        } rounded-2xl px-4 py-3`}>
+                                        } rounded-2xl px-4 py-3`}
+                                        style={{ fontFamily: "'Hind Siliguri', sans-serif" }}
+                                    >
                                         <div className="text-sm leading-relaxed whitespace-pre-wrap">
                                             {message.content}
                                         </div>
@@ -235,7 +264,7 @@ export default function VideoAskAI({
                                         rows={1}
                                         disabled={isLoading}
                                         className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-gray-200 text-sm resize-none focus:outline-none focus:border-violet-500 transition-colors placeholder-gray-500"
-                                        style={{ minHeight: "44px", maxHeight: "120px" }}
+                                        style={{ minHeight: "44px", maxHeight: "120px", fontFamily: "'Hind Siliguri', sans-serif" }}
                                         onInput={(e) => {
                                             const target = e.target as HTMLTextAreaElement;
                                             target.style.height = "auto";
