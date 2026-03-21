@@ -116,6 +116,7 @@ export default function LearnPage() {
   const [enrollment, setEnrollment] = useState<Enrollment | null>(null);
   const [activeLesson, setActiveLesson] = useState<Lesson | null>(null);
   const [initialLoading, setInitialLoading] = useState(true);
+  const [userRole, setUserRole] = useState<string | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [expandedModules, setExpandedModules] = useState<string[]>([]);
   const [completingLesson, setCompletingLesson] = useState(false);
@@ -178,29 +179,25 @@ export default function LearnPage() {
 
       // ✅ Access Control Check
       const course = courseData.course;
-      const userRole = user.role;
+      const role = user.role;
+      setUserRole(role);
       const userId = user._id || user.id;
 
-      // Admin: Full access to all courses
-      if (userRole === "admin") {
+      // Admin & Instructor: Also allow fetching enrollment for progress testing if they are enrolled
+      if (role === "admin" || role === "instructor") {
         setCourse(course);
+        setUserRole(role);
         setExpandedModules(course.modules.map((m: Module) => m._id));
-        const firstLesson = course.modules?.[0]?.lessons?.[0];
-        if (firstLesson) { setActiveLesson(firstLesson); activeLessonRef.current = firstLesson; }
-        setInitialLoading(false);
-        return;
-      }
 
-      // Instructor: Only their own courses
-      if (userRole === "instructor") {
-        const instructorId = course.instructorId?._id || course.instructorId;
-        if (instructorId !== userId) {
-          toast.error("You can only access your own courses", toastErr);
-          router.push("/dashboard/instructor/courses");
-          return;
+        // If they have enrollment, use it. Otherwise just show first lesson
+        if (enrollData.success && enrollData.enrollments?.length > 0) {
+          const enroll = enrollData.enrollments[0];
+          setEnrollment(enroll);
+          const serverCompleted = enroll.progress?.completedLessons ?? [];
+          setLocalCompleted(serverCompleted);
+          localCompletedRef.current = serverCompleted;
         }
-        setCourse(course);
-        setExpandedModules(course.modules.map((m: Module) => m._id));
+
         const firstLesson = course.modules?.[0]?.lessons?.[0];
         if (firstLesson) { setActiveLesson(firstLesson); activeLessonRef.current = firstLesson; }
         setInitialLoading(false);
@@ -208,7 +205,7 @@ export default function LearnPage() {
       }
 
       // Student: Must be enrolled
-      if (userRole === "student") {
+      if (role === "student") {
         if (!enrollData.success || !enrollData.enrollments || enrollData.enrollments.length === 0) {
           toast.error("You must enroll in this course first", toastErr);
           router.push(`/courses/${courseId}`);
@@ -227,15 +224,24 @@ export default function LearnPage() {
         const lastLessonId = enroll.progress?.currentLesson;
         const allLessons = course.modules.flatMap((m: Module) => m.lessons);
         const validIds = new Set(allLessons.map((l: Lesson) => l._id));
-        const firstIncomplete = allLessons.find((l: Lesson) => !serverCompleted.includes(l._id));
+
+        // Find the index of the last lesson completed to find the next logical one
+        const lastCompletedIdx = allLessons.reduce((maxIdx: number, lesson: Lesson, idx: number) => {
+          return serverCompleted.includes(lesson._id) ? Math.max(maxIdx, idx) : maxIdx;
+        }, -1);
+
+        const nextIncomplete = lastCompletedIdx !== -1 && lastCompletedIdx < allLessons.length - 1
+          ? allLessons[lastCompletedIdx + 1]
+          : null;
 
         if (lastLessonId && validIds.has(lastLessonId)) {
           const last = allLessons.find((l: Lesson) => l._id === lastLessonId);
           if (last) { setActiveLesson(last); activeLessonRef.current = last; }
-        } else if (firstIncomplete) {
-          setActiveLesson(firstIncomplete); activeLessonRef.current = firstIncomplete;
+        } else if (nextIncomplete) {
+          setActiveLesson(nextIncomplete); activeLessonRef.current = nextIncomplete;
         } else {
-          const firstLesson = allLessons[0];
+          const firstIncomplete = allLessons.find((l: Lesson) => !serverCompleted.includes(l._id));
+          const firstLesson = firstIncomplete || allLessons[0];
           if (firstLesson) { setActiveLesson(firstLesson); activeLessonRef.current = firstLesson; }
         }
       }
@@ -262,21 +268,43 @@ export default function LearnPage() {
     } catch (err) { console.error("Silent refresh:", err); }
   };
 
-  const getAllLessons = (): Lesson[] => course?.modules.flatMap(m => m.lessons) ?? [];
+  const getAllLessons = (): Lesson[] => {
+    if (!course) return [];
+    // Ensure modules are sorted by order
+    const sortedModules = [...course.modules].sort((a, b) => (a.order || 0) - (b.order || 0));
+    return sortedModules.flatMap(m =>
+      // Ensure lessons within modules are sorted by order
+      [...m.lessons].sort((a, b) => (a.order || 0) - (b.order || 0))
+    );
+  };
   const validLessonIds = new Set(course?.modules?.flatMap(m => m.lessons.map(l => l._id)) ?? []);
-  const courseWasCompleted = enrollment?.status === "completed";
 
   const isUnlocked = (lessonId: string): boolean => {
-    if (courseWasCompleted) return true;
+    // 🔓 Admin and Instructor always have full access
+    if (userRole === "admin" || userRole === "instructor") return true;
     const all = getAllLessons();
-    const idx = all.findIndex(l => l._id === lessonId);
-    if (idx === 0) return true;
-    const prevLesson = all[idx - 1];
-    if (localCompletedRef.current.includes(prevLesson._id)) return true;
-    const validCompleted = new Set(localCompletedRef.current.filter(id => validLessonIds.has(id)));
-    const precedingValid = all.slice(0, idx).filter(l => validLessonIds.has(l._id));
-    if (precedingValid.length > 0 && precedingValid.every(l => validCompleted.has(l._id))) return true;
-    if (precedingValid.length === 0) return true;
+    const targetIdStr = String(lessonId);
+
+    const idx = all.findIndex(l => String(l._id) === targetIdStr);
+    if (idx === -1) return false;
+    if (idx === 0) return true; // প্রথম লেসন সবসময় আনলক
+
+    const completedSet = new Set(localCompleted.map(id => String(id)));
+
+    // Logic: Find the furthest completed lesson index
+    let furthestIdx = -1;
+    for (let i = 0; i < all.length; i++) {
+      if (completedSet.has(String(all[i]._id))) {
+        furthestIdx = i;
+      }
+    }
+
+    // আনলক হবে যদি:
+    // ১. লেসনটি ইতিমধ্যে কমপ্লিট করা থাকে
+    // ২. অথবা লেসনটি সর্বশেষ কমপ্লিট করা লেসনের ঠিক পরেরটি হয় (furthestIdx + 1)
+    if (completedSet.has(targetIdStr)) return true;
+    if (idx <= furthestIdx + 1) return true;
+
     return false;
   };
 
@@ -285,15 +313,20 @@ export default function LearnPage() {
       setLockedToast(true); setTimeout(() => setLockedToast(false), 2500); return;
     }
     if (activeLessonRef.current && enrollment) {
-      // Only track time for video lessons
+      // Track time for video lessons if switching away
       if (activeLessonRef.current.type === "video") {
         const timeSpent = Math.round((Date.now() - startTime.current) / 60000);
         if (timeSpent > 0) updateProgress(activeLessonRef.current._id, timeSpent, false);
       }
     }
+
     startTime.current = Date.now();
     setActiveLesson(lesson);
     activeLessonRef.current = lesson;
+
+    // ✅ Save current lesson to DB so it resumes on reload
+    updateProgress(lesson._id, 0, false);
+
     // reset submit form
     setTextAnswer(""); setLinkUrl(""); setSubmitFile(null); setSubmitTab("text");
   };
@@ -567,7 +600,7 @@ export default function LearnPage() {
                 )}
 
                 {/* For regular lessons (not assignments) */}
-                {activeLesson && !isCompleted(activeLesson._id) && activeLesson.type !== "assignment" && (
+                {activeLesson && userRole === "student" && !isCompleted(activeLesson._id) && activeLesson.type !== "assignment" && (
                   <motion.button whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
                     onClick={handleMarkComplete} disabled={completingLesson}
                     className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-white font-bold text-sm shadow-lg disabled:opacity-60 whitespace-nowrap cursor-pointer"
@@ -578,7 +611,7 @@ export default function LearnPage() {
                 )}
 
                 {/* For assignments - show Mark Complete if submitted but not completed */}
-                {activeLesson && activeLesson.type === "assignment" && !isCompleted(activeLesson._id) && getSubmission(activeLesson._id) && (
+                {activeLesson && userRole === "student" && activeLesson.type === "assignment" && !isCompleted(activeLesson._id) && getSubmission(activeLesson._id) && (
                   <motion.button whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
                     onClick={handleMarkComplete} disabled={completingLesson}
                     className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-white font-bold text-sm shadow-lg disabled:opacity-60 whitespace-nowrap cursor-pointer"
@@ -702,6 +735,8 @@ export default function LearnPage() {
                 const sub = getSubmission(activeLesson._id);
                 const alreadySubmitted = sub && sub.status !== "graded";
                 const label = alreadySubmitted ? "Re-submit Assignment" : "Submit Assignment";
+
+                if (userRole !== "student") return null;
 
                 return (
                   <div className="p-5 rounded-2xl bg-[#161b22] border border-white/10">
@@ -935,10 +970,10 @@ export default function LearnPage() {
                                   : unlocked ? "hover:bg-white/5 cursor-pointer"
                                     : "opacity-40 cursor-not-allowed"}`}>
                                 <div className={`w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 ${done ? "bg-emerald-500/20 text-emerald-400"
-                                  : !unlocked ? "bg-white/5 text-gray-600"
+                                  : !unlocked ? "bg-white/5 text-gray-700"
                                     : current ? "bg-[#C81D77]/20 text-[#C81D77]"
                                       : "bg-white/5 text-gray-500"}`}>
-                                  {done ? <FaCheckCircle size={12} /> : !unlocked ? <FaLock size={11} /> : getLessonIcon(lesson.type, 11)}
+                                  {done ? <FaCheckCircle size={12} /> : !unlocked ? <FaLock size={11} className="opacity-50" /> : getLessonIcon(lesson.type, 11)}
                                 </div>
                                 <div className="flex-1 min-w-0">
                                   <p className={`text-xs font-medium truncate ${current ? "text-white" : done ? "text-gray-300" : !unlocked ? "text-gray-600" : "text-gray-300"}`}>
