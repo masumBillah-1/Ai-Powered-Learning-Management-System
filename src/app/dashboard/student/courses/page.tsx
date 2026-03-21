@@ -13,7 +13,8 @@ interface Enrollment {
     thumbnail?: string;
     price?: number;
     originalPrice?: number;
-    instructorId?: { name: string; photoURL?: string }
+    instructorId?: { name: string; photoURL?: string };
+    modules?: Array<{ lessons: Array<{ _id: string }> }>; // ✅ Total lessons count er jonno
   };
   courseName: string;
   courseImage: string;
@@ -78,6 +79,29 @@ function getInstructorPhoto(e: Enrollment): string | null {
   return null;
 }
 
+// ✅ Runtime e actual progress calculate koro (learn page logic)
+function calculateActualProgress(e: Enrollment): number {
+  // Jodi courseId populate na kora thake, fallback to saved percentage
+  if (typeof e.courseId === "string") {
+    return e.progress?.progressPercentage || 0;
+  }
+
+  const course = e.courseId;
+  if (!course?.modules || course.modules.length === 0) {
+    return e.progress?.progressPercentage || 0;
+  }
+
+  // Total lessons count
+  const totalLessons = course.modules.reduce((sum, mod) => sum + (mod.lessons?.length || 0), 0);
+  if (totalLessons === 0) return 0;
+
+  // Completed lessons count
+  const completedCount = e.progress?.completedLessons?.length || 0;
+
+  // Calculate percentage
+  return Math.min(Math.round((completedCount / totalLessons) * 100), 100);
+}
+
 function SkeletonCard() {
   return (
     <div className="card bg-base-100 border border-base-300 overflow-hidden animate-pulse">
@@ -117,7 +141,8 @@ export default function StudentCoursesPage() {
       setLoading(true);
       // ✅ Authorization header — localStorage token
       const token = localStorage.getItem("token");
-      const res = await fetch("/api/enrollments?limit=100", {
+      // ✅ populate=true to get course modules for accurate progress calculation
+      const res = await fetch("/api/enrollments?limit=100&populate=true", {
         headers: token ? { Authorization: `Bearer ${token}` } : {},
       });
       const data = await res.json();
@@ -231,7 +256,8 @@ export default function StudentCoursesPage() {
                 const courseName = getCourseName(enrollment);
                 const instructorName = getInstructorName(enrollment);
                 const instructorPhoto = getInstructorPhoto(enrollment);
-                const progress = enrollment.progress?.progressPercentage || 0;
+                // ✅ Runtime e actual progress calculate koro
+                const progress = calculateActualProgress(enrollment);
 
                 return (
                   <motion.div
@@ -263,8 +289,8 @@ export default function StudentCoursesPage() {
                         />
                       </button>
 
-                      {/* Completed overlay */}
-                      {enrollment.status === "completed" && (
+                      {/* Completed overlay - শুধু status না, progress ও 100% হতে হবে */}
+                      {enrollment.status === "completed" && progress >= 100 && (
                         <div className="absolute bottom-3 left-3 right-3">
                           <div
                             className="text-white text-sm font-bold px-4 py-2 rounded-xl text-center shadow-lg backdrop-blur-md flex items-center justify-center gap-2"
@@ -322,8 +348,8 @@ export default function StudentCoursesPage() {
                         </span>
                       </div>
 
-                      {/* Progress bar */}
-                      {enrollment.status === "active" && (
+                      {/* Progress bar - active অথবা completed কিন্তু 100% না হলে দেখাও */}
+                      {(enrollment.status === "active" || (enrollment.status === "completed" && progress < 100)) && (
                         <div className="mb-4">
                           <div className="flex justify-between items-center mb-1.5">
                             <span className="text-xs font-bold opacity-60">Progress</span>
@@ -341,8 +367,8 @@ export default function StudentCoursesPage() {
                         </div>
                       )}
 
-                      {/* Certificate */}
-                      {enrollment.status === "completed" && enrollment.certificate?.issued && (
+                      {/* Certificate - শুধু progress 100% হলেই দেখাও */}
+                      {enrollment.status === "completed" && progress >= 100 && enrollment.certificate?.issued && (
                         <div className="mb-3 flex items-center gap-2 text-xs font-bold text-emerald-600 dark:text-emerald-400">
                           <CheckCircle size={14} /> Certificate Issued
                         </div>

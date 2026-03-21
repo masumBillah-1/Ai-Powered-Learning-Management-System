@@ -231,7 +231,7 @@ export async function GET(req: NextRequest) {
       .sort({ enrolledAt: -1 }).limit(limit)
       .populate({
         path: "courseId",
-        select: "title thumbnail instructorId level category",
+        select: "title thumbnail instructorId level category modules",
         populate: { path: "instructorId", select: "name photoURL" },
       }).lean() as any[];
 
