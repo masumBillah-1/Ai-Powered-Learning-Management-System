@@ -106,7 +106,6 @@ function getLessonIcon(type: string, size = 10) {
 const toastOk = { style: { borderRadius: "12px", background: "#1e1e2e", color: "#fff", fontWeight: "600" }, duration: 3500 };
 const toastErr = { style: { borderRadius: "12px", background: "#dc2626", color: "#fff", fontWeight: "600" }, duration: 4000 };
 
-// ═══════════════════════════════════════════════════════════════════════════════
 export default function LearnPage() {
   const params = useParams();
   const router = useRouter();
@@ -138,13 +137,46 @@ export default function LearnPage() {
   const startTime = useRef<number>(Date.now());
   const activeLessonRef = useRef<Lesson | null>(null);
 
-  useEffect(() => { if (courseId) initialFetch(); }, [courseId]);
+  // ── GAMIFICATION STATES ──────────────────────────────────────────────────
+  const [showXPAnim, setShowXPAnim] = useState(false);
+  const [showLevelAnim, setShowLevelAnim] = useState(false);
+  const [showStreakAnim, setShowStreakAnim] = useState(false);
+  const [userStats, setUserStats] = useState<{ totalXP: number; level: number; currentStreak: number } | null>(null);
+
+  const [xpAnimData, setXpAnimData] = useState(null);
+  const [levelAnimData, setLevelAnimData] = useState(null);
+  const [streakAnimData, setStreakAnimData] = useState(null);
+
+  const Lottie = typeof window !== "undefined" ? require("lottie-react").default : null;
+
+  useEffect(() => {
+    if (courseId) initialFetch();
+    fetchUserStats();
+    // Load Animations
+    fetch("https://assets9.lottiefiles.com/packages/lf20_u4yrau.json").then(r => r.json()).then(setXpAnimData);
+    fetch("https://assets1.lottiefiles.com/packages/lf20_m34u7x.json").then(r => r.json()).then(setLevelAnimData);
+    fetch("https://assets10.lottiefiles.com/packages/lf20_8ndisj.json").then(r => r.json()).then(setStreakAnimData);
+  }, [courseId]);
+
+  const fetchUserStats = async () => {
+    try {
+      const res = await fetch("/api/profile");
+      const data = await res.json();
+      if (data.success && data.user) {
+        setUserStats({
+          totalXP: data.user.stats?.totalXP || 0,
+          level: data.user.stats?.level || 1,
+          currentStreak: data.user.stats?.currentStreak || 0
+        });
+      }
+    } catch (err) { console.error("User stats fetch:", err); }
+  };
 
   // Update current time every minute for real-time countdown
   useEffect(() => {
     const timer = setInterval(() => {
       setCurrentTime(Date.now());
-    }, 60000); // Update every minute
+    }, 60000);
 
     return () => clearInterval(timer);
   }, []);
@@ -160,8 +192,7 @@ export default function LearnPage() {
 
       if (!user) {
         toast.error("Please login to access this course", toastErr);
-        router.push("/login");
-        return;
+        router.push("/login"); return;
       }
 
       const [courseRes, enrollRes] = await Promise.all([
@@ -173,23 +204,16 @@ export default function LearnPage() {
 
       if (!courseData.success || !courseData.course) {
         toast.error("Course not found", toastErr);
-        router.push("/courses");
-        return;
+        router.push("/courses"); return;
       }
 
-      // ✅ Access Control Check
       const course = courseData.course;
       const role = user.role;
       setUserRole(role);
-      const userId = user._id || user.id;
 
-      // Admin & Instructor: Also allow fetching enrollment for progress testing if they are enrolled
       if (role === "admin" || role === "instructor") {
         setCourse(course);
-        setUserRole(role);
         setExpandedModules(course.modules.map((m: Module) => m._id));
-
-        // If they have enrollment, use it. Otherwise just show first lesson
         if (enrollData.success && enrollData.enrollments?.length > 0) {
           const enroll = enrollData.enrollments[0];
           setEnrollment(enroll);
@@ -197,26 +221,19 @@ export default function LearnPage() {
           setLocalCompleted(serverCompleted);
           localCompletedRef.current = serverCompleted;
         }
-
         const firstLesson = course.modules?.[0]?.lessons?.[0];
         if (firstLesson) { setActiveLesson(firstLesson); activeLessonRef.current = firstLesson; }
-        setInitialLoading(false);
         return;
       }
 
-      // Student: Must be enrolled
       if (role === "student") {
         if (!enrollData.success || !enrollData.enrollments || enrollData.enrollments.length === 0) {
           toast.error("You must enroll in this course first", toastErr);
-          router.push(`/courses/${courseId}`);
-          return;
+          router.push(`/courses/${courseId}`); return;
         }
-
         const enroll = enrollData.enrollments[0];
-        setEnrollment(enroll);
-        setCourse(course);
+        setEnrollment(enroll); setCourse(course);
         setExpandedModules(course.modules.map((m: Module) => m._id));
-
         const serverCompleted: string[] = enroll.progress?.completedLessons ?? [];
         setLocalCompleted(serverCompleted);
         localCompletedRef.current = serverCompleted;
@@ -225,14 +242,12 @@ export default function LearnPage() {
         const allLessons = course.modules.flatMap((m: Module) => m.lessons);
         const validIds = new Set(allLessons.map((l: Lesson) => l._id));
 
-        // Find the index of the last lesson completed to find the next logical one
         const lastCompletedIdx = allLessons.reduce((maxIdx: number, lesson: Lesson, idx: number) => {
           return serverCompleted.includes(lesson._id) ? Math.max(maxIdx, idx) : maxIdx;
         }, -1);
 
         const nextIncomplete = lastCompletedIdx !== -1 && lastCompletedIdx < allLessons.length - 1
-          ? allLessons[lastCompletedIdx + 1]
-          : null;
+          ? allLessons[lastCompletedIdx + 1] : null;
 
         if (lastLessonId && validIds.has(lastLessonId)) {
           const last = allLessons.find((l: Lesson) => l._id === lastLessonId);
@@ -245,10 +260,7 @@ export default function LearnPage() {
           if (firstLesson) { setActiveLesson(firstLesson); activeLessonRef.current = firstLesson; }
         }
       }
-    } catch (err) {
-      console.error("Failed to load:", err);
-      toast.error("Failed to load course", toastErr);
-    }
+    } catch (err) { console.error("Failed to load:", err); toast.error("Failed to load course", toastErr); }
     finally { setInitialLoading(false); }
   };
 
@@ -343,22 +355,51 @@ export default function LearnPage() {
       ? Math.round((Date.now() - startTime.current) / 60000)
       : 0;
 
-    const success = await updateProgress(activeLesson._id, timeSpent, true);
-    if (!success) {
+    const data = await updateProgress(activeLesson._id, timeSpent, true);
+    if (!data.success) {
       const reverted = localCompletedRef.current.filter(id => id !== activeLesson._id);
       localCompletedRef.current = reverted; setLocalCompleted(reverted);
-    } else { await silentRefreshEnrollment(); }
+    } else { 
+      // Handle gamification response
+      if (data.gamified) {
+        if (data.gamified.xpGained > 0) {
+          setShowXPAnim(true);
+          setTimeout(() => setShowXPAnim(false), 3000);
+          toast.success(`+${data.gamified.xpGained} XP Earned!`, { icon: "✨", ...toastOk });
+        }
+        if (data.gamified.leveledUp) {
+          setShowLevelAnim(true);
+          setTimeout(() => setShowLevelAnim(false), 5000);
+          toast.success(`LEVEL UP! You are now Level ${data.gamified.newLevel}`, { icon: "🏆", duration: 5000, ...toastOk });
+        }
+        if (data.gamified.streakIncremented) {
+          setShowStreakAnim(true);
+          setTimeout(() => setShowStreakAnim(false), 3000);
+        }
+        
+        // 🔥 Update local state immediately for instant feedback
+        setUserStats(prev => prev ? ({
+          ...prev,
+          totalXP: prev.totalXP + data.gamified.xpGained,
+          level: data.gamified.newLevel,
+          currentStreak: data.gamified.streakIncremented ? prev.currentStreak + 1 : prev.currentStreak
+        }) : prev);
+
+        fetchUserStats(); // Background refresh to ensure sync
+      }
+      await silentRefreshEnrollment(); 
+    }
     startTime.current = Date.now(); setCompletingLesson(false);
   };
 
-  const updateProgress = async (lessonId: string, timeSpent: number, completed: boolean): Promise<boolean> => {
+  const updateProgress = async (lessonId: string, timeSpent: number, completed: boolean): Promise<any> => {
     try {
       const res = await fetch("/api/enrollments", {
         method: "PUT", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ courseId, lessonId, timeSpent, completed }),
       });
-      return res.ok;
-    } catch { return false; }
+      return await res.json();
+    } catch { return { success: false }; }
   };
 
   // ── Assignment submit ─────────────────────────────────────────────────────
@@ -410,8 +451,31 @@ export default function LearnPage() {
 
           // Update progress on server - no time tracking for assignments
           const timeSpent = 0; // Assignments don't track time
-          const progressSuccess = await updateProgress(activeLesson._id, timeSpent, true);
-          if (!progressSuccess) {
+          const progData = await updateProgress(activeLesson._id, timeSpent, true);
+          
+          if (progData.success && progData.gamified) {
+             if (progData.gamified.xpGained > 0) {
+               setShowXPAnim(true);
+               setTimeout(() => setShowXPAnim(false), 3000);
+               toast.success(`+${progData.gamified.xpGained} XP Earned!`, { icon: "✨", ...toastOk });
+             }
+             if (progData.gamified.streakIncremented) {
+               setShowStreakAnim(true);
+               setTimeout(() => setShowStreakAnim(false), 3000);
+             }
+             
+             // 🔥 Update local state immediately for instant feedback
+             setUserStats(prev => prev ? ({
+               ...prev,
+               totalXP: prev.totalXP + progData.gamified.xpGained,
+               level: progData.gamified.newLevel,
+               currentStreak: progData.gamified.streakIncremented ? prev.currentStreak + 1 : prev.currentStreak
+             }) : prev);
+
+             fetchUserStats();
+          }
+
+          if (!progData.success) {
             // Revert if progress update failed
             const reverted = localCompletedRef.current.filter(id => id !== activeLesson._id);
             localCompletedRef.current = reverted;
@@ -444,6 +508,8 @@ export default function LearnPage() {
   };
   const nextLesson = getNextLesson();
   const canGoNext = activeLesson ? isCompleted(activeLesson._id) : false;
+
+  const xpProgress = userStats ? (userStats.totalXP % 500) / 5 : 0;
 
   // ── Loading ────────────────────────────────────────────────────────────────
   if (initialLoading) {
@@ -480,6 +546,33 @@ export default function LearnPage() {
     <div className="min-h-screen bg-[#0d1117] flex flex-col" style={{ fontFamily: "'DM Sans', sans-serif" }}>
       <Toaster position="top-right" containerStyle={{ top: 70, right: 16 }} />
 
+      {/* GAMIFICATION ANIMATIONS */}
+      {Lottie && (
+        <>
+          <AnimatePresence>
+            {showXPAnim && xpAnimData && (
+              <div className="fixed inset-0 z-[1000] pointer-events-none flex items-center justify-center">
+                <div className="w-96 h-96">
+                   <Lottie animationData={xpAnimData} loop={false} />
+                </div>
+              </div>
+            )}
+            {showLevelAnim && levelAnimData && (
+              <div className="fixed inset-0 z-[1001] pointer-events-none flex items-center justify-center bg-black/40 backdrop-blur-sm">
+                <div className="w-full max-w-lg">
+                   <Lottie animationData={levelAnimData} loop={false} />
+                </div>
+              </div>
+            )}
+            {showStreakAnim && streakAnimData && (
+              <div className="fixed bottom-10 left-10 z-[1000] pointer-events-none w-48 h-48">
+                 <Lottie animationData={streakAnimData} loop={false} />
+              </div>
+            )}
+          </AnimatePresence>
+        </>
+      )}
+
       {/* Locked Toast */}
       <AnimatePresence>
         {lockedToast && (
@@ -500,19 +593,49 @@ export default function LearnPage() {
             <span className="hidden sm:block">My Courses</span>
           </button>
           <span className="text-white/20">|</span>
-          <span className="text-white font-semibold text-sm truncate max-w-[180px] sm:max-w-xs">{course.title}</span>
+          <span className="text-white font-semibold text-sm truncate max-w-[120px] sm:max-w-xs">{course.title}</span>
         </div>
-        <div className="flex items-center gap-3">
-          <div className="hidden sm:flex items-center gap-2 bg-white/5 rounded-full px-3 py-1.5 border border-white/10">
-            <div className="w-24 h-1.5 bg-white/10 rounded-full overflow-hidden">
+        
+        <div className="flex items-center gap-3 pr-2">
+          {/* XP & Level Status (Desktop/Tablet) */}
+          {userStats && (
+            <div className="hidden md:flex items-center gap-2 px-3 py-1.5 bg-[#1f2937]/50 border border-white/10 rounded-xl hover:border-white/20 transition-all cursor-default group">
+              <div className="flex items-center gap-1.5">
+                <div className="w-6 h-6 rounded-lg bg-gradient-to-tr from-yellow-400 to-orange-500 flex items-center justify-center text-xs font-black text-white shadow-xl shadow-orange-500/20 group-hover:scale-110 transition-transform">
+                  {userStats.level}
+                </div>
+                <div className="flex flex-col">
+                   <span className="text-[8px] font-black text-white/40 uppercase leading-none tracking-widest">Growth</span>
+                   <span className="text-[10px] font-black text-orange-400 tabular-nums leading-none mt-1">
+                     {userStats.totalXP % 500} / 500 <span className="text-white/40 font-bold ml-0.5">XP</span>
+                   </span>
+                </div>
+              </div>
+
+              {userStats.currentStreak > 0 && (
+                <div className="h-6 w-px bg-white/10 mx-1"></div>
+              )}
+              
+              {userStats.currentStreak > 0 && (
+                <div className="flex items-center gap-1">
+                  <span className="text-xs animate-bounce" style={{ animationDuration: '2s' }}>🔥</span>
+                  <span className="text-xs font-black text-orange-400 tabular-nums">{userStats.currentStreak}</span>
+                </div>
+              )}
+            </div>
+          )}
+
+          <div className="flex items-center gap-2 bg-[#1f2937]/50 rounded-xl px-3 py-1.5 border border-white/10">
+            <div className="hidden sm:block w-16 h-1.5 bg-white/10 rounded-full overflow-hidden">
               <motion.div className="h-full rounded-full" animate={{ width: `${progressPct}%` }}
                 transition={{ duration: 0.5 }} style={{ background: "linear-gradient(90deg, #C81D77, #6710C2)" }} />
             </div>
-            <span className="text-xs text-gray-300 font-bold tabular-nums">{progressPct}%</span>
+            <span className="text-[10px] sm:text-xs text-blue-400 font-black tabular-nums">{progressPct}%</span>
           </div>
+
           <button onClick={() => setSidebarOpen(!sidebarOpen)}
-            className="w-8 h-8 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center text-gray-400 hover:text-white hover:bg-white/10 transition-all">
-            {sidebarOpen ? <FaTimes size={12} /> : <FaBars size={12} />}
+            className="w-9 h-9 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-gray-400 hover:text-white hover:bg-white/10 transition-all">
+            {sidebarOpen ? <FaTimes size={14} /> : <FaBars size={14} />}
           </button>
         </div>
       </header>

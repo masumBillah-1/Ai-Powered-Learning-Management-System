@@ -27,6 +27,18 @@ export interface IUserStats {
   completedCourses?: number;
   certificatesEarned?: number;
   totalLearningTime?: number; // in minutes
+
+  // Gamification stats
+  totalXP?: number;
+  level?: number;
+  currentStreak?: number;
+  streakLastUpdated?: Date;
+  badges?: Array<{
+    id: string;
+    name: string;
+    icon: string;
+    earnedAt: Date;
+  }>;
   
   // Common stats
   joinedAt?: Date;
@@ -106,6 +118,18 @@ const UserStatsSchema = new Schema<IUserStats>({
   completedCourses: { type: Number, default: 0, min: 0 },
   certificatesEarned: { type: Number, default: 0, min: 0 },
   totalLearningTime: { type: Number, default: 0, min: 0 },
+
+  // Gamification stats
+  totalXP: { type: Number, default: 0, min: 0 },
+  level: { type: Number, default: 1, min: 1 },
+  currentStreak: { type: Number, default: 0, min: 0 },
+  streakLastUpdated: { type: Date, default: null },
+  badges: [{
+    id: String,
+    name: String,
+    icon: String,
+    earnedAt: { type: Date, default: Date.now }
+  }],
   
   // Common stats
   joinedAt: { type: Date, default: Date.now },

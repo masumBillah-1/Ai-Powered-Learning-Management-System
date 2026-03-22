@@ -501,13 +501,77 @@ export async function PUT(req: NextRequest) {
       }
     }
 
-    if (timeSpent > 0) {
+    // ── GAMIFICATION LOGIC ──────────────────────────────────────────────────
+    let xpGained = 0;
+    let leveledUp = false;
+    let newLevel = 1;
+    let streakIncremented = false;
+
+    if (completed && lessonId) {
+      const alreadyDone = enrollment.progress.completedLessons.some(
+        (id: any) => id.toString() === lessonId.toString()
+      );
+      
+      if (!alreadyDone) {
+        xpGained = 50; // XP per lesson
+
+        const user = await User.findById(decoded.userId);
+        if (user) {
+          const oldXP = user.stats?.totalXP || 0;
+          const newXP = oldXP + xpGained;
+          const oldLevel = user.stats?.level || 1;
+          newLevel = Math.floor(newXP / 500) + 1;
+          leveledUp = newLevel > oldLevel;
+
+          // Streak Logic
+          const now = new Date();
+          const lastUpdate = user.stats?.streakLastUpdated;
+          let currentStreak = user.stats?.currentStreak || 0;
+
+          if (!lastUpdate) {
+            currentStreak = 1;
+            streakIncremented = true;
+          } else {
+            const lastDate = new Date(lastUpdate);
+            const diffDays = Math.floor((now.getTime() - lastDate.getTime()) / (1000 * 60 * 60 * 24));
+            
+            if (diffDays === 1) {
+              currentStreak += 1;
+              streakIncremented = true;
+            } else if (diffDays > 1) {
+              currentStreak = 1;
+              streakIncremented = true;
+            }
+          }
+
+          await User.findByIdAndUpdate(decoded.userId, {
+            $set: {
+              "stats.totalXP": newXP,
+              "stats.level": newLevel,
+              "stats.currentStreak": currentStreak,
+              "stats.streakLastUpdated": now,
+              "stats.lastActiveAt": now
+            }
+          });
+        }
+      }
+    } else {
+      // Just update last active even if not completed
       await User.findByIdAndUpdate(decoded.userId, {
-        $inc: { "stats.totalTimeSpent": timeSpent },
+        $set: { "stats.lastActiveAt": new Date() }
       });
     }
 
-    return NextResponse.json({ success: true, enrollment: updated });
+    return NextResponse.json({ 
+      success: true, 
+      enrollment: updated,
+      gamified: {
+        xpGained,
+        leveledUp,
+        newLevel,
+        streakIncremented
+      }
+    });
 
   } catch (error: any) {
     console.error("PUT /api/enrollments:", error);

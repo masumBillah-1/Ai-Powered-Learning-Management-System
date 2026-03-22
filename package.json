@@ -23,6 +23,7 @@
     "framer-motion": "^12.34.3",
     "jose": "^6.2.1",
     "jsonwebtoken": "^9.0.3",
+    "lottie-react": "^2.4.1",
     "lucide": "^0.564.0",
     "lucide-react": "^0.575.0",
     "mongodb": "^7.1.0",

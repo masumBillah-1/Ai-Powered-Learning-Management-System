@@ -27,36 +27,20 @@ export async function GET(req: NextRequest) {
     const userObj = user.toObject();
 
     // ── Instructor stats ─────────────────────────────────────────────────────
+    // Ensure stats object exists and preserve gamification fields
+    if (!userObj.stats) userObj.stats = {};
+
+    // ── Instructor stats ─────────────────────────────────────────────────────
     if (user.role === "instructor") {
-      // Step 1: instructor এর সব course আনো
-      const courses = await Course.find({ instructorId: userId })
-        .select("_id enrollmentCount rating reviewCount")
-        .lean();
-
+      const courses = await Course.find({ instructorId: userId }).select("_id enrollmentCount rating reviewCount").lean();
       const courseIds = courses.map((c: any) => c._id);
-
-      // Step 2: ওই courses এর payment transactions থেকে earnings calculate করো
-      //  (payout হোক বা না হোক — instructor কত টাকার course বিক্রি করেছে সেটা দেখাবে)
       const earningsAgg = await Transaction.aggregate([
-        {
-          $match: {
-            courseId: { $in: courseIds },
-            status: "completed",
-            type: "payment",
-          },
-        },
+        { $match: { courseId: { $in: courseIds }, status: "completed", type: "payment" } },
         { $group: { _id: null, total: { $sum: "$amount" } } },
       ]);
-
       const totalStudents = courses.reduce((sum: number, c: any) => sum + (c.enrollmentCount || 0), 0);
       const totalReviews  = courses.reduce((sum: number, c: any) => sum + (c.reviewCount   || 0), 0);
-      const avgRating =
-        totalReviews > 0
-          ? courses.reduce(
-              (sum: number, c: any) => sum + (c.rating || 0) * (c.reviewCount || 0),
-              0
-            ) / totalReviews
-          : 0;
+      const avgRating = totalReviews > 0 ? courses.reduce((sum: number, c: any) => sum + (c.rating || 0) * (c.reviewCount || 0), 0) / totalReviews : 0;
 
       userObj.stats = {
         ...userObj.stats,
@@ -67,25 +51,15 @@ export async function GET(req: NextRequest) {
         reviewCount   : totalReviews,
       };
     }
-
     // ── Student stats ────────────────────────────────────────────────────────
     else if (user.role === "student") {
       const [enrollments, certificateCount] = await Promise.all([
-        Enrollment.find({ studentId: userId })
-          .select("status progress certificate")
-          .lean(),
-        Enrollment.countDocuments({
-          studentId: userId,
-          "certificate.issued": true,
-        }),
+        Enrollment.find({ studentId: userId }).select("status progress certificate").lean(),
+        Enrollment.countDocuments({ studentId: userId, "certificate.issued": true }),
       ]);
-
       const enrolled = enrollments.length;
       const completed = enrollments.filter((e: any) => e.status === "completed").length;
-      const totalTime = enrollments.reduce(
-        (sum: number, e: any) => sum + (e.progress?.totalTimeSpent || 0),
-        0
-      );
+      const totalTime = enrollments.reduce((sum: number, e: any) => sum + (e.progress?.totalTimeSpent || 0), 0);
 
       userObj.stats = {
         ...userObj.stats,
@@ -95,7 +69,6 @@ export async function GET(req: NextRequest) {
         totalLearningTime: totalTime,
       };
     }
-
     // ── Admin stats ─────────────────────────────────────────────────────────
     else if (user.role === "admin") {
       const [totalUsers, totalCourses, revenueAgg, activeUsers] = await Promise.all([
@@ -105,11 +78,7 @@ export async function GET(req: NextRequest) {
           { $match: { status: "completed", type: "payment" } },
           { $group: { _id: null, total: { $sum: "$amount" } } },
         ]),
-        Enrollment.countDocuments({
-          "progress.lastAccessedAt": {
-            $gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
-          },
-        }),
+        Enrollment.countDocuments({ "progress.lastAccessedAt": { $gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) } }),
       ]);
 
       userObj.stats = {
