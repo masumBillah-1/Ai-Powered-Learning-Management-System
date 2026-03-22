@@ -200,7 +200,7 @@ export default function ProfilePage() {
         { label: "Enrolled", value: user.stats?.enrolledCourses || 0, icon: BookOpen, color: "#FF0F7B" },
         { label: "Completed", value: user.stats?.completedCourses || 0, icon: Award, color: "#00C48C" },
         { label: "Certificates", value: user.stats?.certificatesEarned || 0, icon: Award, color: "#F89B29" },
-        { label: "Learning Time", value: `${Math.floor((user.stats?.totalLearningTime || 0) / 60)}h`, icon: Clock, color: "#832388" },
+        { label: "Learning Time", value: `${Math.floor((user.stats?.totalLearningTime || 0) / 60)}h ${(user.stats?.totalLearningTime || 0) % 60}m`, icon: Clock, color: "#832388" },
       ];
     } else if (user.role === "instructor") {
       return [

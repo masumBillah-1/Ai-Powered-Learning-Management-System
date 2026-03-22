@@ -134,14 +134,30 @@ export default function LearnPage() {
   // ── Video Ask AI state ────────────────────────────────────────────────────
   const [askAIOpen, setAskAIOpen] = useState(false);
 
-  const startTime = useRef<number>(Date.now());
-  const activeLessonRef = useRef<Lesson | null>(null);
-
-  // ── GAMIFICATION STATES ──────────────────────────────────────────────────
   const [isFocusMode, setIsFocusMode] = useState(false);
   const [playbackSpeed, setPlaybackSpeed] = useState(1);
   const [showVideoSettings, setShowVideoSettings] = useState(false);
   const playerRef = useRef<any>(null);
+
+  // ── TIME TRACKING (Enhanced) ─────────────────────────────────────────────
+  const startTime = useRef<number>(Date.now());
+  const activeLessonRef = useRef<Lesson | null>(null);
+  const accumulatedVideoMsRef = useRef<number>(0);
+  const playStartTimeRef = useRef<number | null>(null);
+
+  const calculateTotalTimeSpent = () => {
+    let activeMs = accumulatedVideoMsRef.current;
+    if (playStartTimeRef.current) {
+      activeMs += (Date.now() - playStartTimeRef.current);
+    }
+    return Math.round(activeMs / 60000); // Minutes
+  };
+
+  const resetTimeTracking = () => {
+    accumulatedVideoMsRef.current = 0;
+    playStartTimeRef.current = null;
+    startTime.current = Date.now();
+  };
 
   const [showXPAnim, setShowXPAnim] = useState(false);
   const [showLevelAnim, setShowLevelAnim] = useState(false);
@@ -372,12 +388,12 @@ export default function LearnPage() {
     if (activeLessonRef.current && enrollment) {
       // Track time for video lessons if switching away
       if (activeLessonRef.current.type === "video") {
-        const timeSpent = Math.round((Date.now() - startTime.current) / 60000);
+        const timeSpent = calculateTotalTimeSpent();
         if (timeSpent > 0) updateProgress(activeLessonRef.current._id, timeSpent, false);
       }
     }
 
-    startTime.current = Date.now();
+    resetTimeTracking();
     setActiveLesson(lesson);
     activeLessonRef.current = lesson;
 
@@ -398,6 +414,19 @@ export default function LearnPage() {
           events: {
             onReady: (event: any) => {
               playerRef.current = event.target;
+            },
+            onStateChange: (event: any) => {
+              // YT.PlayerState.PLAYING = 1
+              if (event.data === 1) {
+                playStartTimeRef.current = Date.now();
+              } 
+              // PAUSED (2), ENDED (0), BUFFERING (3), CUED (5)
+              else {
+                if (playStartTimeRef.current) {
+                  accumulatedVideoMsRef.current += (Date.now() - playStartTimeRef.current);
+                  playStartTimeRef.current = null;
+                }
+              }
             }
           }
         });
@@ -438,7 +467,7 @@ export default function LearnPage() {
 
     // Only track time for video lessons
     const timeSpent = activeLesson.type === "video"
-      ? Math.round((Date.now() - startTime.current) / 60000)
+      ? calculateTotalTimeSpent()
       : 0;
 
     const data = await updateProgress(activeLesson._id, timeSpent, true);
@@ -475,7 +504,8 @@ export default function LearnPage() {
       }
       await silentRefreshEnrollment(); 
     }
-    startTime.current = Date.now(); setCompletingLesson(false);
+    resetTimeTracking();
+    setCompletingLesson(false);
   };
 
   const updateProgress = async (lessonId: string, timeSpent: number, completed: boolean): Promise<any> => {

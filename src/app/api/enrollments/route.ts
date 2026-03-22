@@ -437,7 +437,13 @@ export async function PUT(req: NextRequest) {
       },
     };
 
-    if (timeSpent > 0) updateOps.$inc = { "progress.totalTimeSpent": timeSpent };
+    if (timeSpent > 0) {
+      updateOps.$inc = { "progress.totalTimeSpent": timeSpent };
+      // Also update the User's aggregate stats
+      await User.findByIdAndUpdate(decoded.userId, {
+        $inc: { "stats.totalLearningTime": timeSpent }
+      });
+    }
 
     if (completed && lessonId) {
       const alreadyDone = enrollment.progress.completedLessons.some(
