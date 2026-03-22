@@ -1,7 +1,9 @@
 "use client";
 
-import React, { useState, useEffect, useRef, useMemo } from 'react';
+import React, { useState, useEffect, useRef, useMemo, Suspense } from 'react';
 import axios from 'axios';
+import { useSearchParams } from 'next/navigation';
+import { Send } from "lucide-react";
 
 // --- Emojis ---
 const EMOJIS = ["😀", "😂", "😍", "🥰", "😎", "🤩", "😭", "😤", "🥺", "😏", "👍", "👎", "❤️", "🔥", "🎉", "✅", "💯", "🙏", "💪", "👏", "😊", "🤔", "😴", "🤣", "😇", "🤗", "😈", "👀", "💀", "🫡", "🌟", "💫", "⚡", "🎯", "🚀", "💥", "🌈", "🎊", "🏆", "🎁"];
@@ -47,32 +49,24 @@ const formatMessageWithLinks = (text: string) => {
   });
 };
 
-export default function SupportChatPage() {
+// ✅ Messaging Module: Real-time Polling, Notification Sounds, and UI Refinements
+function SupportChatContent() {
+  const searchParams = useSearchParams();
   const [currentUser, setCurrentUser] = useState<{ id: string, role: string, photoURL?: string } | null>(null);
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [enrolledInstructors, setEnrolledInstructors] = useState<any[]>([]);
-  const [allUsers, setAllUsers] = useState<any[]>([]); // New state for admin/instructor
+  const [allUsers, setAllUsers] = useState<any[]>([]); 
   const [messages, setMessages] = useState<Message[]>([]);
   const [activeRoomId, setActiveRoomId] = useState<string | null>(null);
   const [activeUser, setActiveUser] = useState<any>(null);
   const [input, setInput] = useState("");
-  const [searchTerm, setSearchTerm] = useState(""); // New state for search
+  const [searchTerm, setSearchTerm] = useState(""); 
   const [loading, setLoading] = useState(true);
   const [showEmoji, setShowEmoji] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const emojiRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    const userData = localStorage.getItem("user");
-    if (userData) {
-      const parsed = JSON.parse(userData);
-      const userObj = { id: parsed._id || parsed.id, role: parsed.role, photoURL: parsed.photoURL };
-      setCurrentUser(userObj);
-      if (userObj.role === 'student') fetchEnrolledData();
-      if (userObj.role === 'admin' || userObj.role === 'instructor') fetchAllUsers();
-    }
-  }, []);
-
+  // --- Functions (Defined before Use) ---
   const fetchAllUsers = async () => {
     try {
       const res = await axios.get('/api/messages/users');
@@ -95,14 +89,13 @@ export default function SupportChatPage() {
 
   const fetchConversations = async () => {
     try {
-      const res = await axios.get('/api/messages', { timeout: 30000 }); // Increase to 30s
+      const res = await axios.get('/api/messages', { timeout: 30000 });
       if (res.data.success) {
         setConversations(res.data.conversations);
       }
     } catch (err: any) {
       console.error("❌ fetchConversations error:", err.message);
       if (err.code === 'ECONNABORTED' || err.response?.status === 500 || err.response?.status === 504) {
-        // Only reset if we truly lost connectivity
         if (!conversations.length) setConversations([]); 
       }
     } finally {
@@ -113,7 +106,6 @@ export default function SupportChatPage() {
   const sidebarList = useMemo(() => {
     if (!currentUser) return [] as Conversation[];
 
-    // 1. Get existing conversations from DB
     const existingConversations = conversations.filter(conv => {
       const other = conv.participants.find(p => p._id !== currentUser.id);
       if (!other) return false;
@@ -128,12 +120,11 @@ export default function SupportChatPage() {
       }
 
       if (currentUser.role === 'admin') {
-        return true; // Admin sees everything
+        return true; 
       }
       return true;
     });
 
-    // 2. Extra chats for discovery
     let enrichedList = [...existingConversations];
     
     if (currentUser.role === 'student' || currentUser.role === 'admin') {
@@ -160,7 +151,6 @@ export default function SupportChatPage() {
       enrichedList = [...existingConversations, ...extraChats];
     }
 
-    // 3. Apply local search filter
     if (!searchTerm.trim()) return enrichedList;
     
     return enrichedList.filter(conv => {
@@ -169,18 +159,47 @@ export default function SupportChatPage() {
     });
   }, [conversations, currentUser, enrolledInstructors, allUsers, searchTerm]);
 
+  // --- Effects ---
   useEffect(() => {
+    const userData = localStorage.getItem("user");
+    if (userData) {
+      const parsed = JSON.parse(userData);
+      const userObj = { id: parsed._id || parsed.id, role: parsed.role, photoURL: parsed.photoURL };
+      setCurrentUser(userObj);
+      if (userObj.role === 'student') fetchEnrolledData();
+      if (userObj.role === 'admin' || userObj.role === 'instructor') fetchAllUsers();
+    }
     fetchConversations();
     const interval = setInterval(fetchConversations, 10000);
     return () => clearInterval(interval);
   }, []);
+
+  const lastProcessedUserIdRef = useRef<string | null>(null);
+
+  // ✅ Auto-select user from URL parameter (?userId=...)
+  useEffect(() => {
+    const targetUserId = searchParams.get('userId');
+    if (targetUserId && sidebarList.length > 0 && currentUser && targetUserId !== lastProcessedUserIdRef.current) {
+      const foundConv = sidebarList.find(c => 
+        c.participants.some(p => p._id === targetUserId)
+      );
+      if (foundConv) {
+        const otherUser = foundConv.participants.find(p => p._id === targetUserId);
+        setActiveRoomId(foundConv.roomId);
+        setActiveUser(otherUser);
+        lastProcessedUserIdRef.current = targetUserId; // Mark as processed
+      }
+    }
+  }, [searchParams, sidebarList, currentUser]);
+
+  const lastMessageIdRef = useRef<string | null>(null);
 
   useEffect(() => {
     if (activeRoomId) {
       const markAsRead = async () => {
         try {
           await axios.put(`/api/messages/${activeRoomId}`);
-          fetchConversations(); // Update list to clear badge
+          fetchConversations(); 
         } catch (err) { console.error("❌ markAsRead error:", err); }
       };
       markAsRead();
@@ -188,7 +207,22 @@ export default function SupportChatPage() {
       const fetchMsgs = async () => {
         try {
           const res = await axios.get(`/api/messages/${activeRoomId}`, { timeout: 15000 });
-          if (res.data.success) setMessages(res.data.messages);
+          if (res.data.success) {
+            const newMsgs = res.data.messages;
+            if (newMsgs.length > 0) {
+              const latest = newMsgs[newMsgs.length - 1];
+              const senderId = typeof latest.senderId === 'object' ? latest.senderId._id : latest.senderId;
+              
+              // ✅ Play sound if new message and sender is NOT current user
+              if (lastMessageIdRef.current && latest._id !== lastMessageIdRef.current && senderId !== currentUser?.id) {
+                const audio = new Audio("https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3");
+                audio.volume = 0.5;
+                audio.play().catch(e => console.warn("Audio play blocked:", e));
+              }
+              lastMessageIdRef.current = latest._id;
+            }
+            setMessages(newMsgs);
+          }
         } catch (err: any) { 
           console.error("❌ fetchMsgs error:", err.response?.data?.error || err.message); 
         }
@@ -196,8 +230,10 @@ export default function SupportChatPage() {
       fetchMsgs();
       const interval = setInterval(fetchMsgs, 4000);
       return () => clearInterval(interval);
+    } else {
+      lastMessageIdRef.current = null;
     }
-  }, [activeRoomId]);
+  }, [activeRoomId, currentUser]);
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -255,7 +291,6 @@ export default function SupportChatPage() {
           <h2 className={`text-lg font-bold ${theme.text}`}>Message Center</h2>
           <div className={`badge ${theme.badge} badge-sm text-white uppercase font-bold mb-3`}>{currentUser?.role}</div>
           
-          {/* Sidebar Search Bar */}
           <div className="relative mt-2">
             <input 
               type="text" 
@@ -296,7 +331,6 @@ export default function SupportChatPage() {
                       <h4 className={`text-xs font-bold truncate ${isSelected ? theme.text : ''}`}>{user.name}</h4>
                       <span className="px-1.5 py-0.5 rounded-md bg-base-300 text-[10px] capitalize font-bold opacity-70 flex-shrink-0">{user.role}</span>
                       
-                      {/* Unread Badge */}
                       {currentUser && (conv as any).unreadCount?.[currentUser.id] > 0 && !isSelected && (
                         <span className="ml-auto badge badge-error badge-xs text-[9px] p-1.5 min-w-[18px] h-[18px] text-white font-bold border-none">
                           {(conv as any).unreadCount[currentUser.id]}
@@ -335,7 +369,6 @@ export default function SupportChatPage() {
                 const isMe = (sender?._id || msg.senderId) === currentUser?.id;
                 const avatarUrl = isMe ? (currentUser?.photoURL || `https://ui-avatars.com/api/?name=Me`) : (activeUser?.photoURL || `https://ui-avatars.com/api/?name=${activeUser?.name}`);
 
-                // Check if message is only emoji (no text)
                 const isOnlyEmoji = /^[\p{Emoji}\s]+$/u.test(msg.content.trim()) && msg.content.trim().length <= 10;
 
                 return (
@@ -366,7 +399,7 @@ export default function SupportChatPage() {
               })}
             </div>
 
-            <form onSubmit={handleSend} className="p-4 border-t border-base-300 bg-base-100 pr-30 relative">
+            <form onSubmit={handleSend} className="p-4 pr-30 border-t border-base-300 bg-base-100 relative">
               <div className="flex gap-2 items-center">
                 <div className="relative" ref={emojiRef}>
                   <button
@@ -398,14 +431,14 @@ export default function SupportChatPage() {
                   onChange={(e) => setInput(e.target.value)}
                   type="text"
                   placeholder="Type here..."
-                  className="input input-bordered flex-1 rounded-full bg-base-200 focus:bg-base-100 transition-all border-none ring-1 ring-base-300 h-11 text-sm"
+                  className="input input-bordered flex-1 rounded-full bg-base-200 focus:bg-base-100 transition-all border-none ring-1 ring-base-300 h-11 text-sm outline-none"
                 />
                 <button
                   disabled={!input.trim()}
                   type="submit"
                   className={`btn btn-circle border-none ${theme.btn} text-white shadow-md h-11 w-11 -rotate-90`}
                 >
-                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5 rotate-90"><path d="M3.478 2.405a.75.75 0 00-.926.94l2.432 7.905H13.5a.75.75 0 010 1.5H4.984l-2.432 7.905a.75.75 0 00.926.94 60.519 60.519 0 0018.445-8.986.75.75 0 000-1.218A60.517 60.517 0 003.478 2.405z" /></svg>
+                  <Send size={20} className="rotate-90" />
                 </button>
               </div>
             </form>
@@ -418,5 +451,17 @@ export default function SupportChatPage() {
         )}
       </main>
     </div>
+  );
+}
+
+export default function SupportChatPage() {
+  return (
+    <Suspense fallback={
+      <div className="flex items-center justify-center h-[85vh] bg-base-100 rounded-2xl border border-base-300">
+        <span className="loading loading-spinner loading-lg text-primary"></span>
+      </div>
+    }>
+      <SupportChatContent />
+    </Suspense>
   );
 }

@@ -8,7 +8,7 @@ import {
   MessageSquare, Settings, Bell, ChevronLeft, ChevronRight,
   Menu, X, LogOut, Users, DollarSign, BarChart2, Megaphone,
 } from "lucide-react";
-import { FaSun, FaMoon } from "react-icons/fa";
+import { FaSun, FaMoon, FaFacebookMessenger } from "react-icons/fa";
 
 type Role = "student" | "instructor" | "admin";
 interface UserData { name: string; email: string; photoURL?: string; role: Role; }
@@ -169,7 +169,7 @@ function Sidebar({ items, collapsed, onToggle, mobileOpen, onMobileClose }: {
   );
 }
 
-function TopNavbar({ role, items, theme, toggleTheme, user, onLogout, onMobileMenu, collapsed, unreadCount, setUnreadCount, router }: {
+function TopNavbar({ role, items, theme, toggleTheme, user, onLogout, onMobileMenu, collapsed, unreadCount, setUnreadCount, unreadMessageCount, messageConversations, router }: {
   role: Role;
   items: { label: string; href: string; icon: React.ReactNode }[];
   theme: "dark" | "light"; toggleTheme: () => void;
@@ -177,14 +177,18 @@ function TopNavbar({ role, items, theme, toggleTheme, user, onLogout, onMobileMe
   onMobileMenu: () => void; collapsed: boolean;
   unreadCount: number;
   setUnreadCount: (count: number) => void;
+  unreadMessageCount: number;
+  messageConversations: any[];
   router: any;
 }) {
   const pathname = usePathname();
   const [showUser, setShowUser] = useState(false);
   const [showNotif, setShowNotif] = useState(false);
+  const [showMsgPopup, setShowMsgPopup] = useState(false);
   const [notifications, setNotifications] = useState<any[]>([]);
   const userRef = useRef<HTMLDivElement>(null);
   const notifRef = useRef<HTMLDivElement>(null);
+  const msgRef = useRef<HTMLDivElement>(null);
   const rm = roleMeta[role];
 
   const currentPage = items.find(i =>
@@ -212,6 +216,7 @@ function TopNavbar({ role, items, theme, toggleTheme, user, onLogout, onMobileMe
     const h = (e: MouseEvent) => {
       if (userRef.current && !userRef.current.contains(e.target as Node)) setShowUser(false);
       if (notifRef.current && !notifRef.current.contains(e.target as Node)) setShowNotif(false);
+      if (msgRef.current && !msgRef.current.contains(e.target as Node)) setShowMsgPopup(false);
     };
     document.addEventListener("mousedown", h);
     return () => document.removeEventListener("mousedown", h);
@@ -319,6 +324,74 @@ function TopNavbar({ role, items, theme, toggleTheme, user, onLogout, onMobileMe
           )}
         </div>
 
+        {/* --- Message Icon (Functional with Popup) --- */}
+        <div ref={msgRef} className="relative">
+          <button onClick={() => { setShowMsgPopup(!showMsgPopup); setShowNotif(false); setShowUser(false); }}
+            className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-all cursor-pointer relative group">
+            <FaFacebookMessenger size={19} className="text-[#00B2FF] dark:text-[#00B2FF] group-hover:scale-110 transition-transform" />
+            {unreadMessageCount > 0 && (
+              <span className="absolute top-1 right-1 w-3.5 h-3.5 rounded-full text-white font-bold flex items-center justify-center text-[9px] bg-red-500 shadow-sm border border-white dark:border-[#0f172a] animate-pulse">
+                {unreadMessageCount > 9 ? "9+" : unreadMessageCount}
+              </span>
+            )}
+          </button>
+          {showMsgPopup && (
+            <div className="absolute right-0 top-[calc(100%+6px)] w-72 bg-white dark:bg-[#1e293b] border border-gray-200 dark:border-gray-700 rounded-xl shadow-2xl z-[200] overflow-hidden animate-in zoom-in-95 duration-200">
+              <div className="px-4 py-3 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between bg-gray-50 dark:bg-gray-800/50">
+                <span className="text-sm font-bold text-gray-900 dark:text-white">Messages</span>
+                {unreadMessageCount > 0 && (
+                  <span className="text-[10px] bg-red-50 text-red-600 px-2 py-0.5 rounded-full font-bold">
+                    {unreadMessageCount} NEW
+                  </span>
+                )}
+              </div>
+              
+              <div className="max-h-80 overflow-y-auto">
+                {messageConversations.length === 0 ? (
+                  <div className="px-4 py-8 text-center text-sm text-gray-400">কোনো ইনবক্স নেই</div>
+                ) : messageConversations.filter((c: any) => (c.unreadCount?.[(user as any)?._id || ""] || 0) > 0).length === 0 ? (
+                  <div className="px-4 py-8 text-center text-sm text-gray-400">সব মেসেজ পড়া হয়েছে</div>
+                ) : messageConversations
+                    .filter((c: any) => (c.unreadCount?.[(user as any)?._id || ""] || 0) > 0)
+                    .slice(0, 5)
+                    .map((conv: any, idx) => {
+                      const otherUser = conv.participants.find((p: any) => p._id !== (user as any)?._id) || conv.participants[0];
+                      const unread = conv.unreadCount?.[(user as any)?._id || ""] || 0;
+                      
+                      return (
+                        <div key={idx} 
+                          onClick={() => {
+                            router.push(`/dashboard/messages?userId=${otherUser._id}`);
+                            setShowMsgPopup(false);
+                          }}
+                          className="flex gap-3 px-4 py-3 border-b border-gray-100 dark:border-gray-700 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors bg-blue-50/5 dark:bg-blue-900/10">
+                          <div className="w-10 h-10 rounded-full flex-shrink-0 overflow-hidden bg-gray-200 flex items-center justify-center">
+                            {otherUser.photoURL ? (
+                              <img src={otherUser.photoURL} alt="" className="w-full h-full object-cover" />
+                            ) : (
+                              <span className="text-sm font-bold text-gray-400">{otherUser.name?.[0]}</span>
+                            )}
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <div className="flex justify-between items-center mb-0.5">
+                              <p className="text-[13.5px] font-bold text-gray-900 dark:text-white truncate pr-2">{otherUser.name}</p>
+                              {unread > 0 && <span className="w-1.5 h-1.5 rounded-full bg-red-500 shadow-sm" />}
+                            </div>
+                            <p className="text-[11.5px] text-gray-500 dark:text-gray-400 truncate font-medium">
+                              {typeof conv.lastMessage === 'object' ? conv.lastMessage?.content : (conv.lastMessage || "নতুন মেসেজ...")}
+                            </p>
+                          </div>
+                        </div>
+                      );
+                    })}
+              </div>
+              <div className="py-2.5 text-center bg-gray-50 dark:bg-gray-800/30">
+                <Link href="/dashboard/messages" onClick={() => setShowMsgPopup(false)} className="text-xs font-semibold text-[#832388]">Go to Messenger →</Link>
+              </div>
+            </div>
+          )}
+        </div>
+
         <div className="w-px h-6 bg-gray-200 dark:bg-gray-700 mx-1" />
 
         <div ref={userRef} className="relative">
@@ -397,6 +470,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [messageConversations, setMessageConversations] = useState<any[]>([]);
+  const [unreadMessageCount, setUnreadMessageCount] = useState(0);
 
   const currentRoleRef = useRef<Role | null>(null);
   const lastFetchRef = useRef<number>(0);
@@ -528,6 +603,25 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         setUnreadCount(0);
       }
 
+      // ✅ Fetch actual messages for the popup and badge count
+      try {
+        const msgRes = await fetch("/api/messages", {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        const msgData = await msgRes.json();
+        if (msgData.success && Array.isArray(msgData.conversations)) {
+          setMessageConversations(msgData.conversations);
+          // Calculate total unread for current user using (user as any)?._id or data.user._id
+          const currentUserId = (user as any)?._id || data.user._id;
+          const totalUnread = msgData.conversations.reduce((sum: number, conv: any) => {
+            return sum + (conv.unreadCount?.[currentUserId] || 0);
+          }, 0);
+          setUnreadMessageCount(totalUnread);
+        }
+      } catch (err) {
+        console.error("Failed to fetch messages for layout:", err);
+      }
+
       if (isInitial) {
         setIsLoading(false);
         const isWrongRoleDashboard = Object.entries(roleDashboard).some(
@@ -619,6 +713,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         onMobileMenu={() => setMobileOpen(true)}
         collapsed={collapsed} unreadCount={unreadCount}
         setUnreadCount={setUnreadCount}
+        unreadMessageCount={unreadMessageCount}
+        messageConversations={messageConversations}
         router={router}
       />
       <main className={`min-h-screen pt-16 transition-all duration-300 ${collapsed ? "md:pl-[68px]" : "md:pl-60"}`}>
