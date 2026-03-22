@@ -6,9 +6,9 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   FaPlay, FaCheckCircle, FaChevronDown, FaChevronUp,
   FaBook, FaClock, FaArrowLeft, FaFileAlt,
-  FaTrophy, FaBars, FaTimes, FaLock, FaLink, FaPaperPlane, FaRobot
+  FaTrophy, FaBars, FaTimes, FaLock, FaLink, FaPaperPlane, FaRobot, FaForward, FaUndo, FaRedo, FaCog
 } from "react-icons/fa";
-import { HiSparkles } from "react-icons/hi2";
+import { HiSparkles, HiOutlineArrowsPointingOut, HiMiniArrowsPointingIn } from "react-icons/hi2";
 import Link from "next/link";
 import toast, { Toaster } from "react-hot-toast";
 import VideoAskAI from "@/components/VideoAskAI";
@@ -56,7 +56,7 @@ interface Enrollment {
 function getYouTubeEmbedUrl(url: string) {
   if (!url) return "";
   const match = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([^&?\s]+)/);
-  if (match) return `https://www.youtube.com/embed/${match[1]}?autoplay=1&rel=0&modestbranding=1&showinfo=0&iv_load_policy=3&playsinline=1`;
+  if (match) return `https://www.youtube.com/embed/${match[1]}?autoplay=1&rel=0&modestbranding=1&showinfo=0&iv_load_policy=3&playsinline=1&enablejsapi=1`;
   return url;
 }
 
@@ -138,6 +138,11 @@ export default function LearnPage() {
   const activeLessonRef = useRef<Lesson | null>(null);
 
   // ── GAMIFICATION STATES ──────────────────────────────────────────────────
+  const [isFocusMode, setIsFocusMode] = useState(false);
+  const [playbackSpeed, setPlaybackSpeed] = useState(1);
+  const [showVideoSettings, setShowVideoSettings] = useState(false);
+  const playerRef = useRef<any>(null);
+
   const [showXPAnim, setShowXPAnim] = useState(false);
   const [showLevelAnim, setShowLevelAnim] = useState(false);
   const [showStreakAnim, setShowStreakAnim] = useState(false);
@@ -150,6 +155,14 @@ export default function LearnPage() {
   const Lottie = typeof window !== "undefined" ? require("lottie-react").default : null;
 
   useEffect(() => {
+    // Load YouTube API
+    if (!(window as any).YT) {
+      const tag = document.createElement('script');
+      tag.src = "https://www.youtube.com/iframe_api";
+      const firstScriptTag = document.getElementsByTagName('script')[0];
+      firstScriptTag?.parentNode?.insertBefore(tag, firstScriptTag);
+    }
+
     if (courseId) initialFetch();
     fetchUserStats();
     // Load Animations
@@ -373,6 +386,47 @@ export default function LearnPage() {
 
     // reset submit form
     setTextAnswer(""); setLinkUrl(""); setSubmitFile(null); setSubmitTab("text");
+    setPlaybackSpeed(1);
+    // Re-initialize player timer to give ref time to mount
+    setTimeout(initYTPlayer, 1000);
+  };
+
+  const initYTPlayer = () => {
+    if (typeof window !== "undefined" && (window as any).YT && (window as any).YT.Player) {
+      try {
+        new (window as any).YT.Player('yt-player', {
+          events: {
+            onReady: (event: any) => {
+              playerRef.current = event.target;
+            }
+          }
+        });
+      } catch (e) {
+        console.error("YT Player init error:", e);
+      }
+    }
+  };
+
+  const changeSpeed = (speed: number) => {
+    if (playerRef.current && playerRef.current.setPlaybackRate) {
+      playerRef.current.setPlaybackRate(speed);
+      setPlaybackSpeed(speed);
+      toast.success(`Speed: ${speed}x`, { duration: 1500, style: { fontSize: '10px' } });
+    } else {
+      toast.error("Video player not ready", { duration: 1500 });
+      initYTPlayer(); // Try re-init
+    }
+  };
+
+  const skipTime = (seconds: number) => {
+    if (playerRef.current && playerRef.current.getCurrentTime) {
+      const currentTime = playerRef.current.getCurrentTime();
+      playerRef.current.seekTo(currentTime + seconds, true);
+      toast.success(seconds > 0 ? `+${seconds}s` : `${seconds}s`, { duration: 1000, style: { fontSize: '10px' } });
+    } else {
+      toast.error("Video player not ready", { duration: 1500 });
+      initYTPlayer();
+    }
   };
 
   const handleMarkComplete = async () => {
@@ -616,8 +670,26 @@ export default function LearnPage() {
         )}
       </AnimatePresence>
 
+      {/* Focus Mode Exit Button */}
+      {isFocusMode && (
+        <motion.button
+          initial={{ opacity: 0, scale: 0.8 }}
+          animate={{ opacity: 0.4, scale: 1 }}
+          whileHover={{ opacity: 1, scale: 1.1 }}
+          onClick={() => setIsFocusMode(false)}
+          className="fixed top-6 right-6 z-[100] w-12 h-12 rounded-full bg-black/60 backdrop-blur-xl border border-white/20 flex items-center justify-center text-white shadow-2xl transition-all cursor-pointer group"
+          title="Exit Focus Mode"
+        >
+          <HiMiniArrowsPointingIn size={20} className="group-hover:scale-90 transition-transform" />
+          <div className="absolute right-full mr-3 px-3 py-1.5 rounded-lg bg-black/80 text-white text-[10px] font-bold uppercase tracking-widest opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap">
+            Exit Focus
+          </div>
+        </motion.button>
+      )}
+
       {/* Top Nav */}
-      <header className="h-14 bg-[#161b22] border-b border-white/10 flex items-center justify-between px-4 z-50 sticky top-0">
+      {!isFocusMode && (
+        <header className="h-14 bg-[#161b22] border-b border-white/10 flex items-center justify-between px-4 z-50 sticky top-0">
         <div className="flex items-center gap-3">
           <button onClick={() => router.push("/dashboard/student/courses")}
             className="flex cursor-pointer items-center gap-2 text-gray-400 hover:text-white transition-colors text-sm font-medium">
@@ -665,12 +737,22 @@ export default function LearnPage() {
             <span className="text-[10px] sm:text-xs text-blue-400 font-black tabular-nums">{progressPct}%</span>
           </div>
 
+          <button onClick={() => setIsFocusMode(true)}
+            className="w-9 h-9 rounded-xl bg-violet-500/10 border border-violet-500/20 flex items-center justify-center text-violet-400 hover:text-white hover:bg-violet-500 transition-all group relative"
+            title="Focus Mode">
+            <HiOutlineArrowsPointingOut size={18} className="group-hover:scale-125 transition-transform duration-300" />
+            <div className="absolute top-full mt-2 px-2 py-1 rounded bg-black/80 text-[8px] text-white font-bold opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-[60]">
+              FOCUS MODE
+            </div>
+          </button>
+
           <button onClick={() => setSidebarOpen(!sidebarOpen)}
             className="w-9 h-9 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-gray-400 hover:text-white hover:bg-white/10 transition-all">
             {sidebarOpen ? <FaTimes size={14} /> : <FaBars size={14} />}
           </button>
         </div>
-      </header>
+        </header>
+      )}
 
       {/* Body */}
       <div className="flex flex-1 overflow-hidden">
@@ -679,7 +761,7 @@ export default function LearnPage() {
           {/* VIDEO PLAYER */}
           <div className="bg-black w-full relative" style={{ aspectRatio: "16/9", maxHeight: "75vh" }}>
             {activeLesson?.type === "video" && activeLesson.videoUrl ? (
-              <iframe key={activeLesson._id} src={getYouTubeEmbedUrl(activeLesson.videoUrl)}
+              <iframe key={activeLesson._id} id="yt-player" src={getYouTubeEmbedUrl(activeLesson.videoUrl)}
                 className="w-full h-full"
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
                 allowFullScreen style={{ border: "none" }} />
@@ -703,6 +785,78 @@ export default function LearnPage() {
                           : "Sidebar থেকে lesson select করুন"}
                   </p>
                 </div>
+              </div>
+            )}
+
+            {/* VIDEO SETTINGS (Floating inside video player) */}
+            {activeLesson?.type === "video" && (
+              <div className="absolute bottom-10 right-4 z-[70] flex flex-col items-end">
+                {/* SETTINGS POPUP */}
+                <AnimatePresence>
+                  {showVideoSettings && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                      className="mb-3 w-64 bg-white/10 border border-white/20 rounded-3xl shadow-2xl p-5 backdrop-blur-2xl"
+                    >
+                      <div className="flex items-center justify-between mb-4 border-b border-white/10 pb-2">
+                        <h4 className="text-white text-[10px] font-black uppercase tracking-widest opacity-80">Player Controls</h4>
+                        <button onClick={() => setShowVideoSettings(false)} className="text-white/40 hover:text-white transition-colors cursor-pointer p-1">
+                          <FaTimes size={10} />
+                        </button>
+                      </div>
+
+                      {/* Speed Setting */}
+                      <div className="mb-6">
+                        <p className="text-[9px] text-white/50 font-black uppercase tracking-widest mb-3 flex items-center gap-2">
+                          Playback Speed
+                        </p>
+                        <div className="grid grid-cols-4 gap-1 p-1 bg-white/5 rounded-2xl border border-white/10">
+                          {[0.5, 1, 1.5, 2].map(speed => (
+                            <button
+                              key={speed}
+                              onClick={() => changeSpeed(speed)}
+                              className={`py-2 rounded-xl text-[10px] font-black transition-all cursor-pointer ${playbackSpeed === speed ? "bg-white text-black shadow-lg" : "text-white/60 hover:text-white hover:bg-white/10"}`}
+                            >
+                              {speed}x
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Skip Setting */}
+                      <div>
+                        <p className="text-[9px] text-white/50 font-black uppercase tracking-widest mb-3">Quick Seek</p>
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => skipTime(-10)}
+                            className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-2xl bg-white/5 border border-white/10 text-white/70 hover:text-white hover:bg-white/10 transition-all text-[10px] font-black cursor-pointer"
+                          >
+                            <FaUndo size={9} /> -10s
+                          </button>
+                          <button
+                            onClick={() => skipTime(10)}
+                            className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-2xl bg-white/5 border border-white/10 text-white/70 hover:text-white hover:bg-white/10 transition-all text-[10px] font-black cursor-pointer"
+                          >
+                            +10s <FaRedo size={9} />
+                          </button>
+                        </div>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+
+                {/* Settings Toggle Button (TRANSPARENT) */}
+                <motion.button
+                  whileHover={{ scale: 1.1, opacity: 1 }}
+                  whileTap={{ scale: 0.9 }}
+                  onClick={() => setShowVideoSettings(!showVideoSettings)}
+                  className={`w-10 h-10 flex cursor-pointer items-center justify-center transition-all ${showVideoSettings ? "text-white opacity-100" : "text-white/40 hover:text-white opacity-60"}`}
+                  title="Player Settings"
+                >
+                  <FaCog size={20} className={showVideoSettings ? "rotate-90" : ""} style={{ transition: 'transform 0.4s' }} />
+                </motion.button>
               </div>
             )}
           </div>
@@ -731,7 +885,7 @@ export default function LearnPage() {
                 )}
               </div>
 
-              <div className="flex items-center gap-2 flex-shrink-0">
+              <div className="flex items-center gap-2 flex-shrink-0 relative">
                 {/* Ask AI Button - শুধু video lessons এর জন্য */}
                 {activeLesson && activeLesson.type === "video" && activeLesson.videoUrl && (
                   <motion.button
@@ -1026,7 +1180,8 @@ export default function LearnPage() {
           )}
 
           {/* MOBILE SIDEBAR */}
-          <div className="md:hidden px-5 py-4">
+          {!isFocusMode && (
+            <div className="md:hidden px-5 py-4">
             <h3 className="text-white font-bold text-sm mb-3">Course Content</h3>
             <div className="space-y-2">
               {course.modules.map((module, mIdx) => (
@@ -1065,11 +1220,12 @@ export default function LearnPage() {
               ))}
             </div>
           </div>
+          )}
         </main>
 
         {/* DESKTOP SIDEBAR */}
         <AnimatePresence>
-          {sidebarOpen && (
+          {!isFocusMode && sidebarOpen && (
             <motion.aside initial={{ width: 0, opacity: 0 }} animate={{ width: 320, opacity: 1 }}
               exit={{ width: 0, opacity: 0 }} transition={{ duration: 0.22 }}
               className="bg-[#161b22] border-l border-white/10 overflow-y-auto flex-shrink-0 hidden md:block"
