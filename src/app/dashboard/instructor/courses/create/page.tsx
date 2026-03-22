@@ -214,7 +214,7 @@ export default function CreateCoursePage() {
               _id: l._id,
               title: l.title || "",
               type: l.type || "video",
-              duration: String(l.duration || ""),
+              duration: l.duration && !isNaN(Number(l.duration)) ? String(l.duration).replace(".", ":") : "0:00",
               videoUrl: l.videoUrl || l.url || "",
               textContent: l.textContent || "",
               assignmentDesc: l.assignmentDesc || "",
@@ -287,6 +287,56 @@ export default function CreateCoursePage() {
   const updateLesson = (mid: number, lid: number, field: string, value: string) =>
     setModules(p => p.map(m => m.id === mid ? { ...m, lessons: m.lessons.map(l => l.id === lid ? { ...l, [field]: value } : l) } : m));
 
+  // --- Automatic Video Duration Fetch Logic (No External API/Files) ---
+  const fetchYouTubeDuration = (url: string): Promise<string> => {
+    return new Promise((resolve) => {
+      const match = url.match(/(?:youtube\.com\/(?:watch\?v=|embed\/|v\/|shorts\/)|youtu\.be\/)([^&?\s]+)/);
+      const videoId = match ? match[1] : null;
+      if (!videoId) return resolve("");
+
+      if (!(window as any).YT) {
+        const tag = document.createElement("script");
+        tag.src = "https://www.youtube.com/iframe_api";
+        document.body.appendChild(tag);
+      }
+
+      const checkAPI = setInterval(() => {
+        if ((window as any).YT && (window as any).YT.Player) {
+          clearInterval(checkAPI);
+          const tempId = "yt-temp-" + Date.now();
+          const div = document.createElement("div");
+          div.id = tempId;
+          Object.assign(div.style, { position: "absolute", top: "-1000px", left: "-1000px", opacity: "0" });
+          document.body.appendChild(div);
+
+          new (window as any).YT.Player(tempId, {
+            videoId: videoId,
+            playerVars: { autoplay: 0, controls: 0 },
+            events: {
+              onReady: (e: any) => {
+                const totalSec = e.target.getDuration();
+                setTimeout(() => {
+                  try { document.body.removeChild(document.getElementById(tempId)!); } catch (_) {}
+                }, 100);
+                if (totalSec > 0) {
+                  const m = Math.floor(totalSec / 60);
+                  const s = Math.floor(totalSec % 60);
+                  resolve(`${m}:${String(s).padStart(2, "0")}`);
+                } else resolve("");
+              },
+              onError: () => {
+                try { document.body.removeChild(document.getElementById(tempId)!); } catch (_) {}
+                resolve("");
+              },
+            },
+          });
+        }
+      }, 300);
+      setTimeout(() => { clearInterval(checkAPI); resolve(""); }, 10000); 
+    });
+  };
+  // ------------------------------------------------------------------
+
   const submitCourse = async (status: "draft" | "published") => {
     const vals = getValues();
     if (!instructorId) { toast.error("⚠️ User not found. Please login again.", tErr); return; }
@@ -334,7 +384,8 @@ export default function CreateCoursePage() {
         title: m.title,
         lessons: m.lessons.map(l => ({
           _id: l._id,
-          title: l.title, type: l.type, duration: l.duration,
+          title: l.title, type: l.type,
+          duration: l.duration && l.duration !== "..." ? Number(String(l.duration).replace(":", ".")) : 0,
           videoUrl: l.videoUrl || "",
           textContent: l.textContent || "", assignmentDesc: l.assignmentDesc || "",
           marks: l.assignmentMarks ? Number(l.assignmentMarks) : 0,
@@ -740,7 +791,17 @@ export default function CreateCoursePage() {
                               </svg>
                               <input type="url" placeholder="https://youtube.com/watch?v=..."
                                 value={les.videoUrl || ""}
-                                onChange={e => updateLesson(mod.id, les.id, "videoUrl", e.target.value)}
+                                onChange={async (e) => {
+                                  const val = e.target.value;
+                                  updateLesson(mod.id, les.id, "videoUrl", val);
+                                  if (val.includes("youtube.com") || val.includes("youtu.be")) {
+                                    const savedDuration = les.duration;
+                                    // "..." show logic while fetching
+                                    updateLesson(mod.id, les.id, "duration", "..."); 
+                                    const dur = await fetchYouTubeDuration(val);
+                                    updateLesson(mod.id, les.id, "duration", dur || savedDuration || "0:00");
+                                  }
+                                }}
                                 className="grow bg-transparent focus:outline-none text-sm" />
                               {les.videoUrl && (
                                 <a href={les.videoUrl} target="_blank" rel="noreferrer"

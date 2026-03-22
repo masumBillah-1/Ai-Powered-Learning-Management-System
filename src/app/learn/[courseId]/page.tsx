@@ -181,6 +181,38 @@ export default function LearnPage() {
     return () => clearInterval(timer);
   }, []);
 
+  // ── Polling for New Content (Instructor adding lessons) ────────────────────
+  useEffect(() => {
+    if (!courseId) return;
+
+    const pollInterval = setInterval(async () => {
+      try {
+        const res = await fetch(`/api/courses/${courseId}`);
+        if (!res.ok) return;
+        const data = await res.json();
+        
+        if (data.success && data.course && data.course.modules) {
+          setCourse(prev => {
+            if (!prev || !prev.modules) return data.course;
+            
+            // Safer comparison with optional chaining
+            const oldLessons = prev.modules.flatMap((m: Module) => m.lessons?.map((l: Lesson) => l._id) || []).filter(Boolean).join(",");
+            const newLessons = data.course.modules.flatMap((m: Module) => m.lessons?.map((l: Lesson) => l._id) || []).filter(Boolean).join(",");
+            
+            if (oldLessons !== newLessons) {
+              return data.course;
+            }
+            return prev;
+          });
+        }
+      } catch (err) {
+        console.error("Content polling error:", err);
+      }
+    }, 15000);
+
+    return () => clearInterval(pollInterval);
+  }, [courseId]);
+
   // ── Initial fetch ─────────────────────────────────────────────────────────
   const initialFetch = async () => {
     try {
@@ -365,12 +397,12 @@ export default function LearnPage() {
         if (data.gamified.xpGained > 0) {
           setShowXPAnim(true);
           setTimeout(() => setShowXPAnim(false), 3000);
-          toast.success(`+${data.gamified.xpGained} XP Earned!`, { icon: "✨", ...toastOk });
+          toast.success(`+${data.gamified.xpGained} XP Earned!`, { ...toastOk, icon: "✨" });
         }
         if (data.gamified.leveledUp) {
           setShowLevelAnim(true);
           setTimeout(() => setShowLevelAnim(false), 5000);
-          toast.success(`LEVEL UP! You are now Level ${data.gamified.newLevel}`, { icon: "🏆", duration: 5000, ...toastOk });
+          toast.success(`LEVEL UP! You are now Level ${data.gamified.newLevel}`, { ...toastOk, icon: "🏆", duration: 5000 });
         }
         if (data.gamified.streakIncremented) {
           setShowStreakAnim(true);
@@ -457,7 +489,7 @@ export default function LearnPage() {
              if (progData.gamified.xpGained > 0) {
                setShowXPAnim(true);
                setTimeout(() => setShowXPAnim(false), 3000);
-               toast.success(`+${progData.gamified.xpGained} XP Earned!`, { icon: "✨", ...toastOk });
+               toast.success(`+${progData.gamified.xpGained} XP Earned!`, { ...toastOk, icon: "✨" });
              }
              if (progData.gamified.streakIncremented) {
                setShowStreakAnim(true);
