@@ -118,11 +118,11 @@ export default function VideoAskAI({
             } else {
                 throw new Error(data.error || "Unknown error");
             }
-        } catch (error) {
+        } catch (error: any) {
             setIsLoading(false);
             setMessages(prev => [...prev, {
                 role: "assistant",
-                content: "দুঃখিত, কিছু সমস্যা হয়েছে। আবার চেষ্টা করুন।",
+                content: error.message || "দুঃখিত, কিছু সমস্যা হয়েছে। আবার চেষ্টা করুন।",
                 timestamp: new Date()
             }]);
         }

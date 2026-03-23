@@ -437,7 +437,13 @@ export async function PUT(req: NextRequest) {
       },
     };
 
-    if (timeSpent > 0) updateOps.$inc = { "progress.totalTimeSpent": timeSpent };
+    if (timeSpent > 0) {
+      updateOps.$inc = { "progress.totalTimeSpent": timeSpent };
+      // Also update the User's aggregate stats
+      await User.findByIdAndUpdate(decoded.userId, {
+        $inc: { "stats.totalLearningTime": timeSpent }
+      });
+    }
 
     if (completed && lessonId) {
       const alreadyDone = enrollment.progress.completedLessons.some(
@@ -478,25 +484,39 @@ export async function PUT(req: NextRequest) {
           { returnDocument: "after" }
         );
 
-        if (percentage === 100 && updated && !updated.certificate?.issued) {
-          const certId = `CERT-${Date.now()}-${decoded.userId.slice(-6).toUpperCase()}`;
-          await Enrollment.findByIdAndUpdate(updated._id, {
-            $set: {
-              status:                         "completed",
-              completedAt:                    new Date(),
-              "certificate.issued":           true,
-              "certificate.issuedAt":         new Date(),
-              "certificate.verificationCode": certId,
-            },
-          });
-          await Promise.all([
-            User.findByIdAndUpdate(decoded.userId, {
-              $inc: { "stats.completedCourses": 1, "stats.totalCertificates": 1 },
-            }),
-            Course.findByIdAndUpdate(courseId, {
-              $inc: { "stats.completedCount": 1 },
-            }),
-          ]);
+        if (percentage === 100) {
+          const updates: any = {
+            status: "completed",
+            completedAt: new Date(),
+          };
+
+          if (updated && !updated.certificate?.issued && course.isCertificateEnabled) {
+            const certId = `CERT-${Date.now()}-${decoded.userId.slice(-6).toUpperCase()}`;
+            updates["certificate.issued"] = true;
+            updates["certificate.issuedAt"] = new Date();
+            updates["certificate.verificationCode"] = certId;
+            
+            await Promise.all([
+              User.findByIdAndUpdate(decoded.userId, {
+                $inc: { "stats.completedCourses": 1, "stats.totalCertificates": 1 },
+              }),
+              Course.findByIdAndUpdate(courseId, {
+                $inc: { "stats.completedCount": 1 },
+              }),
+            ]);
+          } else if (updated && updated.status !== "completed") {
+            // Just increment stats for completion without certificate stats if it's their first time completing
+            await Promise.all([
+              User.findByIdAndUpdate(decoded.userId, {
+                $inc: { "stats.completedCourses": 1 },
+              }),
+              Course.findByIdAndUpdate(courseId, {
+                $inc: { "stats.completedCount": 1 },
+              }),
+            ]);
+          }
+
+          await Enrollment.findByIdAndUpdate(updated._id, { $set: updates });
         }
       }
     }

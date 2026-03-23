@@ -35,53 +35,39 @@ export async function GET(req: NextRequest) {
         // ✅ Get user's enrolled courses for course-specific notifications
         const userEnrolledCourses = await Enrollment.find({ studentId: user._id }).distinct("courseId");
 
-        const [enrollments, transactions, unreadCount] = await Promise.all([
+        const [enrollmentsData, transactions, unreadCount] = await Promise.all([
           Enrollment.find({ studentId: user._id })
             .populate({
               path: "courseId",
               select: "title thumbnail",
             })
             .sort({ enrolledAt: -1 })
-            .limit(5)
             .select("courseId courseName courseImage progress status enrolledAt")
-            .lean(), // ✅ Use lean() for better performance
+            .lean(),
 
           Transaction.find({ studentId: user._id })
             .sort({ createdAt: -1 })
             .limit(5)
             .select("courseName amount status paymentMethod createdAt type"),
 
-          // ✅ Updated unread count with broadcast notifications (matching notifications API logic)
           Notification.countDocuments({
             $or: [
-              // Individual notifications (non-broadcast)
-              { 
-                userId: user._id, 
-                isRead: false, 
-                type: { $ne: "announcement" }
-              },
-              // Broadcast notifications (others' published announcements)
+              { userId: user._id, isRead: false, type: { $ne: "announcement" } },
               { 
                 isBroadcast: true,
                 type: "announcement",
-                createdBy: { $ne: user._id }, // Not my own
-                _id: { $nin: user.readNotifications || [] }, // Not already read
-                $or: [
-                  { targetRole: "all" },
-                  { targetRole: "student" }
-                ]
+                createdBy: { $ne: user._id },
+                _id: { $nin: user.readNotifications || [] },
+                $or: [{ targetRole: "all" }, { targetRole: "student" }]
               }
             ],
-            $and: [
-              {
-                $or: [
-                  { expiresAt: { $exists: false } },
-                  { expiresAt: { $gt: new Date() } },
-                ]
-              }
-            ]
+            $and: [{ $or: [{ expiresAt: { $exists: false } }, { expiresAt: { $gt: new Date() } }] }]
           }),
         ]);
+
+        const totalLearningTime = enrollmentsData.reduce((sum: number, e: any) => sum + (e.progress?.totalTimeSpent || 0), 0);
+        const enrolledCourses = enrollmentsData.length;
+        const completedCourses = enrollmentsData.filter((e: any) => e.status === "completed").length;
 
         return NextResponse.json({
           user: {
@@ -91,13 +77,13 @@ export async function GET(req: NextRequest) {
             photoURL: user.photoURL || "",
             role: user.role,
           },
-          stats: user.stats || {
-            enrolledCourses: 0,
-            completedCourses: 0,
-            certificatesEarned: 0,
-            totalLearningTime: 0,
+          stats: {
+            ...(user.stats || {}),
+            enrolledCourses: enrolledCourses,
+            completedCourses: completedCourses,
+            totalLearningTime: totalLearningTime || user.stats?.totalLearningTime || 0,
           },
-          recentEnrollments: enrollments || [],
+          recentEnrollments: enrollmentsData.slice(0, 5) || [],
           recentTransactions: transactions || [],
           unreadNotifications: unreadCount || 0,
         });

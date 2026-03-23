@@ -103,6 +103,14 @@ Course ID: ${context.courseId}
     if (!geminiRes.ok) {
       const err = await geminiRes.json();
       console.error("Gemini Error:", err);
+      
+      if (err.error?.code === 429) {
+        return NextResponse.json(
+          { error: "AI এখন ব্যস্ত (Limit Exceeded)। কিছুক্ষণ পর আবার চেষ্টা করুন।" },
+          { status: 429 }
+        );
+      }
+
       return NextResponse.json(
         { error: "Gemini API সমস্যা হয়েছে" },
         { status: 500 }

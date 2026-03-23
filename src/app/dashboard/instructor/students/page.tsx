@@ -119,7 +119,7 @@ export default function InstructorStudentsPage() {
         ? `/api/enrollments?instructorId=${instructorId}&populate=student&limit=200`
         : `/api/enrollments?mine=true&populate=student&limit=200`;
 
-      const res = await fetch(url, { credentials: 'include' });
+      const res = await fetch(url, { credentials: 'include', cache: 'no-store' });
       const data = await res.json();
 
       if (!res.ok) throw new Error(data.error || 'Failed to fetch students');
@@ -142,7 +142,7 @@ export default function InstructorStudentsPage() {
           enrolledDate: e.enrolledAt,
           courseName: e.courseName || 'Unknown Course',
           courseId: e.courseId,
-          progressPercentage: e.progress?.progressPercentage || 0,
+          progressPercentage: Number(e.progress?.progressPercentage) || 0,
           status: e.status || 'active',
           totalEnrollments: user.stats?.enrolledCourses || 1,
           lastAccessedAt: e.progress?.lastAccessedAt,
@@ -177,7 +177,7 @@ export default function InstructorStudentsPage() {
   const activeCount = students.filter(s => s.status === 'active').length;
   const completedCount = students.filter(s => s.status === 'completed').length;
   const avgProgress = students.length
-    ? Math.round(students.reduce((a, s) => a + s.progressPercentage, 0) / students.length)
+    ? Math.round(students.reduce((a, s) => a + (Number(s.progressPercentage) || 0), 0) / students.length)
     : 0;
 
   const formatDate = (d?: string) => {
