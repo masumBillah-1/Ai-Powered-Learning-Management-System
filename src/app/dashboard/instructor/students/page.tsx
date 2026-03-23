@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
 import toast, { Toaster } from 'react-hot-toast';
 import {
   Search, Grid, List, MapPin, Calendar, BookOpen,
@@ -73,6 +74,7 @@ function StatusBadge({ status, theme }: { status: Student['status']; theme: stri
 
 // ─── Main Page ────────────────────────────────────────────────────────────────
 export default function InstructorStudentsPage() {
+  const router = useRouter();
   const [viewMode, setViewMode] = useState<'list' | 'grid'>('list');
   const [searchQuery, setSearchQuery] = useState('');
   const [filterStatus, setFilterStatus] = useState('All Status');
@@ -399,7 +401,7 @@ export default function InstructorStudentsPage() {
                           <button className="btn btn-ghost btn-sm cursor-pointer" title="View Profile">
                             <Eye size={15} />
                           </button>
-                          <button className="btn btn-ghost btn-sm cursor-pointer" title="Send Message">
+                          <button onClick={() => router.push(`/dashboard/messages?userId=${s.userId}`)} className="btn btn-ghost btn-sm cursor-pointer" title="Send Message">
                             <MessageCircle size={15} />
                           </button>
                         </div>
@@ -493,7 +495,7 @@ export default function InstructorStudentsPage() {
                         style={{ background: 'linear-gradient(135deg, #832388, #E3436B)' }}>
                         <Eye size={13} /> View
                       </button>
-                      <button className="btn btn-sm btn-ghost cursor-pointer">
+                      <button onClick={() => router.push(`/dashboard/messages?userId=${s.userId}`)} className="btn btn-sm btn-ghost cursor-pointer" title="Send Message">
                         <MessageCircle size={14} />
                       </button>
                     </div>
