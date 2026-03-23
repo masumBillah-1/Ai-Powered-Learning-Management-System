@@ -20,6 +20,7 @@ interface FormValues {
   priceType: "paid" | "free"; price: string; discountPrice: string;
   enrollmentLimit: string; accessDuration: string;
   visibility: "public" | "private";
+  isCertificateEnabled: boolean;
 }
 
 const tErr = {
@@ -149,6 +150,7 @@ export default function CreateCoursePage() {
         videoMode: "url", videoUrl: "",
         faqs: [], priceType: "paid", price: "", discountPrice: "",
         enrollmentLimit: "", accessDuration: "lifetime", visibility: "public",
+        isCertificateEnabled: false,
       },
     });
 
@@ -161,7 +163,7 @@ export default function CreateCoursePage() {
     (async () => {
       setLoadingEdit(true);
       try {
-        const res = await fetch(`/api/courses/${editId}`);
+        const res = await fetch(`/api/courses/${editId}?t=${Date.now()}`, { cache: "no-store" });
         const ct = res.headers.get("content-type") || "";
         if (!ct.includes("application/json")) throw new Error(`Server error (${res.status})`);
         const data = await res.json();
@@ -171,6 +173,7 @@ export default function CreateCoursePage() {
         setValue("title", c.title || "");
         setValue("description", c.description || "");
         setValue("visibility", c.visibility || "public");
+        setValue("isCertificateEnabled", c.isCertificateEnabled || false);
         setValue("category", c.category || "");
         setCourseStatus(c.status || null);
 
@@ -316,7 +319,7 @@ export default function CreateCoursePage() {
               onReady: (e: any) => {
                 const totalSec = e.target.getDuration();
                 setTimeout(() => {
-                  try { document.body.removeChild(document.getElementById(tempId)!); } catch (_) {}
+                  try { document.body.removeChild(document.getElementById(tempId)!); } catch (_) { }
                 }, 100);
                 if (totalSec > 0) {
                   const m = Math.floor(totalSec / 60);
@@ -325,14 +328,14 @@ export default function CreateCoursePage() {
                 } else resolve("");
               },
               onError: () => {
-                try { document.body.removeChild(document.getElementById(tempId)!); } catch (_) {}
+                try { document.body.removeChild(document.getElementById(tempId)!); } catch (_) { }
                 resolve("");
               },
             },
           });
         }
       }, 300);
-      setTimeout(() => { clearInterval(checkAPI); resolve(""); }, 10000); 
+      setTimeout(() => { clearInterval(checkAPI); resolve(""); }, 10000);
     });
   };
   // ------------------------------------------------------------------
@@ -354,13 +357,13 @@ export default function CreateCoursePage() {
     setLoading(true);
     const isEdit = !!editId;
     const isApproved = courseStatus === "published";
-    
+
     const tid = toast.loading(
-      status === "draft" 
-        ? (isEdit ? "💾 Updating..." : "💾 Saving draft...") 
-        : (isEdit 
-            ? (isApproved ? "🚀 Updating..." : "📋 Submitting for review...") 
-            : "📋 Submitting for review..."),
+      status === "draft"
+        ? (isEdit ? "💾 Updating..." : "💾 Saving draft...")
+        : (isEdit
+          ? (isApproved ? "🚀 Updating..." : "📋 Submitting for review...")
+          : "📋 Submitting for review..."),
       { position: "top-right", style: { borderRadius: "12px", background: "#1e1e2e", color: "#fff" } }
     );
 
@@ -414,6 +417,7 @@ export default function CreateCoursePage() {
         originalPrice: vals.discountPrice ? Number(vals.discountPrice) : undefined,
         visibility: vals.visibility,
         status,
+        isCertificateEnabled: Boolean(vals.isCertificateEnabled),
       };
 
       const res = await fetch(isEdit ? `/api/courses/${editId}` : "/api/courses", {
@@ -428,9 +432,9 @@ export default function CreateCoursePage() {
 
       toast.success(
         isEdit
-          ? (status === "draft" 
-              ? "Draft updated! 📝" 
-              : (isApproved ? "Course updated! ✅" : "Course submitted for review! ✅"))
+          ? (status === "draft"
+            ? "Draft updated! 📝"
+            : (isApproved ? "Course updated! ✅" : "Course submitted for review! ✅"))
           : (status === "draft" ? "Draft saved! 📝" : "✅ Submitted for review!"),
         { id: tid, ...tOk }
       );
@@ -523,13 +527,22 @@ export default function CreateCoursePage() {
                       </div>
                     ) : (
                       <div className="space-y-2">
-                        <select {...register("category", { required: "Please select a category" })}
-                          className={`select select-bordered bg-base-200 w-full focus:outline-none cursor-pointer ${errors.category ? "border-error" : ""}`}>
-                          <option value="">— Select —</option>
-                          {dbCategories.map((cat) => (
-                            <option key={cat} value={cat}>{cat}</option>
-                          ))}
-                        </select>
+                        <Controller
+                          name="category"
+                          control={control}
+                          rules={{ required: "Please select a category" }}
+                          render={({ field }) => (
+                            <select
+                              {...field}
+                              className={`select select-bordered bg-base-200 w-full focus:outline-none cursor-pointer ${errors.category ? "border-error" : ""}`}
+                            >
+                              <option value="">— Select —</option>
+                              {dbCategories.map((cat) => (
+                                <option key={cat} value={cat}>{cat}</option>
+                              ))}
+                            </select>
+                          )}
+                        />
                         <button type="button" onClick={() => setCustomCategory(true)}
                           className="text-xs font-semibold hover:underline flex items-center gap-1" style={{ color: "#832388" }}>
                           <span>+</span> Add custom category
@@ -797,7 +810,7 @@ export default function CreateCoursePage() {
                                   if (val.includes("youtube.com") || val.includes("youtu.be")) {
                                     const savedDuration = les.duration;
                                     // "..." show logic while fetching
-                                    updateLesson(mod.id, les.id, "duration", "..."); 
+                                    updateLesson(mod.id, les.id, "duration", "...");
                                     const dur = await fetchYouTubeDuration(val);
                                     updateLesson(mod.id, les.id, "duration", dur || savedDuration || "0:00");
                                   }
@@ -1005,6 +1018,17 @@ export default function CreateCoursePage() {
                     ))}
                   </div>
                 )} />
+              </div>
+
+              <div className="flex items-center justify-between p-4 bg-base-200 border border-base-300 rounded-xl">
+                <div>
+                  <p className="label-text font-semibold">Enable Certificates</p>
+                  <p className="text-xs opacity-60">Issue a certificate to students upon 100% completion.</p>
+                </div>
+                <input type="checkbox"
+                  checked={watch("isCertificateEnabled") || false}
+                  onChange={(e) => setValue("isCertificateEnabled", e.target.checked)}
+                  className="toggle" style={{ border: "2px solid #832388", ["--tglbg" as any]: "#832388" }} />
               </div>
 
               <div className={`card border ${allDone ? "bg-success/5 border-success/30" : "bg-base-200 border-base-300"}`}>

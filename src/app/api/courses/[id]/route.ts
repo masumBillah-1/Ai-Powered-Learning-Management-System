@@ -1,7 +1,7 @@
 // src/app/api/courses/[id]/route.ts
 import { NextResponse } from "next/server";
 import { connectDB } from "@/db/connect";
-import { Course, AdminLog } from "@/models";
+import { Course, AdminLog, Enrollment, User } from "@/models";
 import mongoose from "mongoose";
 
 const normalizeLevel = (level: string): string => {
@@ -229,6 +229,44 @@ export async function PATCH(
       } catch (logErr) {
         console.error("Failed to create admin log:", logErr);
       }
+    }
+    
+    // ✅ Retroactive Certificate Issuance
+    try {
+      if (course.isCertificateEnabled) {
+        const enrollments = await Enrollment.find({
+          courseId: course._id,
+          $or: [
+            { status: "completed" },
+            { "progress.progressPercentage": 100 }
+          ],
+          "certificate.issued": { $ne: true }
+        });
+        
+        for (const enrollment of enrollments) {
+          const certId = `CERT-${Date.now()}-${enrollment.studentId.toString().slice(-6).toUpperCase()}`;
+          await Enrollment.findByIdAndUpdate(enrollment._id, {
+            $set: {
+              status: "completed",
+              completedAt: new Date(),
+              "certificate.issued": true,
+              "certificate.issuedAt": new Date(),
+              "certificate.verificationCode": certId,
+            }
+          });
+          
+          await Promise.all([
+            User.findByIdAndUpdate(enrollment.studentId, {
+              $inc: { "stats.completedCourses": 1, "stats.totalCertificates": 1 },
+            }),
+            Course.findByIdAndUpdate(course._id, {
+              $inc: { "stats.completedCount": 1 },
+            }),
+          ]);
+        }
+      }
+    } catch (certErr) {
+      console.error("Failed to retroactively issue certificates:", certErr);
     }
     
     return NextResponse.json({ success: true, course });

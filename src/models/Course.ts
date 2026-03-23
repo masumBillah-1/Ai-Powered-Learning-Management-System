@@ -57,6 +57,7 @@ export interface ICourseDocument extends Document {
   rejectedAt?: Date;
   isPublished: boolean;
   publishedAt?: Date;
+  isCertificateEnabled: boolean;
   enrollmentCount: number;
   rating: number;
   reviewCount: number;
@@ -162,6 +163,7 @@ const CourseSchema = new Schema<ICourseDocument>(
 
     isPublished: { type: Boolean, default: false },
     publishedAt: { type: Date },
+    isCertificateEnabled: { type: Boolean, default: false },
 
     enrollmentCount: { type: Number, default: 0 },
     rating:          { type: Number, default: 0, min: 0, max: 5 },

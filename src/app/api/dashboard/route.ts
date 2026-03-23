@@ -66,6 +66,8 @@ export async function GET(req: NextRequest) {
         ]);
 
         const totalLearningTime = enrollmentsData.reduce((sum: number, e: any) => sum + (e.progress?.totalTimeSpent || 0), 0);
+        const enrolledCourses = enrollmentsData.length;
+        const completedCourses = enrollmentsData.filter((e: any) => e.status === "completed").length;
 
         return NextResponse.json({
           user: {
@@ -77,6 +79,8 @@ export async function GET(req: NextRequest) {
           },
           stats: {
             ...(user.stats || {}),
+            enrolledCourses: enrolledCourses,
+            completedCourses: completedCourses,
             totalLearningTime: totalLearningTime || user.stats?.totalLearningTime || 0,
           },
           recentEnrollments: enrollmentsData.slice(0, 5) || [],

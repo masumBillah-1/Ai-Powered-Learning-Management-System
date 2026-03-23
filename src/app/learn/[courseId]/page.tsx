@@ -33,6 +33,7 @@ interface Course {
   modules: Module[];
   instructorId: { name: string; photoURL?: string };
   level: string; category: string;
+  isCertificateEnabled?: boolean;
 }
 interface Enrollment {
   _id: string;
@@ -257,8 +258,8 @@ export default function LearnPage() {
       }
 
       const [courseRes, enrollRes] = await Promise.all([
-        fetch(`/api/courses/${courseId}`),
-        fetch(`/api/enrollments?courseId=${courseId}`),
+        fetch(`/api/courses/${courseId}?t=${Date.now()}`, { cache: "no-store" }),
+        fetch(`/api/enrollments?courseId=${courseId}&t=${Date.now()}`, { cache: "no-store" }),
       ]);
       const courseData = await courseRes.json();
       const enrollData = await enrollRes.json();
@@ -1195,7 +1196,7 @@ export default function LearnPage() {
           </div>
 
           {/* CERTIFICATE */}
-          {enrollment?.certificate?.issued && (
+          {course?.isCertificateEnabled === true && enrollment?.certificate?.issued && (
             <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
               className="mx-5 my-4 p-4 rounded-2xl border border-yellow-500/30 bg-yellow-500/5 flex items-center gap-4">
               <FaTrophy className="text-yellow-400 text-3xl flex-shrink-0" />

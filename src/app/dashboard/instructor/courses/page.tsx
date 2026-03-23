@@ -155,7 +155,7 @@ const InstructorCoursesPage = () => {
         setLoading(false);
         return;
       }
-      const data = await safeFetch(`/api/courses?instructorId=${instructorId}`);
+      const data = await safeFetch(`/api/courses?instructorId=${instructorId}&t=${Date.now()}`, { cache: 'no-store' });
       setCourses(data.courses || []);
     } catch (err: any) {
       toast.error(`❌ ${err.message}`, tErr);
@@ -235,7 +235,7 @@ const InstructorCoursesPage = () => {
   const rejected      = courses.filter(c => c.status === 'rejected').length;
   const totalStudents = courses.reduce((a, c) => a + getEnrolledCount(c), 0);
   const totalRevenue  = courses.reduce((a, c) => {
-    const p = c.price || c.pricing?.price || 0;
+    const p = c.originalPrice || c.pricing?.discountPrice || c.price || c.pricing?.price || 0;
     return a + p * getEnrolledCount(c);
   }, 0);
 
