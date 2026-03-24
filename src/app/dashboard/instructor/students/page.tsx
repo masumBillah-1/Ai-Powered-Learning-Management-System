@@ -168,10 +168,31 @@ export default function InstructorStudentsPage() {
       s.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
       (s.location || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
       s.courseName.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchStatus = filterStatus === 'All Status' || s.status === filterStatus.toLowerCase();
+    const matchStatus = filterStatus === 'All Status' 
+      ? true 
+      : filterStatus === 'Need Nudge'
+        ? (() => {
+            const daysSinceEnrollment = Math.floor((Date.now() - new Date(s.enrolledDate).getTime()) / (1000 * 60 * 60 * 24));
+            const inactiveDays = s.lastAccessedAt ? Math.floor((Date.now() - new Date(s.lastAccessedAt).getTime()) / (1000 * 60 * 60 * 24)) : daysSinceEnrollment;
+            // Only nudge if enrolled > 7 days AND (low progress OR long inactivity)
+            return daysSinceEnrollment > 7 && (s.progressPercentage < 50 || inactiveDays > 10);
+          })()
+        : s.status === filterStatus.toLowerCase();
     const matchCourse = filterCourse === 'All Courses' || s.courseId === filterCourse;
     return matchSearch && matchStatus && matchCourse;
   });
+
+  const getRiskLevel = (s: Student) => {
+    const daysSinceEnrollment = Math.floor((Date.now() - new Date(s.enrolledDate).getTime()) / (1000 * 60 * 60 * 24));
+    const inactiveDays = s.lastAccessedAt ? Math.floor((Date.now() - new Date(s.lastAccessedAt).getTime()) / (1000 * 60 * 60 * 24)) : daysSinceEnrollment;
+    
+    // Don't flag new students (enrolled < 7 days) unless they are completely inactive for a while
+    if (daysSinceEnrollment <= 7 && inactiveDays <= 7) return null;
+
+    if (inactiveDays > 15 || (s.progressPercentage < 30 && daysSinceEnrollment > 10)) return { label: 'High Risk', color: '#dc2626', days: inactiveDays };
+    if (inactiveDays > 10 || (s.progressPercentage < 50 && daysSinceEnrollment > 7)) return { label: 'Need Nudge', color: '#f59e0b', days: inactiveDays };
+    return null;
+  };
 
   // ── Stats ───────────────────────────────────────────────────────────────────
   // unique students (একই user একাধিক course এ থাকতে পারে)
@@ -273,6 +294,7 @@ export default function InstructorStudentsPage() {
             <select className="select select-bordered bg-base-100 cursor-pointer min-w-[160px]"
               value={filterStatus} onChange={e => setFilterStatus(e.target.value)}>
               <option>All Status</option>
+              <option value="Need Nudge">Need Nudge (At Risk)</option>
               <option>Active</option>
               <option>Completed</option>
               <option>Dropped</option>
@@ -313,10 +335,8 @@ export default function InstructorStudentsPage() {
               <table className="table">
                 <thead>
                   <tr>
-                    <th className="text-xs font-bold uppercase tracking-wider opacity-60">Student</th>
-                    <th className="text-xs font-bold uppercase tracking-wider opacity-60">Contact</th>
-                    <th className="text-xs font-bold uppercase tracking-wider opacity-60">Course</th>
-                    <th className="text-center text-xs font-bold uppercase tracking-wider opacity-60">Enrolled</th>
+                    <th className="text-xs font-bold uppercase tracking-wider opacity-60">Student / Info</th>
+                    <th className="text-xs font-bold uppercase tracking-wider opacity-60">Course / Date</th>
                     <th className="text-xs font-bold uppercase tracking-wider opacity-60">Progress</th>
                     <th className="text-center text-xs font-bold uppercase tracking-wider opacity-60">Status</th>
                     <th className="text-right text-xs font-bold uppercase tracking-wider opacity-60">Actions</th>
@@ -326,11 +346,11 @@ export default function InstructorStudentsPage() {
                   {filtered.map(s => (
                     <tr key={s.enrollmentId} className="hover">
 
-                      {/* Student */}
-                      <td>
+                      {/* Student & Info */}
+                      <td className="min-w-[200px]">
                         <div className="flex items-center gap-3">
                           <div className="avatar">
-                            <div className="w-11 h-11 rounded-xl overflow-hidden bg-base-200 flex items-center justify-center">
+                            <div className="w-11 h-11 rounded-xl overflow-hidden bg-base-200 flex items-center justify-center flex-shrink-0">
                               {s.photoURL
                                 ? <img src={s.photoURL} alt={s.name} className="w-full h-full object-cover" />
                                 : <span className="text-lg font-bold" style={{ color: '#832388' }}>
@@ -339,49 +359,42 @@ export default function InstructorStudentsPage() {
                               }
                             </div>
                           </div>
-                          <div>
-                            <h4 className="text-sm font-bold hover:text-[#832388] transition-colors cursor-pointer">
+                          <div className="min-w-0">
+                            <h4 className="text-sm font-bold hover:text-[#832388] transition-colors cursor-pointer truncate max-w-[150px] flex items-center gap-1.5" title={s.name}>
                               {s.name}
+                              {getRiskLevel(s) && (
+                                <span className="tooltip tooltip-right" data-tip={`${getRiskLevel(s)?.label}: ${getRiskLevel(s)?.days} days inactive`}>
+                                  <TrendingUp className="w-3 h-3" style={{ color: getRiskLevel(s)?.color }} />
+                                </span>
+                              )}
                             </h4>
-                            {s.location && s.location !== 'N/A' && (
-                              <div className="flex items-center gap-1 text-xs opacity-50 mt-0.5">
-                                <MapPin size={10} />
-                                <span>{s.location}</span>
+                            <div className="flex flex-col gap-0.5 mt-0.5">
+                              <div className="flex items-center gap-1.5 text-[11px] opacity-60">
+                                <Mail size={10} className="flex-shrink-0" />
+                                <span className="truncate max-w-[140px]">{s.email}</span>
                               </div>
-                            )}
-                          </div>
-                        </div>
-                      </td>
-
-                      {/* Contact */}
-                      <td>
-                        <div className="space-y-1">
-                          <div className="flex items-center gap-1.5 text-xs opacity-70">
-                            <Mail size={11} />
-                            <span className="truncate max-w-[160px]">{s.email}</span>
-                          </div>
-                          {s.phone && (
-                            <div className="flex items-center gap-1.5 text-xs opacity-70">
-                              <Phone size={11} />
-                              <span>{s.phone}</span>
+                              {s.location && s.location !== 'N/A' && (
+                                <div className="flex items-center gap-1.5 text-[11px] opacity-50">
+                                  <MapPin size={10} className="flex-shrink-0" />
+                                  <span className="truncate max-w-[140px]">{s.location}</span>
+                                </div>
+                              )}
                             </div>
-                          )}
+                          </div>
                         </div>
                       </td>
 
-                      {/* Course */}
-                      <td>
-                        <div className="flex items-start gap-1.5 text-xs">
-                          <BookOpen size={12} className="mt-0.5 flex-shrink-0" style={{ color: '#832388' }} />
-                          <span className="font-semibold line-clamp-2 max-w-[180px]">{s.courseName}</span>
-                        </div>
-                      </td>
-
-                      {/* Enrolled date */}
-                      <td className="text-center">
-                        <div className="flex items-center justify-center gap-1.5 text-xs opacity-70">
-                          <Calendar size={11} />
-                          <span className="font-semibold whitespace-nowrap">{formatDate(s.enrolledDate)}</span>
+                      {/* Course & Enrollment Info */}
+                      <td className="min-w-[180px]">
+                        <div className="flex flex-col gap-1.5">
+                          <div className="flex items-start gap-1.5 text-xs text-[#832388] font-bold">
+                            <BookOpen size={13} className="mt-0.5 flex-shrink-0" />
+                            <span className="line-clamp-1 max-w-[160px]">{s.courseName}</span>
+                          </div>
+                          <div className="flex items-center gap-1.5 text-[11px] opacity-60">
+                            <Calendar size={11} className="flex-shrink-0" />
+                            <span className="whitespace-nowrap italic">Enrolled: {formatDate(s.enrolledDate)}</span>
+                          </div>
                         </div>
                       </td>
 
@@ -433,8 +446,13 @@ export default function InstructorStudentsPage() {
                           }
                         </div>
                         <div>
-                          <h3 className="text-sm font-bold hover:text-[#832388] transition-colors cursor-pointer leading-snug">
+                          <h3 className="text-sm font-bold hover:text-[#832388] transition-colors cursor-pointer leading-snug flex items-center gap-1.5">
                             {s.name}
+                            {getRiskLevel(s) && (
+                                <div className="badge border-0 text-[8px] font-black h-4 px-1" style={{ backgroundColor: getRiskLevel(s)?.color + '20', color: getRiskLevel(s)?.color }}>
+                                    {getRiskLevel(s)?.label}
+                                </div>
+                            )}
                           </h3>
                           {s.location && s.location !== 'N/A' && (
                             <div className="flex items-center gap-1 text-xs opacity-50 mt-0.5">

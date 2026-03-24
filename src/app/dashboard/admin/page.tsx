@@ -15,6 +15,7 @@ interface IDashboardStats {
   pendingCourses: number;
   rejectedCourses: number;
   totalRevenue: number;
+  totalProfit: number;
   totalEnrollments: number;
 }
 
@@ -69,8 +70,13 @@ export default function AdminDashboard() {
       // ✅ Enrollment count (DB field: enrollmentCount)
       const totalEnroll = courses.reduce((a: number, c: any) => a + (c.enrollmentCount || 0), 0);
 
-      // ✅ Revenue (from real adminStats)
-      const revenue = adminStats.totalRevenue || 0;
+      // ✅ Get real stats from dashboard API
+      const dashRes = await fetch("/api/dashboard", { headers });
+      const dashData = await dashRes.json();
+      const dbStats = dashData.stats || {};
+      
+      const revenue = dbStats.totalRevenue || 0;
+      const profit = dbStats.totalProfit || 0;
 
       // ✅ Pending courses - show all if pending, else show first 4 published
       let pendingList: IPendingCourse[] = courses
@@ -131,6 +137,7 @@ export default function AdminDashboard() {
         pendingCourses:   pending,
         rejectedCourses:  rejected,
         totalRevenue:     revenue,
+        totalProfit:      profit,
         totalEnrollments: totalEnroll,
       });
 
@@ -172,12 +179,12 @@ export default function AdminDashboard() {
       href:    "/dashboard/admin/courses",
     },
     {
-      label:   "Est. Revenue",
-      value:   `৳${(stats?.totalRevenue ?? 0).toLocaleString()}`,
-      change:  "+21%",
-      icon:    DollarSign,
-      color:   "#00C48C",
-      glow:    "rgba(0,196,140,0.12)",
+      label:   "Platfrom Profit",
+      value:   `৳${(stats?.totalProfit ?? 0).toLocaleString()}`,
+      change:  "+15%",
+      icon:    ShieldCheck,
+      color:   "#E3436B",
+      glow:    "rgba(227,67,107,0.12)",
       href:    "/dashboard/admin/earnings",
     },
   ];

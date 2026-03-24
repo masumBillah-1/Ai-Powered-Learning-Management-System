@@ -1,7 +1,4 @@
-
-
 "use client";
-
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { ArrowRight, ChevronLeft, ChevronRight, FileQuestion, Clock, CheckCircle, XCircle, Trophy, RotateCcw } from 'lucide-react';

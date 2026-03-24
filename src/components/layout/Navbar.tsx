@@ -165,7 +165,6 @@ const Navbar = () => {
 
   const navLinks = [
     { name: "Course Details", href: "/courses" },
-   
     { name: "Blog", href: "/blog" },
     { name: "About", href: "/about" },
   ];
@@ -271,8 +270,18 @@ const Navbar = () => {
                   </Link>
                 ))}
                 {user && (
-                  <Link href="/myclasses" className="nav-link-hover hover:text-[#C81D77] transition-colors nav-link-animate" style={{ animationDelay: "0.43s" }}>
-                    My Classes
+                  <Link
+                    href={
+                      user.role === "instructor"
+                        ? "/dashboard/instructor/courses"
+                        : user.role === "admin"
+                          ? "/dashboard/admin/courses"
+                          : "/dashboard/student/courses"
+                    }
+                    className="nav-link-hover hover:text-[#C81D77] transition-colors nav-link-animate"
+                    style={{ animationDelay: "0.43s" }}
+                  >
+                    {user.role === "instructor" ? "My Courses" : user.role === "admin" ? "All Courses" : "My Classes"}
                   </Link>
                 )}
                 {user && (
@@ -354,8 +363,8 @@ const Navbar = () => {
                               user.role === "admin"
                                 ? "/dashboard/admin"
                                 : user.role === "instructor"
-                                ? "/dashboard/instructor"
-                                : "/dashboard/student"
+                                  ? "/dashboard/instructor"
+                                  : "/dashboard/student"
                             }
                             className="flex items-center gap-2.5 px-4 py-2.5 text-[13.5px] text-gray-700 dark:text-gray-200 border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors no-underline"
                             onClick={() => setShowMenu(false)}
@@ -364,8 +373,8 @@ const Navbar = () => {
                             {user.role === "admin"
                               ? "Admin Dashboard"
                               : user.role === "instructor"
-                              ? "Instructor Dashboard"
-                              : "Student Dashboard"}
+                                ? "Instructor Dashboard"
+                                : "Student Dashboard"}
                           </Link>
                           {/* Settings */}
                           <Link
@@ -461,11 +470,18 @@ const Navbar = () => {
                   ))}
                   {user && (
                     <Link
-                      href="/myclasses"
+                      href={
+                        user.role === "instructor"
+                          ? "/dashboard/instructor/courses"
+                          : user.role === "admin"
+                            ? "/dashboard/admin/courses"
+                            : "/dashboard/student/courses"
+                      }
                       className="flex justify-between items-center p-4 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-800 text-gray-800 dark:text-gray-200 font-bold transition-colors"
                       onClick={() => setIsOpen(false)}
                     >
-                      My Classes <FaChevronRight size={12} />
+                      {user.role === "instructor" ? "My Courses" : user.role === "admin" ? "All Courses" : "My Classes"}
+                      <FaChevronRight size={12} />
                     </Link>
                   )}
                 </div>
