@@ -168,10 +168,31 @@ export default function InstructorStudentsPage() {
       s.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
       (s.location || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
       s.courseName.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchStatus = filterStatus === 'All Status' || s.status === filterStatus.toLowerCase();
+    const matchStatus = filterStatus === 'All Status' 
+      ? true 
+      : filterStatus === 'Need Nudge'
+        ? (() => {
+            const daysSinceEnrollment = Math.floor((Date.now() - new Date(s.enrolledDate).getTime()) / (1000 * 60 * 60 * 24));
+            const inactiveDays = s.lastAccessedAt ? Math.floor((Date.now() - new Date(s.lastAccessedAt).getTime()) / (1000 * 60 * 60 * 24)) : daysSinceEnrollment;
+            // Only nudge if enrolled > 7 days AND (low progress OR long inactivity)
+            return daysSinceEnrollment > 7 && (s.progressPercentage < 50 || inactiveDays > 10);
+          })()
+        : s.status === filterStatus.toLowerCase();
     const matchCourse = filterCourse === 'All Courses' || s.courseId === filterCourse;
     return matchSearch && matchStatus && matchCourse;
   });
+
+  const getRiskLevel = (s: Student) => {
+    const daysSinceEnrollment = Math.floor((Date.now() - new Date(s.enrolledDate).getTime()) / (1000 * 60 * 60 * 24));
+    const inactiveDays = s.lastAccessedAt ? Math.floor((Date.now() - new Date(s.lastAccessedAt).getTime()) / (1000 * 60 * 60 * 24)) : daysSinceEnrollment;
+    
+    // Don't flag new students (enrolled < 7 days) unless they are completely inactive for a while
+    if (daysSinceEnrollment <= 7 && inactiveDays <= 7) return null;
+
+    if (inactiveDays > 15 || (s.progressPercentage < 30 && daysSinceEnrollment > 10)) return { label: 'High Risk', color: '#dc2626', days: inactiveDays };
+    if (inactiveDays > 10 || (s.progressPercentage < 50 && daysSinceEnrollment > 7)) return { label: 'Need Nudge', color: '#f59e0b', days: inactiveDays };
+    return null;
+  };
 
   // ── Stats ───────────────────────────────────────────────────────────────────
   // unique students (একই user একাধিক course এ থাকতে পারে)
@@ -273,6 +294,7 @@ export default function InstructorStudentsPage() {
             <select className="select select-bordered bg-base-100 cursor-pointer min-w-[160px]"
               value={filterStatus} onChange={e => setFilterStatus(e.target.value)}>
               <option>All Status</option>
+              <option value="Need Nudge">Need Nudge (At Risk)</option>
               <option>Active</option>
               <option>Completed</option>
               <option>Dropped</option>
@@ -338,8 +360,13 @@ export default function InstructorStudentsPage() {
                             </div>
                           </div>
                           <div className="min-w-0">
-                            <h4 className="text-sm font-bold hover:text-[#832388] transition-colors cursor-pointer truncate max-w-[150px]" title={s.name}>
+                            <h4 className="text-sm font-bold hover:text-[#832388] transition-colors cursor-pointer truncate max-w-[150px] flex items-center gap-1.5" title={s.name}>
                               {s.name}
+                              {getRiskLevel(s) && (
+                                <span className="tooltip tooltip-right" data-tip={`${getRiskLevel(s)?.label}: ${getRiskLevel(s)?.days} days inactive`}>
+                                  <TrendingUp className="w-3 h-3" style={{ color: getRiskLevel(s)?.color }} />
+                                </span>
+                              )}
                             </h4>
                             <div className="flex flex-col gap-0.5 mt-0.5">
                               <div className="flex items-center gap-1.5 text-[11px] opacity-60">
@@ -419,8 +446,13 @@ export default function InstructorStudentsPage() {
                           }
                         </div>
                         <div>
-                          <h3 className="text-sm font-bold hover:text-[#832388] transition-colors cursor-pointer leading-snug">
+                          <h3 className="text-sm font-bold hover:text-[#832388] transition-colors cursor-pointer leading-snug flex items-center gap-1.5">
                             {s.name}
+                            {getRiskLevel(s) && (
+                                <div className="badge border-0 text-[8px] font-black h-4 px-1" style={{ backgroundColor: getRiskLevel(s)?.color + '20', color: getRiskLevel(s)?.color }}>
+                                    {getRiskLevel(s)?.label}
+                                </div>
+                            )}
                           </h3>
                           {s.location && s.location !== 'N/A' && (
                             <div className="flex items-center gap-1 text-xs opacity-50 mt-0.5">

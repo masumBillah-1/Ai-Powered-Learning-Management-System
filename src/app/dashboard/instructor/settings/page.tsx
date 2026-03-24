@@ -1,11 +1,13 @@
+"use client";
+
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { 
-  Camera, Plus, Calendar, 
-  Trash2, Globe, Shield, 
+import {
+  Camera, Plus, Calendar,
+  Trash2, Globe, Shield,
   Bell, CreditCard, User,
-  Wallet, Clock, CheckCircle, 
-  AlertCircle, Loader2 
+  Wallet, Clock, CheckCircle,
+  AlertCircle, Loader2
 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 
@@ -21,7 +23,7 @@ const Settings = () => {
   const [stats, setStats] = useState<WithdrawStats | null>(null);
   const [loadingStats, setLoadingStats] = useState(false);
   const [submitting, setSubmitting] = useState(false);
-  
+
   // Withdrawal Form State
   const [amount, setAmount] = useState('');
   const [method, setMethod] = useState('bkash');
@@ -54,7 +56,7 @@ const Settings = () => {
 
   const handleWithdraw = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     const numAmount = Number(amount);
     if (!numAmount || numAmount < 500) {
       toast.error("Minimum withdrawal amount is ৳500");
@@ -111,17 +113,16 @@ const Settings = () => {
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
-              className={`px-6 py-4 text-sm font-bold transition-all relative ${
-                activeTab === tab 
-                ? 'text-pink-500' 
-                : 'text-gray-500 hover:text-gray-700 dark:text-gray-400'
-              }`}
+              className={`px-6 py-4 text-sm font-bold transition-all relative ${activeTab === tab
+                  ? 'text-pink-500'
+                  : 'text-gray-500 hover:text-gray-700 dark:text-gray-400'
+                }`}
             >
               {tab}
               {activeTab === tab && (
-                <motion.div 
-                  layoutId="activeTab" 
-                  className="absolute bottom-0 left-0 right-0 h-0.5 bg-pink-500" 
+                <motion.div
+                  layoutId="activeTab"
+                  className="absolute bottom-0 left-0 right-0 h-0.5 bg-pink-500"
                 />
               )}
             </button>
@@ -136,9 +137,9 @@ const Settings = () => {
             <section className="bg-white dark:bg-slate-900 rounded-3xl p-8 border border-gray-100 dark:border-slate-800 shadow-sm">
               <div className="flex items-center gap-6 mb-10 pb-10 border-b dark:border-slate-800">
                 <div className="relative group">
-                  <img 
-                    src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=facearea&facepad=2&w=256&h=256&q=80" 
-                    alt="Avatar" 
+                  <img
+                    src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=facearea&facepad=2&w=256&h=256&q=80"
+                    alt="Avatar"
                     className="w-24 h-24 rounded-full object-cover border-4 border-gray-50"
                   />
                   <div className="absolute inset-0 flex items-center justify-center bg-black/20 rounded-full opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">
@@ -201,7 +202,7 @@ const Settings = () => {
                 { title: 'PENDING', amount: stats?.pending || 0, icon: <Clock className="text-amber-500" /> },
                 { title: 'TOTAL', amount: stats?.totalWithdrawn || 0, icon: <CheckCircle className="text-blue-500" /> },
               ].map((card, idx) => (
-                <motion.div 
+                <motion.div
                   key={card.title}
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
@@ -239,12 +240,12 @@ const Settings = () => {
                 <form onSubmit={handleWithdraw} className="space-y-6 max-w-2xl">
                   <div className="space-y-2">
                     <label className="text-sm font-black text-gray-700 dark:text-gray-300">Amount (৳)</label>
-                    <input 
-                      type="number" 
+                    <input
+                      type="number"
                       placeholder="Min 500"
                       value={amount}
                       onChange={(e) => setAmount(e.target.value)}
-                      className="w-full p-3.5 bg-gray-50 dark:bg-slate-800 border border-gray-100 dark:border-slate-700 rounded-xl outline-none focus:ring-2 focus:ring-pink-500 font-bold text-gray-600 dark:text-gray-200" 
+                      className="w-full p-3.5 bg-gray-50 dark:bg-slate-800 border border-gray-100 dark:border-slate-700 rounded-xl outline-none focus:ring-2 focus:ring-pink-500 font-bold text-gray-600 dark:text-gray-200"
                     />
                     {stats && stats.available < 500 && (
                       <p className="text-xs text-red-500 flex items-center gap-1 mt-1 font-bold">
@@ -255,7 +256,7 @@ const Settings = () => {
 
                   <div className="space-y-2">
                     <label className="text-sm font-black text-gray-700 dark:text-gray-300">Payment Method</label>
-                    <select 
+                    <select
                       value={method}
                       onChange={(e) => setMethod(e.target.value)}
                       className="w-full p-3.5 bg-gray-50 dark:bg-slate-800 border border-gray-100 dark:border-slate-700 rounded-xl outline-none focus:ring-2 focus:ring-pink-500 font-bold text-gray-600 dark:text-gray-200"
@@ -270,8 +271,8 @@ const Settings = () => {
 
                   <div className="space-y-2">
                     <label className="text-sm font-black text-gray-700 dark:text-gray-300">Account Details</label>
-                    <textarea 
-                      rows={3} 
+                    <textarea
+                      rows={3}
                       placeholder="e.g. Phone number for bKash/Nagad or Email for PayPal/Stripe"
                       value={accountDetails}
                       onChange={(e) => setAccountDetails(e.target.value)}
@@ -279,7 +280,7 @@ const Settings = () => {
                     />
                   </div>
 
-                  <button 
+                  <button
                     type="submit"
                     disabled={submitting || (stats ? stats.available < 500 : false)}
                     className="flex items-center justify-center gap-2 bg-pink-500 text-white px-8 py-3.5 rounded-xl font-black shadow-lg shadow-pink-100 dark:shadow-none hover:bg-pink-600 transition-all disabled:opacity-50 disabled:cursor-not-allowed"

@@ -1,12 +1,13 @@
 "use client";
 
 import Link from "next/link";
+import Logo from "@/components/layout/Logo";
 import { usePathname, useRouter } from "next/navigation";
 import { useState, useEffect, useRef, useCallback } from "react";
 import {
   LayoutDashboard, User, BookOpen, FileText, HelpCircle, Award,
   MessageSquare, Settings, Bell, ChevronLeft, ChevronRight,
-  Menu, X, LogOut, Users, DollarSign, BarChart2, Megaphone,
+  Menu, X, LogOut, Users, DollarSign, BarChart2, Megaphone, Trophy,
 } from "lucide-react";
 import { FaSun, FaMoon, FaFacebookMessenger } from "react-icons/fa";
 
@@ -113,12 +114,18 @@ function Sidebar({ items, collapsed, onToggle, mobileOpen, onMobileClose }: {
   const NavContent = ({ forceWide = false }: { forceWide?: boolean }) => {
     const w = forceWide || wide;
     return (
-      <div className={`flex flex-col h-full overflow-hidden bg-gradient-to-b from-[#1a1a2e] via-[#16213e] to-[#0f3460] transition-all duration-300 ${w ? "w-60" : "w-[68px]"}`}>
-        <div className={`h-16 flex items-center flex-shrink-0 border-b border-white/[0.07] ${w ? "px-3.5 justify-between" : "justify-center px-0"}`}>
+      <div className={`flex flex-col h-full overflow-hidden bg-gradient-to-b from-[#1a1a2e] via-[#16213e] to-[#0f3460] transition-all duration-300 ${w ? "w-64" : "w-[68px]"}`}>
+        <div className={`h-16 flex items-center flex-shrink-0 border-b border-white/[0.07] ${w ? "px-4 justify-between" : "justify-center px-0"}`}>
           {w && (
-            <Link href="/" className="flex items-center gap-2.5 no-underline min-w-0">
-              <div className="w-8 h-8 rounded-lg flex-shrink-0 flex items-center justify-center text-[15px] font-black text-white bg-gradient-to-br from-[#832388] to-[#FF0F7B]">S</div>
-              <span className="text-[15px] font-black text-white whitespace-nowrap tracking-tight">SmartLMS<span className="text-[#FF0F7B]">Pro</span></span>
+            <Link href="/" className="flex items-center gap-2 no-underline group min-w-0">
+              <img
+                src="/mortarboard.png"
+                alt="Logo"
+                className="w-12 h-12 flex-shrink-0 group-hover:rotate-6 transition-transform duration-300"
+              />
+              <span className="whitespace-nowrap text-[17px] font-black tracking-tight text-white">
+                Career<span className="bg-gradient-to-r from-[#FF0F7B] to-[#F89B29] bg-clip-text text-transparent">Canvas</span>
+              </span>
             </Link>
           )}
           {!forceWide ? (
@@ -154,7 +161,7 @@ function Sidebar({ items, collapsed, onToggle, mobileOpen, onMobileClose }: {
 
   return (
     <>
-      <aside className={`fixed top-0 left-0 bottom-0 z-60 overflow-hidden transition-all duration-300 hidden md:block ${collapsed ? "w-[68px]" : "w-60"}`}>
+      <aside className={`fixed top-0 left-0 bottom-0 z-60 overflow-hidden transition-all duration-300 hidden md:block ${collapsed ? "w-[68px]" : "w-64"}`}>
         <NavContent />
       </aside>
       {mobileOpen && (
@@ -428,6 +435,12 @@ function TopNavbar({ role, items, theme, toggleTheme, user, onLogout, onMobileMe
               <Link href="/dashboard/settings" onClick={() => setShowUser(false)}
                 className="flex items-center gap-2.5 px-4 py-2.5 text-[13.5px] text-gray-700 dark:text-gray-300 border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors no-underline">
                 <Settings size={14} className="opacity-50" /> Settings
+              </Link>
+              <Link href="/leaderboard" onClick={() => setShowUser(false)}
+                className="flex items-center gap-2.5 px-4 py-2.5 text-[13.5px] text-gray-700 dark:text-gray-300 border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors no-underline group">
+                <Trophy size={14} style={{ color: "#F89B29" }} /> 
+                <span>Leaderboard</span>
+                <span className="ml-auto text-[9px] font-black px-1.5 py-0.5 rounded-md" style={{ backgroundColor: "#F89B2920", color: "#F89B29", border: "1px solid #F89B2930" }}>🏆 NEW</span>
               </Link>
               <button onClick={() => { setShowUser(false); onLogout(); }}
                 className="flex items-center gap-2.5 w-full px-4 py-2.5 text-[13.5px] font-semibold bg-transparent border-none cursor-pointer hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors text-[#FF0F7B]">
@@ -717,7 +730,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         messageConversations={messageConversations}
         router={router}
       />
-      <main className={`min-h-screen pt-16 transition-all duration-300 ${collapsed ? "md:pl-[68px]" : "md:pl-60"}`}>
+      <main className={`min-h-screen pt-16 transition-all duration-300 ${collapsed ? "md:pl-[68px]" : "md:pl-64"}`}>
         <div className="p-6">
           <PageLoader>{children}</PageLoader>
         </div>
