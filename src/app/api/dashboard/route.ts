@@ -24,6 +24,33 @@ export async function GET(req: NextRequest) {
     if (!auth) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     await connectDB();
+    
+    // ✅ Leaderboard data fetcher (accessible to any authenticated user)
+    const url = new URL(req.url);
+    if (url.searchParams.get("leaderboard") === "true") {
+      const topUsers = await User.find({ status: "active", role: "student" })
+        .sort({ "stats.totalXP": -1 })
+        .limit(20)
+        .select("name photoURL stats.totalXP stats.level stats.currentStreak stats.badges")
+        .lean();
+      
+      return NextResponse.json({ 
+        success: true, 
+        leaderboard: topUsers.map((u: any, i: number) => ({
+          id: u._id.toString(),
+          name: u.name,
+          xp: u.stats?.totalXP || 0,
+          level: u.stats?.level || 1,
+          streak: u.stats?.currentStreak || 0,
+          badges: (u.stats?.badges || []).length,
+          photo: u.photoURL || "",
+          rank: i + 1,
+          initials: u.name.split(" ").map((n: string) => n[0]).join("").toUpperCase().slice(0, 2),
+          trend: "stable",
+          courses: (u.stats?.enrolledCourses || 0)
+        }))
+      });
+    }
 
     const user = await User.findById(auth.userId)
       .select("-password -resetToken -resetTokenExpiry");
