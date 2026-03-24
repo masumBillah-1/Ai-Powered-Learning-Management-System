@@ -67,7 +67,7 @@ const About = () => {
         />
       </div>
 
-      <div className="container mx-auto px-6 lg:px-16 max-w-7xl relative z-10">
+      <div className="container mx-auto px-6 lg:px-16 max-w-9xl relative z-10">
         
         {/* Header Section */}
         <div className="text-center mb-32">
@@ -100,76 +100,70 @@ const About = () => {
         </div>
 
         {/* Team Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-x-10 gap-y-20">
-          {team.map((member, index) => (
-            <motion.div 
-              key={index}
-              initial={{ opacity: 0, y: 60 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.6, delay: index * 0.1 }}
-              whileHover={{ y: -10 }}
-              className="group relative"
-            >
-              {/* Card Decoration */}
-              <div className="absolute -inset-2 bg-gradient-to-b from-purple-500/20 to-blue-500/20 rounded-[3.5rem] blur-xl opacity-0 group-hover:opacity-100 transition duration-500" />
-              
-              <div className="relative">
-                {/* Image Wrapper */}
-                <div className="relative aspect-[4/5] rounded-[3rem] overflow-hidden border border-white/10 bg-slate-900 shadow-2xl transition-all duration-500 group-hover:border-white/20">
-                  
-                  {/* Subtle Grain Overlay */}
-                  <div className="absolute inset-0 opacity-[0.03] pointer-events-none bg-[url('https://grainy-gradients.vercel.app/noise.svg')]" />
+<div className="flex flex-wrap items-center justify-center gap-6">
+  {team.map((member, index) => (
+ <motion.div
+  key={index}
+  initial={{ opacity: 0, y: 50 }}
+  whileInView={{ opacity: 1, y: 0 }}
+  viewport={{ once: true }}
+  transition={{ duration: 0.5, delay: index * 0.08 }}
+  className="group relative h-[620px] w-[180px] overflow-hidden rounded-[2.5rem] border border-white/10 bg-white/10 dark:bg-black/10 dark:border-black/30 shadow-2xl hover:w-[260px] duration-500"
+>
+      {/* Image */}
+      <img
+        src={member.image}
+        alt={member.name}
+        className="h-full w-full object-cover object-top transition-transform duration-700 group-hover:scale-110"
+      />
 
-                  {/* Glass Hover UI */}
-                  <div className="absolute inset-0 bg-black/40 backdrop-blur-[2px] opacity-0 group-hover:opacity-100 transition-all duration-500 z-20 flex flex-col items-center justify-center gap-6">
-                    <p className="text-white/80 text-xs font-bold tracking-widest uppercase mb-[-10px]">Follow on</p>
-                    <div className="flex gap-4">
-                      <motion.a 
-                        href={member.github} 
-                        target="_blank" 
-                        whileHover={{ scale: 1.1, backgroundColor: "#fff", color: "#000" }}
-                        className="w-14 h-14 rounded-2xl bg-white/10 backdrop-blur-md border border-white/20 flex items-center justify-center text-2xl transition-all shadow-xl"
-                      >
-                        <FaGithub />
-                      </motion.a>
-                      <motion.a 
-                        href={member.linkedin} 
-                        target="_blank" 
-                        whileHover={{ scale: 1.1, backgroundColor: "#0077b5", color: "#fff" }}
-                        className="w-14 h-14 rounded-2xl bg-white/10 backdrop-blur-md border border-white/20 flex items-center justify-center text-2xl transition-all shadow-xl"
-                      >
-                        <FaLinkedinIn />
-                      </motion.a>
-                    </div>
-                  </div>
-                  
-                  {/* Base Gradient Overlay */}
-                  <div className="absolute inset-0 bg-gradient-to-t from-[#020617] via-transparent to-transparent opacity-60 z-10" />
-                  
-                  <img 
-                    src={member.image} 
-                    alt={member.name}
-                    className="w-full h-full object-cover object-top transition-all duration-700 group-hover:scale-110 group-hover:rotate-1" 
-                  />
-                </div>
+      {/* Gradient Overlay */}
+      <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/10 to-transparent" />
 
-                {/* Info Section */}
-                <div className="mt-8 text-center">
-                  <h3 className="text-2xl font-black tracking-tight text-white group-hover:text-purple-400 transition-colors duration-300">
-                    {member.name}
-                  </h3>
-                  <div className="mt-3 relative inline-block">
-                    <div className="absolute inset-0 bg-purple-500/20 blur-md rounded-full opacity-0 group-hover:opacity-100 transition-opacity" />
-                    <span className="relative px-5 py-1.5 rounded-full border border-white/10 bg-white/5 text-[10px] text-purple-300 font-black uppercase tracking-[0.2em]">
-                      {member.role}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            </motion.div>
-          ))}
+      {/* Social Icons Always Visible */}
+      <div className="absolute top-4 left-4 flex flex-col gap-3 z-30">
+        <motion.a
+          href={member.github}
+          target="_blank"
+          whileHover={{ scale: 1.2 }}
+          className="w-10 h-10 flex items-center justify-center rounded-full bg-white/20 dark:bg-black/30 text-white hover:bg-white hover:text-black transition"
+        >
+          <FaGithub className="text-lg" />
+        </motion.a>
+      </div>
+
+      <div className="absolute top-4 right-4 flex flex-col gap-3 z-30">
+        <motion.a
+          href={member.linkedin}
+          target="_blank"
+          whileHover={{ scale: 1.2 }}
+          className="w-10 h-10 flex items-center justify-center rounded-full bg-white/20 dark:bg-black/30 text-white hover:bg-blue-600 hover:text-white transition"
+        >
+          <FaLinkedinIn className="text-lg" />
+        </motion.a>
+      </div>
+
+      {/* Bottom Info */}
+      <div className="absolute bottom-7 left-1/2 z-20 -translate-x-1/2">
+        <div className="flex items-center rounded-full border border-white/30 bg-white/20 dark:bg-black/20 dark:border-black/30 px-3 py-2 backdrop-blur-md">
+          <img
+            src={member.image}
+            alt={member.name}
+            className="h-10 w-10 rounded-full border-2 border-white dark:border-black object-cover"
+          />
+          <div className="ml-3 w-0 overflow-hidden opacity-0 transition-all duration-500 group-hover:w-[120px] group-hover:opacity-100">
+            <h3 className="whitespace-nowrap text-sm font-bold text-white">
+              {member.name}
+            </h3>
+            <p className="whitespace-nowrap text-[10px] uppercase tracking-wider text-white/80">
+              {member.role}
+            </p>
+          </div>
         </div>
+      </div>
+    </motion.div>
+  ))}
+</div>
 
         {/* Bottom CTA - More Cinematic */}
         <motion.div 

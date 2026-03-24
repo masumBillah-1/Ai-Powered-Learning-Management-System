@@ -165,7 +165,7 @@ const Navbar = () => {
 
   const navLinks = [
     { name: "Course Details", href: "/courses" },
-    { name: "Student Feedback", href: "/feedback" },
+   
     { name: "Blog", href: "/blog" },
     { name: "About", href: "/about" },
   ];
@@ -178,6 +178,10 @@ const Navbar = () => {
           <div className="flex justify-between items-center h-20">
             <Logo />
           </div>
+
+
+
+          
         </div>
       </nav>
     );
