@@ -8,7 +8,8 @@ interface CourseStat { courseId: string; title: string; price: number; enrollmen
 interface Transaction { id: string; enrollmentId: string; date: string; course: string; studentName: string; studentPhoto: string; amount: number; }
 interface MonthPoint { name: string; earnings: number; year: number; month: number; }
 interface EarningsData {
-  totalEarnings: number; thisMonthEarnings: number; totalStudents: number; totalCourses: number;
+  totalEarnings: number; totalNetEarnings: number; totalPlatformFees: number;
+  thisMonthEarnings: number; totalStudents: number; totalCourses: number;
   courseStats: CourseStat[]; allMonthlyData: MonthPoint[]; recentTransactions: Transaction[];
 }
 
@@ -20,7 +21,7 @@ const RANGE_OPTIONS = [
 ];
 
 const formatDate = (d: string) => new Date(d).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
-const fmt = (n: number) => n >= 1000 ? `$${(n / 1000).toFixed(1)}k` : `$${n.toFixed(0)}`;
+const fmt = (n: number) => `৳${(n || 0).toLocaleString()}`;
 
 export default function EarningsPage() {
   const [theme, setTheme] = useState("light");
@@ -53,9 +54,14 @@ export default function EarningsPage() {
       const courses: any[] = cData.courses || [];
 
       if (courses.length === 0) {
-        setData({ totalEarnings: 0, thisMonthEarnings: 0, totalStudents: 0, totalCourses: 0, courseStats: [], allMonthlyData: [], recentTransactions: [] });
+        setData({ totalEarnings: 0, totalNetEarnings: 0, totalPlatformFees: 0, thisMonthEarnings: 0, totalStudents: 0, totalCourses: 0, courseStats: [], allMonthlyData: [], recentTransactions: [] });
         return;
       }
+
+      // ✅ Fetch accurate stats from the dashboard API
+      const dRes = await fetch("/api/dashboard", { credentials: "include", headers });
+      const dData = await dRes.json();
+      const dbStats = dData.stats || {};
 
       let instructorId = "";
       try { const u = JSON.parse(localStorage.getItem("user") || "{}"); instructorId = u?._id || u?.id || ""; } catch { }
@@ -76,7 +82,7 @@ export default function EarningsPage() {
         const cId = e.courseId?.toString() || "";
         const course = courseMap.get(cId);
         if (!course) continue;
-        const price = course.price || 0;  // ✅ Direct price field, not pricing.price
+        const price = course.originalPrice || course.price || 0;  // ✅ Match Dashboard logic
         if (!statsMap.has(cId)) statsMap.set(cId, { courseId: cId, title: course.title, price, enrollments: 0, earnings: 0 });
         const s = statsMap.get(cId)!;
         s.enrollments += 1;
@@ -94,7 +100,7 @@ export default function EarningsPage() {
         .reduce((sum: number, e: any) => {
           const course = courseMap.get(e.courseId?.toString() || "");
           if (!course) return sum;
-          return sum + (course.price || 0);  // ✅ Direct price field
+          return sum + (course.originalPrice || course.price || 0);  // ✅ Match Dashboard logic
         }, 0);
 
       const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
@@ -109,7 +115,7 @@ export default function EarningsPage() {
         if (!monthlyMap.has(key)) continue;
         const course = courseMap.get(e.courseId?.toString() || "");
         if (!course) continue;
-        const price = course.price || 0;  // ✅ Direct price field
+        const price = course.originalPrice || course.price || 0;  // ✅ Match Dashboard logic
         monthlyMap.set(key, (monthlyMap.get(key) || 0) + price);
       }
       const allMonthlyData: MonthPoint[] = Array.from(monthlyMap.entries()).map(([key, earnings]) => {
@@ -124,7 +130,7 @@ export default function EarningsPage() {
       const recentTransactions: Transaction[] = recent.map((e: any, i: number) => {
         const course = courseMap.get(e.courseId?.toString() || "");
         const student = e.studentData || {};
-        const price = course?.price || 0;  // ✅ Direct price field
+        const price = course?.originalPrice || course?.price || 0;  // ✅ Match Dashboard logic
         return {
           id: `ORD-${String(i + 1).padStart(3, "0")}`,
           enrollmentId: e._id,
@@ -136,7 +142,17 @@ export default function EarningsPage() {
         };
       });
 
-      setData({ totalEarnings, thisMonthEarnings, totalStudents, totalCourses: courses.length, courseStats, allMonthlyData, recentTransactions });
+      setData({ 
+        totalEarnings, 
+        totalNetEarnings: dbStats.totalNetAmount || totalEarnings * 0.7, 
+        totalPlatformFees: dbStats.totalPlatformFee || totalEarnings * 0.3, 
+        thisMonthEarnings, 
+        totalStudents, 
+        totalCourses: courses.length, 
+        courseStats, 
+        allMonthlyData, 
+        recentTransactions 
+      });
     } catch (err: any) {
       setError(err.message || "Earnings load করতে সমস্যা হয়েছে।");
     } finally {
@@ -154,10 +170,10 @@ export default function EarningsPage() {
   const rangeEarnings = useMemo(() => chartData.reduce((s, d) => s + d.earnings, 0), [chartData]);
 
   const stats = [
-    { label: "Total Earnings", value: data ? fmt(data.totalEarnings) : "$0", subtitle: "All time", icon: DollarSign, color: '#832388', bg: '#f3e8ff', bgDark: '#2a1f35' },
-    { label: "This Month", value: data ? fmt(data.thisMonthEarnings) : "$0", subtitle: new Date().toLocaleString('en-US', { month: 'long', year: 'numeric' }), icon: TrendingUp, color: '#00C48C', bg: '#d1fae5', bgDark: '#0f2520' },
-    { label: "Students", value: data ? data.totalStudents.toString() : "0", subtitle: "Unique students", icon: Users, color: '#F89B29', bg: '#fef3c7', bgDark: '#2a1f15' },
-    { label: "Courses", value: data ? data.totalCourses.toString() : "0", subtitle: "Your courses", icon: BookOpen, color: '#E3436B', bg: '#fce7f3', bgDark: '#2a1520' },
+    { label: "Total Revenue", value: data ? fmt(data.totalEarnings) : "৳0", subtitle: "Total students paid", icon: DollarSign, color: '#832388', bg: '#f3e8ff', bgDark: '#2a1f35' },
+    { label: "Net Earnings", value: data ? fmt(data.totalNetEarnings) : "৳0", subtitle: "Your total share", icon: TrendingUp, color: '#00C48C', bg: '#d1fae5', bgDark: '#0f2520' },
+    { label: "Platform Fees", value: data ? fmt(data.totalPlatformFees) : "৳0", subtitle: "Platform commission", icon: AlertCircle, color: '#E3436B', bg: '#fce7f3', bgDark: '#2a1520' },
+    { label: "This Month", value: data ? fmt(data.thisMonthEarnings) : "৳0", subtitle: new Date().toLocaleString('en-US', { month: 'long', year: 'numeric' }), icon: CalendarDays, color: '#F89B29', bg: '#fef3c7', bgDark: '#2a1f15' },
   ];
 
   return (
@@ -251,10 +267,10 @@ export default function EarningsPage() {
                   tick={{ fontSize: 12, fontWeight: 600, fill: theme === 'dark' ? '#aaa' : '#94a3b8' }} />
                 <YAxis axisLine={false} tickLine={false}
                   tick={{ fontSize: 12, fontWeight: 600, fill: theme === 'dark' ? '#aaa' : '#94a3b8' }}
-                  tickFormatter={(v) => v >= 1000 ? `$${v / 1000}k` : `$${v}`} />
+                  tickFormatter={(v) => v >= 1000 ? `৳${v / 1000}k` : `৳${v}`} />
                 <Tooltip
                   contentStyle={{ borderRadius: '10px', border: 'none', boxShadow: '0 8px 30px rgba(0,0,0,0.12)', backgroundColor: theme === 'dark' ? '#1e293b' : '#ffffff' }}
-                  formatter={(value) => [`$${value ?? 0}`, 'Earnings']}
+                  formatter={(value) => [`৳${(value as number).toLocaleString()}`, 'Earnings']}
                   itemStyle={{ color: '#832388', fontWeight: 700 }}
                   labelStyle={{ fontWeight: 600, opacity: 0.6 }}
                 />
@@ -287,10 +303,10 @@ export default function EarningsPage() {
                       <td className="text-center text-sm">
                         {c.price === 0
                           ? <span className="badge badge-sm" style={{ backgroundColor: '#d1fae5', color: '#059669' }}>Free</span>
-                          : <span className="opacity-70">${c.price}</span>}
+                          : <span className="opacity-70">৳{c.price.toLocaleString()}</span>}
                       </td>
                       <td className="text-center font-bold" style={{ color: '#F89B29' }}>{c.enrollments}</td>
-                      <td className="text-right font-bold" style={{ color: '#00C48C' }}>${c.earnings.toLocaleString()}</td>
+                      <td className="text-right font-bold" style={{ color: '#00C48C' }}>৳{c.earnings.toLocaleString()}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -298,7 +314,7 @@ export default function EarningsPage() {
                   <tr>
                     <td colSpan={2} className="font-bold opacity-50 text-sm">Total</td>
                     <td className="text-center font-bold" style={{ color: '#F89B29' }}>{data.courseStats.reduce((s, c) => s + c.enrollments, 0)}</td>
-                    <td className="text-right font-black text-xl" style={{ color: '#832388' }}>${data.totalEarnings.toLocaleString()}</td>
+                    <td className="text-right font-black text-xl" style={{ color: '#832388' }}>৳{data.totalEarnings.toLocaleString()}</td>
                   </tr>
                 </tfoot>
               </table>
@@ -356,7 +372,7 @@ export default function EarningsPage() {
                       <td className="text-sm opacity-60 whitespace-nowrap">{formatDate(t.date)}</td>
                       <td className="font-semibold text-sm max-w-[180px] truncate">{t.course}</td>
                       <td className="text-right font-bold" style={{ color: '#00C48C' }}>
-                        {t.amount === 0 ? <span className="text-xs opacity-40">Free</span> : `$${t.amount}`}
+                        {t.amount === 0 ? <span className="text-xs opacity-40">Free</span> : `৳${t.amount.toLocaleString()}`}
                       </td>
                     </tr>
                   ))}

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { connectDB } from "@/db/connect";
-import { Course, Enrollment, Transaction, User } from "@/models";
+import { Course, Enrollment, Transaction, User, SystemSettings } from "@/models";
 import jwt from "jsonwebtoken";
 
 const JWT_SECRET = process.env.JWT_SECRET as string;
@@ -78,6 +78,30 @@ export async function GET(req: NextRequest) {
       (e: any) => new Date(e.enrolledAt) >= firstDayOfMonth
     );
     
+    const commissionSetting = await SystemSettings.findOne({ key: "platform_commission" });
+    const commissionRate = commissionSetting ? Number(commissionSetting.value) / 100 : 0.3;
+
+    // Use transaction aggregation to get precise financial data
+    const financialStats = await Transaction.aggregate([
+      {
+        $match: {
+          type: "payment",
+          status: "completed",
+        },
+      },
+      {
+        $group: {
+          _id: null,
+          totalRevenue: { $sum: "$amount" },
+          totalProfit: { $sum: "$platformFee" },
+          totalNetAmount: { $sum: "$netAmount" },
+        },
+      },
+    ]);
+
+    const statsFromDB = financialStats[0] || { totalRevenue: 0, totalProfit: 0, totalNetAmount: 0 };
+    
+    // Monthly calculation (fallback logic or combined)
     const thisMonthRevenue = thisMonthEnrollments.reduce((sum, e: any) => {
       const enrollCourseId = typeof e.courseId === 'object' ? e.courseId?._id?.toString() : e.courseId?.toString();
       const course = courses.find(c => c._id.toString() === enrollCourseId);
@@ -85,10 +109,8 @@ export async function GET(req: NextRequest) {
       return sum + price;
     }, 0);
 
-    // Platform profit (30% of total revenue)
-    const platformFee = 0.3;
-    const platformProfit = Math.round(totalRevenue * platformFee);
-    const instructorPayouts = totalRevenue - platformProfit;
+    const platformProfit = statsFromDB.totalProfit || Math.round(statsFromDB.totalRevenue * commissionRate);
+    const instructorPayouts = statsFromDB.totalNetAmount || (statsFromDB.totalRevenue - platformProfit);
 
     // Revenue breakdown by course (top courses)
     const breakdown = Array.from(courseRevenue.entries())
@@ -102,11 +124,11 @@ export async function GET(req: NextRequest) {
       .sort((a, b) => b.amount - a.amount)
       .slice(0, 10);
 
-    // Fetch pending payouts (transactions with type=payout and status=pending)
-    const pendingPayouts = await Transaction.find({ type: "payout", status: "pending" })
+    // Fetch all payouts (transactions with type=payout)
+    const allPayouts = await Transaction.find({ type: "payout" })
       .populate("instructorId", "name email photoURL")
       .sort({ createdAt: -1 })
-      .limit(20)
+      .limit(50)
       .lean() as any[];
 
     // Recent statements (completed payments)
@@ -138,6 +160,9 @@ export async function GET(req: NextRequest) {
         studentPhoto: t.studentId?.photoURL || null,
         date: t.createdAt,
         amount: t.amount,
+        platformFee: t.platformFee || 0,
+        netAmount: t.netAmount || (t.amount - (t.platformFee || 0)),
+        paymentMethod: t.paymentMethod || "Unknown",
         status: t.status,
       };
     });
@@ -145,11 +170,10 @@ export async function GET(req: NextRequest) {
     // If no transactions, create sample data from enrollments
     if (statements.length === 0 && enrollments.length > 0) {
       statements = enrollments.slice(0, 20).map((e: any) => {
-        // Get course info (already populated)
         const course = typeof e.courseId === 'object' ? e.courseId : null;
         const price = course?.originalPrice || course?.price || 0;
+        const fee = price * commissionRate;
         
-        // Get instructor info from populated courseId
         let instructorName = "Instructor";
         let instructorPhoto = null;
         
@@ -167,6 +191,9 @@ export async function GET(req: NextRequest) {
           studentPhoto: null,
           date: e.enrolledAt,
           amount: price,
+          platformFee: fee,
+          netAmount: price - fee,
+          paymentMethod: "unknown",
           status: "completed",
         };
       });
@@ -181,7 +208,7 @@ export async function GET(req: NextRequest) {
         platformProfit,
       },
       breakdown,
-      payouts: pendingPayouts.map((p: any) => ({
+      payouts: allPayouts.map((p: any) => ({
         _id: p._id,
         instructor: p.instructorId?.name || p.instructorName || "Unknown",
         instructorEmail: p.instructorId?.email || "",

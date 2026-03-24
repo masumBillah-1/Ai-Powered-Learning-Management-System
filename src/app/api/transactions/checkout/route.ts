@@ -1,7 +1,7 @@
 // src/app/api/transactions/checkout/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import { connectDB } from "@/db/connect";
-import { Course, Transaction, Enrollment, User } from "@/models";
+import { Course, Transaction, Enrollment, User, SystemSettings } from "@/models";
 import mongoose from "mongoose";
 import jwt from "jsonwebtoken";
 import Stripe from "stripe";
@@ -120,9 +120,12 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Invalid course price" }, { status: 400 });
     }
 
+    const commissionSetting = await SystemSettings.findOne({ key: "platform_commission" });
+    const commissionRate = commissionSetting ? Number(commissionSetting.value) / 100 : 0.3;
+
     const priceInUSD    = parseFloat((priceInBDT / 110).toFixed(2));
     const amountInCents = Math.max(Math.round(priceInUSD * 100), 50);
-    const platformFee   = Math.round(priceInBDT * 0.3);
+    const platformFee   = Math.round(priceInBDT * commissionRate);
     const netAmount     = priceInBDT - platformFee;
 
     const paymentIntent = await stripe.paymentIntents.create({
@@ -145,6 +148,7 @@ export async function POST(req: NextRequest) {
       status:         "pending",
       studentId:      decoded.userId,
       courseId,
+      instructorId:   course.instructorId?._id || course.instructorId,
       paymentMethod:  "card",
       paymentId:      paymentIntent.id,
       description:    `Course enrollment: ${course.title}`,

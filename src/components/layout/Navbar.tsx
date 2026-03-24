@@ -165,7 +165,6 @@ const Navbar = () => {
 
   const navLinks = [
     { name: "Course Details", href: "/courses" },
-    { name: "Student Feedback", href: "/feedback" },
     { name: "Blog", href: "/blog" },
     { name: "About", href: "/about" },
   ];

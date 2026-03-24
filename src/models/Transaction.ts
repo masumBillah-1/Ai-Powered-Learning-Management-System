@@ -10,7 +10,7 @@ export interface ITransactionDocument extends Document {
   paymentMethod?: "bkash" | "nagad" | "rocket" | "card" | "bank";
   paymentId?: string;
   instructorId?: mongoose.Types.ObjectId;
-  payoutMethod?: "bank" | "bkash" | "nagad" | "rocket";
+  payoutMethod?: "bank" | "bkash" | "nagad" | "rocket" | "stripe" | "paypal";
   accountDetails?: string;
   description: string;
   metadata?: any;
@@ -38,7 +38,7 @@ const TransactionSchema = new Schema<ITransactionDocument>(
     paymentId:     { type: String },
 
     instructorId:  { type: mongoose.Schema.Types.ObjectId, ref: "User" },
-    payoutMethod:  { type: String, enum: ["bank", "bkash", "nagad", "rocket"] },
+    payoutMethod:  { type: String, enum: ["bank", "bkash", "nagad", "rocket", "stripe", "paypal"] },
     accountDetails:{ type: String },
 
     description: { type: String, required: true, trim: true },

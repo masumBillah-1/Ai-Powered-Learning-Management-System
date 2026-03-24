@@ -2,8 +2,9 @@
 import { useState, useEffect } from "react";
 import {
   User, Shield, Bell, CreditCard, Star, Settings,
-  Eye, EyeOff, Check, Smartphone
+  Eye, EyeOff, Check, Smartphone, RotateCw
 } from "lucide-react";
+import { toast } from "react-hot-toast";
 
 type Role = "student" | "instructor" | "admin";
 
@@ -18,7 +19,14 @@ export default function SettingsPage() {
 
   // System settings state
   const [showDemoLogin, setShowDemoLogin] = useState(true);
+  const [platformCommission, setPlatformCommission] = useState(30);
   const [settingsLoading, setSettingsLoading] = useState(false);
+  
+  // Withdrawal states
+  const [withdrawStats, setWithdrawStats] = useState({ available: 0, pending: 0, totalWithdrawn: 0 });
+  const [withdrawForm, setWithdrawForm] = useState({ amount: "", method: "bkash", account: "" });
+  const [isWithdrawing, setIsWithdrawing] = useState(false);
+  const [loadingWithdraw, setLoadingWithdraw] = useState(false);
 
   // ── Dark/Light + Role sync ──
   useEffect(() => {
@@ -76,12 +84,80 @@ export default function SettingsPage() {
     }
   }, [role, currentTabs, activeTab]);
 
-  // Fetch system settings (admin only)
   useEffect(() => {
     if (role === "admin") {
       fetchSystemSettings();
     }
-  }, [role]);
+    if (role === "instructor" && activeTab === "Withdraw") {
+      fetchWithdrawStats();
+    }
+  }, [role, activeTab]);
+
+  const fetchWithdrawStats = async () => {
+    setLoadingWithdraw(true);
+    try {
+      const res = await fetch("/api/dashboard");
+      const data = await res.json();
+      if (data.withdrawStats) {
+        setWithdrawStats(data.withdrawStats);
+      }
+    } catch (err) {
+      console.error("Failed to fetch withdraw stats:", err);
+    } finally {
+      setLoadingWithdraw(false);
+    }
+  };
+
+  const handleWithdrawalRequest = async () => {
+    const numAmount = Number(withdrawForm.amount);
+    
+    if (!numAmount || numAmount < 500) {
+      toast.error("Minimum withdrawal amount is ৳500");
+      return;
+    }
+
+    if (numAmount > withdrawStats.available) {
+      toast.error("Insufficient balance");
+      return;
+    }
+
+    if (!withdrawForm.account || !withdrawForm.method) {
+      toast.error("Please fill all details correctly.");
+      return;
+    }
+    
+    setIsWithdrawing(true);
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch("/api/dashboard", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          action: "withdraw",
+          amount: numAmount,
+          payoutMethod: withdrawForm.method,
+          accountDetails: withdrawForm.account
+        }),
+      });
+
+      const data = await res.json();
+      if (data.success) {
+        toast.success("Withdrawal request submitted successfully!");
+        setWithdrawForm({ amount: "", method: "bkash", account: "" });
+        fetchWithdrawStats();
+      } else {
+        toast.error(data.error || "Submission failed");
+      }
+    } catch (error) {
+      console.error("Withdrawal error:", error);
+      toast.error("Something went wrong");
+    } finally {
+      setIsWithdrawing(false);
+    }
+  };
 
   const fetchSystemSettings = async () => {
     try {
@@ -89,13 +165,14 @@ export default function SettingsPage() {
       const data = await res.json();
       if (data.success && data.settings) {
         setShowDemoLogin(data.settings.showDemoLogin ?? true);
+        setPlatformCommission(data.settings.platform_commission ?? 30);
       }
     } catch (error) {
       console.error("Failed to fetch settings:", error);
     }
   };
 
-  const updateSystemSetting = async (key: string, value: boolean) => {
+  const updateSystemSetting = async (key: string, value: any) => {
     setSettingsLoading(true);
     try {
       const token = localStorage.getItem("token");
@@ -113,12 +190,13 @@ export default function SettingsPage() {
         showSaved();
         // Update local state
         if (key === "showDemoLogin") setShowDemoLogin(value);
+        if (key === "platform_commission") setPlatformCommission(value);
       } else {
-        alert("Failed to update setting");
+        toast.error("Failed to update setting");
       }
     } catch (error) {
       console.error("Failed to update setting:", error);
-      alert("Failed to update setting");
+      toast.error("Failed to update setting");
     } finally {
       setSettingsLoading(false);
     }
@@ -139,10 +217,22 @@ export default function SettingsPage() {
     <div className="min-h-screen">
 
       {/* Header */}
-      <div className="mb-6">
-        <p className="text-xs font-bold uppercase tracking-widest opacity-40 mb-1">Account</p>
-        <h1 className="text-3xl font-black tracking-tight">Settings</h1>
-        <p className="text-sm opacity-50 mt-1">Manage your account preferences</p>
+      <div className="mb-6 flex items-end justify-between">
+        <div>
+          <p className="text-xs font-bold uppercase tracking-widest opacity-40 mb-1">Account</p>
+          <h1 className="text-3xl font-black tracking-tight">Settings</h1>
+          <p className="text-sm opacity-50 mt-1">Manage your account preferences</p>
+        </div>
+        {activeTab === "Withdraw" && role === "instructor" && (
+          <button
+            onClick={fetchWithdrawStats}
+            disabled={loadingWithdraw}
+            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-base-200 hover:bg-base-300 transition-colors text-xs font-bold cursor-pointer disabled:opacity-50"
+          >
+            <RotateCw size={13} className={loadingWithdraw ? "animate-spin" : ""} />
+            Refresh Stats
+          </button>
+        )}
       </div>
 
       {/* Tabs */}
@@ -276,9 +366,9 @@ export default function SettingsPage() {
         <div className="space-y-6">
           <div className="grid grid-cols-3 gap-4">
             {[
-              { label: "Available", value: "৳1,248", color: "#00C48C" },
-              { label: "Pending", value: "৳340", color: "#F89B29" },
-              { label: "Total", value: "৳8,920", color: "#832388" },
+              { label: "Available", value: `৳${withdrawStats.available.toLocaleString()}`, color: "#00C48C" },
+              { label: "Pending", value: `৳${withdrawStats.pending.toLocaleString()}`, color: "#F89B29" },
+              { label: "Total", value: `৳${withdrawStats.totalWithdrawn.toLocaleString()}`, color: "#832388" },
             ].map(({ label, value, color }) => (
               <div key={label} className="rounded-2xl bg-base-100 border border-base-300 p-5 text-center">
                 <p className="text-xs font-bold uppercase opacity-50 mb-1">{label}</p>
@@ -292,25 +382,51 @@ export default function SettingsPage() {
             <div className="space-y-3 max-w-md">
               <div className="flex flex-col gap-1">
                 <label className="text-xs font-bold opacity-50">Amount (৳)</label>
-                <input type="number" placeholder="1000" className="input input-sm bg-base-200 border-base-300 focus:outline-none" />
+                <input 
+                  type="number" 
+                  placeholder="1000" 
+                  className="input input-sm bg-base-200 border-base-300 focus:outline-none" 
+                  value={withdrawForm.amount}
+                  onChange={(e) => setWithdrawForm({ ...withdrawForm, amount: e.target.value })}
+                />
               </div>
               <div className="flex flex-col gap-1">
                 <label className="text-xs font-bold opacity-50">Payment Method</label>
-                <select className="select select-sm bg-base-200 border-base-300 focus:outline-none">
-                  <option>Bank Transfer</option>
-                  <option>bKash</option>
-                  <option>Nagad</option>
-                  <option>PayPal</option>
+                <select 
+                  className="select select-sm bg-base-200 border-base-300 focus:outline-none"
+                  value={withdrawForm.method}
+                  onChange={(e) => setWithdrawForm({ ...withdrawForm, method: e.target.value })}
+                >
+                  <option value="bkash">bKash</option>
+                  <option value="nagad">Nagad</option>
+                  <option value="rocket">Rocket</option>
+                  <option value="bank">Bank Transfer</option>
                 </select>
               </div>
               <div className="flex flex-col gap-1">
                 <label className="text-xs font-bold opacity-50">Account Details</label>
-                <input type="text" placeholder="Account number..." className="input input-sm bg-base-200 border-base-300 focus:outline-none" />
+                <input 
+                  type="text" 
+                  placeholder="Account number or details..." 
+                  className="input input-sm bg-base-200 border-base-300 focus:outline-none" 
+                  value={withdrawForm.account}
+                  onChange={(e) => setWithdrawForm({ ...withdrawForm, account: e.target.value })}
+                />
               </div>
             </div>
             <div className="mt-5">
-              <button className="btn btn-sm gap-2 border-0 text-white cursor-pointer" style={{ backgroundColor: "#832388" }}>
-                <CreditCard size={13} /> Request Withdrawal
+              <button 
+                onClick={handleWithdrawalRequest}
+                disabled={isWithdrawing || !withdrawForm.amount}
+                className="btn btn-sm gap-2 border-0 text-white cursor-pointer" 
+                style={{ backgroundColor: "#832388" }}
+              >
+                {isWithdrawing ? (
+                  <span className="loading loading-spinner loading-xs"></span>
+                ) : (
+                  <CreditCard size={13} />
+                )}
+                {isWithdrawing ? "Processing..." : "Request Withdrawal"}
               </button>
             </div>
           </div>
@@ -349,6 +465,43 @@ export default function SettingsPage() {
             {settingsLoading && (
               <p className="text-xs text-center mt-3 opacity-50">Updating...</p>
             )}
+          </div>
+
+          {/* Platform Commission Control */}
+          <div className="rounded-2xl bg-base-100 border border-base-300 p-6">
+            <p className="text-xs font-bold uppercase tracking-wider opacity-50 mb-1">Platform Earnings</p>
+            <p className="text-xs opacity-50 mb-4">Set the commission percentage for the platform</p>
+
+            <div className="flex items-center justify-between p-4 rounded-xl bg-base-200">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-lg flex items-center justify-center" style={{ backgroundColor: "#832388", opacity: 0.8 }}>
+                  <CreditCard size={18} color="#fff" />
+                </div>
+                <div>
+                  <p className="text-sm font-bold">Platform Commission (%)</p>
+                  <p className="text-xs opacity-50">Percentage taken from each course sale</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <input
+                  type="number"
+                  min="0"
+                  max="100"
+                  value={platformCommission}
+                  className="input input-sm w-20 bg-base-100 border-base-300 focus:outline-none font-bold"
+                  onChange={(e) => setPlatformCommission(Number(e.target.value))}
+                  disabled={settingsLoading}
+                />
+                <button 
+                  onClick={() => updateSystemSetting("platform_commission", platformCommission)}
+                  disabled={settingsLoading}
+                  className="btn btn-sm text-white border-0"
+                  style={{ backgroundColor: "#832388" }}
+                >
+                  Save
+                </button>
+              </div>
+            </div>
           </div>
 
           {/* Future Settings Placeholder */}

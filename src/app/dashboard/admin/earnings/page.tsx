@@ -1,8 +1,9 @@
 "use client";
 import { useState, useEffect } from "react";
-import { TrendingUp, Clock, CheckCircle, XCircle } from "lucide-react";
+import { TrendingUp, Clock, CheckCircle, XCircle, RotateCw } from "lucide-react";
+import { toast } from "react-hot-toast";
 
-type Tab = "overview" | "payouts" | "statements";
+type Tab = "overview" | "pending" | "payouts" | "statements";
 
 interface IStats {
   totalRevenue: number;
@@ -17,6 +18,8 @@ interface IPayout {
   amount: number;
   requested: string;
   status: string;
+  payoutMethod: string;
+  accountDetails: string;
 }
 
 interface IStatement {
@@ -28,6 +31,9 @@ interface IStatement {
   studentPhoto?: string;
   date: string;
   amount: number;
+  platformFee: number;
+  netAmount: number;
+  paymentMethod: string;
 }
 
 interface IBreakdown {
@@ -107,15 +113,16 @@ export default function AdminEarningsPage() {
         setPayouts(prev =>
           prev.map(p => p._id === id ? { ...p, status: action === "approve" ? "completed" : "failed" } : p)
         );
+        toast.success(`Payout ${action}d successfully`);
       } else {
-        console.error("Payout action failed:", data.error);
+        toast.error(data.error || "Payout action failed");
       }
     } catch (err) {
-      console.error("Error updating payout:", err);
+      toast.error("An error occurred while updating payout");
     }
   };
 
-  const tabs: Tab[] = ["overview", "payouts", "statements"];
+  const tabs: Tab[] = ["overview", "pending", "payouts", "statements"];
 
   const statusStyle = (status: string) => {
     if (status === "completed") return { bg: "bg-success/10", text: "text-success", label: "✓ Paid" };
@@ -145,8 +152,18 @@ export default function AdminEarningsPage() {
           <h1 className="text-3xl font-black tracking-tight">Earnings</h1>
           <p className="text-sm opacity-50 mt-1">Platform revenue & payout management</p>
         </div>
-        <div className="flex items-center gap-2 px-4 py-2 rounded-xl bg-base-200 text-xs font-semibold opacity-60">
-          <Clock size={13} /> Last updated: just now
+        <div className="flex items-center gap-3">
+          <button
+            onClick={fetchEarnings}
+            disabled={loading}
+            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-base-200 hover:bg-base-300 transition-colors text-xs font-bold cursor-pointer disabled:opacity-50"
+          >
+            <RotateCw size={13} className={loading ? "animate-spin" : ""} />
+            Refresh
+          </button>
+          <div className="flex items-center gap-2 px-4 py-2 rounded-xl bg-base-200 text-xs font-semibold opacity-60">
+            <Clock size={13} /> Last updated: just now
+          </div>
         </div>
       </div>
 
@@ -238,8 +255,8 @@ export default function AdminEarningsPage() {
           </div>
         )}
 
-        {/* Payouts */}
-        {activeTab === "payouts" && (
+        {/* Pending Payouts */}
+        {activeTab === "pending" && (
           <div className="overflow-x-auto">
             {loading ? (
               <div className="p-6 space-y-4">
@@ -251,23 +268,27 @@ export default function AdminEarningsPage() {
                   </div>
                 ))}
               </div>
-            ) : payouts.length > 0 ? (
+            ) : payouts.filter(p => p.status === "pending").length > 0 ? (
               <>
                 <table className="table table-md w-full">
                   <thead>
                     <tr>
-                      {["Instructor", "Amount", "Requested", "Status", "Action"].map(h => (
+                      {["Instructor", "Amount", "Method", "Details", "Requested", "Status", "Action"].map(h => (
                         <th key={h} className="text-xs font-bold uppercase tracking-wider opacity-50">{h}</th>
                       ))}
                     </tr>
                   </thead>
                   <tbody>
-                    {payouts.map((p) => {
+                    {payouts.filter(p => p.status === "pending").map((p) => {
                       const s = statusStyle(p.status);
                       return (
                         <tr key={p._id} className="hover">
                           <td className="font-bold">{p.instructor}</td>
                           <td className="font-black text-base" style={{ color: "#832388" }}>৳{p.amount.toLocaleString()}</td>
+                          <td>
+                            <span className="px-2 py-0.5 rounded bg-base-300 text-[10px] font-black uppercase">{p.payoutMethod}</span>
+                          </td>
+                          <td className="text-xs font-medium opacity-70 max-w-[150px] truncate" title={p.accountDetails}>{p.accountDetails}</td>
                           <td className="text-sm opacity-60">{formatDate(p.requested)}</td>
                           <td>
                             <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold ${s.bg} ${s.text}`}>
@@ -275,24 +296,22 @@ export default function AdminEarningsPage() {
                             </span>
                           </td>
                           <td>
-                            {p.status === "pending" && (
-                              <div className="flex gap-2">
-                                <button
-                                  onClick={() => handlePayout(p._id, "approve")}
-                                  className="btn btn-xs gap-1 border-0 text-white cursor-pointer"
-                                  style={{ backgroundColor: "#00C48C" }}
-                                >
-                                  <CheckCircle size={12} /> Approve
-                                </button>
-                                <button
-                                  onClick={() => handlePayout(p._id, "reject")}
-                                  className="btn btn-xs gap-1 cursor-pointer"
-                                  style={{ backgroundColor: "#FF0F7B", color: "#fff", border: "none" }}
-                                >
-                                  <XCircle size={12} /> Reject
-                                </button>
-                              </div>
-                            )}
+                            <div className="flex gap-2">
+                              <button
+                                onClick={() => handlePayout(p._id, "approve")}
+                                className="btn btn-xs gap-1 border-0 text-white cursor-pointer"
+                                style={{ backgroundColor: "#00C48C" }}
+                              >
+                                <CheckCircle size={12} /> Approve
+                              </button>
+                              <button
+                                onClick={() => handlePayout(p._id, "reject")}
+                                className="btn btn-xs gap-1 cursor-pointer"
+                                style={{ backgroundColor: "#FF0F7B", color: "#fff", border: "none" }}
+                              >
+                                <XCircle size={12} /> Reject
+                              </button>
+                            </div>
                           </td>
                         </tr>
                       );
@@ -308,7 +327,67 @@ export default function AdminEarningsPage() {
               </>
             ) : (
               <div className="text-center py-12">
-                <p className="text-sm opacity-50">No pending payouts</p>
+                <p className="text-sm opacity-50">No pending payout requests</p>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Payout History */}
+        {activeTab === "payouts" && (
+          <div className="overflow-x-auto">
+            {loading ? (
+              <div className="p-6 space-y-4">
+                {Array.from({ length: 3 }).map((_, i) => (
+                  <div key={i} className="flex items-center gap-4 animate-pulse">
+                    <div className="h-4 bg-base-300 rounded w-32" />
+                    <div className="h-4 bg-base-300 rounded w-24" />
+                    <div className="h-4 bg-base-300 rounded w-20" />
+                  </div>
+                ))}
+              </div>
+            ) : payouts.filter(p => p.status !== "pending").length > 0 ? (
+              <>
+                <table className="table table-md w-full">
+                  <thead>
+                    <tr>
+                      {["Instructor", "Amount", "Method", "Details", "Date", "Status"].map(h => (
+                        <th key={h} className="text-xs font-bold uppercase tracking-wider opacity-50">{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {payouts.filter(p => p.status !== "pending").map((p) => {
+                      const s = statusStyle(p.status);
+                      return (
+                        <tr key={p._id} className="hover">
+                          <td className="font-bold">{p.instructor}</td>
+                          <td className="font-black text-base" style={{ color: "#832388" }}>৳{p.amount.toLocaleString()}</td>
+                          <td>
+                            <span className="px-2 py-0.5 rounded bg-base-300 text-[10px] font-black uppercase">{p.payoutMethod}</span>
+                          </td>
+                          <td className="text-xs font-medium opacity-70 max-w-[150px] truncate" title={p.accountDetails}>{p.accountDetails}</td>
+                          <td className="text-sm opacity-60">{formatDate(p.requested)}</td>
+                          <td>
+                            <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold ${s.bg} ${s.text}`}>
+                              {s.label}
+                            </span>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+                <div className="flex justify-end items-center gap-3 px-6 py-4 border-t border-base-300 bg-base-200/50">
+                  <span className="text-xs opacity-50 font-semibold uppercase tracking-wider">Total Payouts:</span>
+                  <span className="text-lg font-black" style={{ color: "#00C48C" }}>
+                    ৳{payouts.filter(p => p.status === "completed").reduce((a, p) => a + p.amount, 0).toLocaleString()}
+                  </span>
+                </div>
+              </>
+            ) : (
+              <div className="text-center py-12">
+                <p className="text-sm opacity-50">No payout history available</p>
               </div>
             )}
           </div>
@@ -332,82 +411,62 @@ export default function AdminEarningsPage() {
                 <table className="table table-md w-full">
                   <thead>
                     <tr>
-                      {["#", "Instructor", "Course", "Student", "Date", "Amount"].map(h => (
-                        <th key={h} className="text-xs font-bold uppercase tracking-wider opacity-50">{h}</th>
+                      {["#", "Instructor / Course", "Student / Date", "Method", "Gross", "Platform Fee", "Net Instructor"].map(h => (
+                        <th key={h} className="text-[10px] font-black uppercase tracking-widest opacity-40">{h}</th>
                       ))}
                     </tr>
                   </thead>
                   <tbody>
                     {statements.map((s, i) => (
-                      <tr key={s._id} className="hover">
-                        <td className="text-xs font-black opacity-25">{String(i + 1).padStart(2, "0")}</td>
+                      <tr key={s._id} className="hover border-base-300">
+                        <td className="text-[10px] font-black opacity-20">{String(i + 1).padStart(2, "0")}</td>
                         <td>
                           <div className="flex items-center gap-3">
                             <div className="relative w-8 h-8 flex-shrink-0">
-                              {/* 1) Image Tag */}
                               {s.instructorPhoto ? (
                                 <img
                                   src={s.instructorPhoto}
                                   alt={s.instructor}
                                   className="w-8 h-8 rounded-full object-cover"
                                   referrerPolicy="no-referrer"
-                                  onError={(e) => {
-                                    (e.target as HTMLImageElement).style.display = "none";
-                                    (e.target as HTMLImageElement).nextElementSibling?.removeAttribute("style");
-                                  }}
                                 />
-                              ) : null}
-                              {/* 2) Fallback Initials (Hidden by default if photo exists) */}
-                              <div
-                                className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold"
-                                style={{
-                                  backgroundColor: "#832388",
-                                  display: s.instructorPhoto ? "none" : "flex",
-                                }}
-                              >
-                                {s.instructor.charAt(0).toUpperCase()}
-                              </div>
+                              ) : (
+                                <div className="w-8 h-8 rounded-full flex items-center justify-center text-white text-[10px] font-bold" style={{ backgroundColor: "#832388" }}>
+                                  {s.instructor.charAt(0).toUpperCase()}
+                                </div>
+                              )}
                             </div>
-                            <span className="font-bold text-sm whitespace-nowrap">{s.instructor}</span>
+                            <div>
+                                <p className="font-bold text-sm leading-tight">{s.instructor}</p>
+                                <p className="text-[10px] opacity-50 mt-0.5 truncate max-w-[150px]">{s.course}</p>
+                            </div>
                           </div>
                         </td>
                         <td>
-                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-info/10 text-info">
-                            {s.course}
-                          </span>
-                        </td>
-                        <td>
-                          <div className="flex items-center gap-3">
-                            <div className="relative w-8 h-8 flex-shrink-0">
-                              {/* 1) Image Tag */}
-                              {s.studentPhoto ? (
-                                <img
-                                  src={s.studentPhoto}
-                                  alt={s.student}
-                                  className="w-8 h-8 rounded-full object-cover"
-                                  referrerPolicy="no-referrer"
-                                  onError={(e) => {
-                                    (e.target as HTMLImageElement).style.display = "none";
-                                    (e.target as HTMLImageElement).nextElementSibling?.removeAttribute("style");
-                                  }}
-                                />
-                              ) : null}
-                              {/* 2) Fallback Initials (Hidden by default if photo exists) */}
-                              <div
-                                className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold"
-                                style={{
-                                  backgroundColor: "#FF0F7B",
-                                  display: s.studentPhoto ? "none" : "flex",
-                                }}
-                              >
-                                {s.student.charAt(0).toUpperCase()}
-                              </div>
-                            </div>
-                            <span className="text-sm opacity-70 whitespace-nowrap">{s.student}</span>
+                          <div className="flex items-center gap-2">
+                             <div className="relative w-6 h-6 flex-shrink-0">
+                                {s.studentPhoto ? (
+                                    <img src={s.studentPhoto} alt={s.student} className="w-6 h-6 rounded-full object-cover" />
+                                ) : (
+                                    <div className="w-6 h-6 rounded-full flex items-center justify-center text-white text-[8px] font-bold" style={{ backgroundColor: "#FF0F7B" }}>
+                                        {s.student.charAt(0).toUpperCase()}
+                                    </div>
+                                )}
+                             </div>
+                             <div>
+                                <p className="font-bold text-[13px] leading-tight">{s.student}</p>
+                                <p className="text-[10px] opacity-40 mt-0.5">{formatDate(s.date)}</p>
+                             </div>
                           </div>
                         </td>
-                        <td className="text-xs opacity-50">{formatDate(s.date)}</td>
-                        <td className="font-black text-base" style={{ color: "#00C48C" }}>৳{s.amount.toLocaleString()}</td>
+                        <td>
+                            <span className="px-2 py-0.5 rounded bg-base-300 text-[9px] font-black uppercase opacity-60">
+                                {s.paymentMethod}
+                            </span>
+                        </td>
+                        <td className="font-bold text-sm">৳{s.amount.toLocaleString()}</td>
+                        <td className="font-bold text-sm text-error">৳{s.platformFee.toLocaleString()}</td>
+                        <td className="font-black text-sm text-success">৳{s.netAmount.toLocaleString()}</td>
                       </tr>
                     ))}
                   </tbody>

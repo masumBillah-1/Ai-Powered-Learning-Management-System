@@ -313,10 +313,8 @@ export default function InstructorStudentsPage() {
               <table className="table">
                 <thead>
                   <tr>
-                    <th className="text-xs font-bold uppercase tracking-wider opacity-60">Student</th>
-                    <th className="text-xs font-bold uppercase tracking-wider opacity-60">Contact</th>
-                    <th className="text-xs font-bold uppercase tracking-wider opacity-60">Course</th>
-                    <th className="text-center text-xs font-bold uppercase tracking-wider opacity-60">Enrolled</th>
+                    <th className="text-xs font-bold uppercase tracking-wider opacity-60">Student / Info</th>
+                    <th className="text-xs font-bold uppercase tracking-wider opacity-60">Course / Date</th>
                     <th className="text-xs font-bold uppercase tracking-wider opacity-60">Progress</th>
                     <th className="text-center text-xs font-bold uppercase tracking-wider opacity-60">Status</th>
                     <th className="text-right text-xs font-bold uppercase tracking-wider opacity-60">Actions</th>
@@ -326,11 +324,11 @@ export default function InstructorStudentsPage() {
                   {filtered.map(s => (
                     <tr key={s.enrollmentId} className="hover">
 
-                      {/* Student */}
-                      <td>
+                      {/* Student & Info */}
+                      <td className="min-w-[200px]">
                         <div className="flex items-center gap-3">
                           <div className="avatar">
-                            <div className="w-11 h-11 rounded-xl overflow-hidden bg-base-200 flex items-center justify-center">
+                            <div className="w-11 h-11 rounded-xl overflow-hidden bg-base-200 flex items-center justify-center flex-shrink-0">
                               {s.photoURL
                                 ? <img src={s.photoURL} alt={s.name} className="w-full h-full object-cover" />
                                 : <span className="text-lg font-bold" style={{ color: '#832388' }}>
@@ -339,49 +337,37 @@ export default function InstructorStudentsPage() {
                               }
                             </div>
                           </div>
-                          <div>
-                            <h4 className="text-sm font-bold hover:text-[#832388] transition-colors cursor-pointer">
+                          <div className="min-w-0">
+                            <h4 className="text-sm font-bold hover:text-[#832388] transition-colors cursor-pointer truncate max-w-[150px]" title={s.name}>
                               {s.name}
                             </h4>
-                            {s.location && s.location !== 'N/A' && (
-                              <div className="flex items-center gap-1 text-xs opacity-50 mt-0.5">
-                                <MapPin size={10} />
-                                <span>{s.location}</span>
+                            <div className="flex flex-col gap-0.5 mt-0.5">
+                              <div className="flex items-center gap-1.5 text-[11px] opacity-60">
+                                <Mail size={10} className="flex-shrink-0" />
+                                <span className="truncate max-w-[140px]">{s.email}</span>
                               </div>
-                            )}
-                          </div>
-                        </div>
-                      </td>
-
-                      {/* Contact */}
-                      <td>
-                        <div className="space-y-1">
-                          <div className="flex items-center gap-1.5 text-xs opacity-70">
-                            <Mail size={11} />
-                            <span className="truncate max-w-[160px]">{s.email}</span>
-                          </div>
-                          {s.phone && (
-                            <div className="flex items-center gap-1.5 text-xs opacity-70">
-                              <Phone size={11} />
-                              <span>{s.phone}</span>
+                              {s.location && s.location !== 'N/A' && (
+                                <div className="flex items-center gap-1.5 text-[11px] opacity-50">
+                                  <MapPin size={10} className="flex-shrink-0" />
+                                  <span className="truncate max-w-[140px]">{s.location}</span>
+                                </div>
+                              )}
                             </div>
-                          )}
+                          </div>
                         </div>
                       </td>
 
-                      {/* Course */}
-                      <td>
-                        <div className="flex items-start gap-1.5 text-xs">
-                          <BookOpen size={12} className="mt-0.5 flex-shrink-0" style={{ color: '#832388' }} />
-                          <span className="font-semibold line-clamp-2 max-w-[180px]">{s.courseName}</span>
-                        </div>
-                      </td>
-
-                      {/* Enrolled date */}
-                      <td className="text-center">
-                        <div className="flex items-center justify-center gap-1.5 text-xs opacity-70">
-                          <Calendar size={11} />
-                          <span className="font-semibold whitespace-nowrap">{formatDate(s.enrolledDate)}</span>
+                      {/* Course & Enrollment Info */}
+                      <td className="min-w-[180px]">
+                        <div className="flex flex-col gap-1.5">
+                          <div className="flex items-start gap-1.5 text-xs text-[#832388] font-bold">
+                            <BookOpen size={13} className="mt-0.5 flex-shrink-0" />
+                            <span className="line-clamp-1 max-w-[160px]">{s.courseName}</span>
+                          </div>
+                          <div className="flex items-center gap-1.5 text-[11px] opacity-60">
+                            <Calendar size={11} className="flex-shrink-0" />
+                            <span className="whitespace-nowrap italic">Enrolled: {formatDate(s.enrolledDate)}</span>
+                          </div>
                         </div>
                       </td>
 
