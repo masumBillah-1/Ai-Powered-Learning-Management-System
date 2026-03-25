@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import {
-  BookOpen, PlayCircle, CheckCircle, Heart, ChevronRight, Clock, TrendingUp, Calendar, Loader2
+  BookOpen, PlayCircle, CheckCircle, Heart, ChevronRight, TrendingUp, Calendar, Loader2
 } from 'lucide-react';
 
 // ✅ theme state নেই — DashboardLayout data-theme set করে
@@ -160,12 +160,7 @@ const StudentDashboard = () => {
                   <p className="text-sm opacity-60">Continue your learning journey</p>
                 </div>
               </div>
-              {stats.totalLearningTime && stats.totalLearningTime > 0 && (
-                <div className="flex items-center gap-2 text-sm opacity-60 mt-2">
-                  <Clock className="w-4 h-4" />
-                  <span>Total learning time: {Math.floor(stats.totalLearningTime / 60)}h {stats.totalLearningTime % 60}m</span>
-                </div>
-              )}
+
             </div>
             <button
               onClick={() => router.push('/courses')}

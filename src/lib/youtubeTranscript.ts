@@ -1,4 +1,3 @@
-// YouTube transcript extraction utility
 import { YoutubeTranscript } from 'youtube-transcript';
 
 export interface TranscriptItem {
@@ -7,121 +6,80 @@ export interface TranscriptItem {
   duration: number;
 }
 
-// YouTube video ID extract করার function
+// 1. Improved Video ID Extraction (Handles more edge cases)
 export function extractVideoId(url: string): string | null {
-  const patterns = [
-    /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([^&?\s]+)/,
-    /youtube\.com\/v\/([^&?\s]+)/,
-    /youtube\.com\/watch\?.*v=([^&?\s]+)/
-  ];
-  
-  for (const pattern of patterns) {
-    const match = url.match(pattern);
-    if (match) return match[1];
-  }
-  return null;
+  if (!url) return null;
+  const regex = /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/;
+  const match = url.match(regex);
+  return match ? match[1] : null;
 }
 
-// YouTube transcript fetch করার function
+// 2. Advanced Transcript Fetch with Auto-Cleanup
 export async function fetchYouTubeTranscript(videoUrl: string): Promise<string> {
+  const videoId = extractVideoId(videoUrl);
+  if (!videoId) throw new Error('Invalid YouTube URL');
+
   try {
-    const videoId = extractVideoId(videoUrl);
-    if (!videoId) {
-      throw new Error('Invalid YouTube URL');
-    }
-
-    // Use youtube-transcript library
-    const transcript = await YoutubeTranscript.fetchTranscript(videoId);
+    // Note: If this fails on Vercel, consider using an API like 'Transcript API' by RapidAPI 
+    // or a custom proxy because YouTube blocks many cloud IPs.
+    const transcript = await YoutubeTranscript.fetchTranscript(videoId, {
+        lang: 'en' // Default to English, can be dynamic
+    });
     
-    if (!transcript || transcript.length === 0) {
-      throw new Error('No transcript available');
-    }
+    if (!transcript || transcript.length === 0) throw new Error('No transcript available');
 
-    // Combine all transcript text
-    const fullTranscript = transcript
+    return transcript
       .map(item => item.text)
       .join(' ')
-      .replace(/\[.*?\]/g, '') // Remove [Music], [Applause] etc.
-      .replace(/\s+/g, ' ') // Clean up multiple spaces
+      .replace(/\[Music\]|\[Applause\]|\[Laughter\]/gi, '') // Advanced Regex
+      .replace(/\s+/g, ' ')
       .trim();
 
-    return fullTranscript;
-
   } catch (error) {
-    console.error('Transcript extraction failed:', error);
+    console.error('Transcript fetch failed:', error);
     throw new Error('Could not extract video transcript');
   }
 }
 
-// Video title fetch করার helper function
-async function getVideoTitle(videoId: string): Promise<string> {
-  try {
-    // YouTube oEmbed API ব্যবহার করে title পাওয়া যায়
-    const response = await fetch(`https://www.youtube.com/oembed?url=https://www.youtube.com/watch?v=${videoId}&format=json`);
-    const data = await response.json();
-    return data.title || 'Unknown Video';
-  } catch {
-    return 'Unknown Video';
-  }
-}
-
-// Video category guess করার helper function
-function getVideoCategory(title: string): string {
-  const lowerTitle = title.toLowerCase();
-  
-  if (lowerTitle.includes('python')) return 'Python programming';
-  if (lowerTitle.includes('javascript') || lowerTitle.includes('js')) return 'JavaScript programming';
-  if (lowerTitle.includes('react')) return 'React development';
-  if (lowerTitle.includes('wordpress')) return 'WordPress development';
-  if (lowerTitle.includes('html') || lowerTitle.includes('css')) return 'Web development';
-  if (lowerTitle.includes('tutorial')) return 'educational';
-  
-  return 'educational';
-}
-
-// Enhanced video context তৈরি করার function
+// 3. Intelligent Context Generation (Token Optimization)
 export async function generateVideoContext(videoUrl: string, videoTitle: string): Promise<string> {
   try {
     const transcript = await fetchYouTubeTranscript(videoUrl);
     
-    // Limit transcript length for AI processing
-    const limitedTranscript = transcript.length > 2000 
-      ? transcript.substring(0, 2000) + '...'
-      : transcript;
+    /**
+     * ADVANCED: Smart Chunking
+     * Gemini-flash can handle up to 1M tokens, but sending 2000 chars is too little.
+     * We should send up to 15,000 characters for a deep quiz (approx 45 mins video).
+     */
+    const MAX_LENGTH = 15000; 
+    let processedTranscript = transcript;
+
+    if (transcript.length > MAX_LENGTH) {
+        // If too long, take the first 8000 and last 7000 characters 
+        // to capture Introduction and Conclusion/Summary.
+        processedTranscript = transcript.substring(0, 8000) + 
+                              "\n... [part of transcript skipped for brevity] ...\n" + 
+                              transcript.substring(transcript.length - 7000);
+    }
     
-    return `🎥 Video Context:
-Title: ${videoTitle}
-URL: ${videoUrl}
+    return `### VIDEO DATA
+TITLE: ${videoTitle}
+SOURCE: ${videoUrl}
 
-Video Transcript:
-${limitedTranscript}
+### CORE CONTENT (TRANSCRIPT)
+${processedTranscript}
 
-Based on this video content, you can answer questions about:
-- Main topics and concepts covered
-- Key points and explanations
-- Step-by-step processes shown
-- Examples and demonstrations mentioned
-- Practice questions based on the actual content
-- Related concepts and applications
-
-Please provide specific answers based on the actual video content above.`;
+### INSTRUCTIONS FOR AI
+- Analyze the technical terminology used in this video.
+- Focus on the practical examples mentioned.
+- Ignore any sponsorship or generic "like/subscribe" segments.
+- Identify the sequence of steps for any tutorial shown.`;
 
   } catch (error) {
-    // Fallback context without transcript
-    const videoId = extractVideoId(videoUrl);
-    const category = getVideoCategory(videoTitle);
-    
-    return `🎥 Video Context:
-Title: ${videoTitle}
+    // Robust Fallback using metadata only
+    return `### VIDEO DATA (Metadata Only)
+TITLE: ${videoTitle}
 URL: ${videoUrl}
-Category: ${category}
-
-This is an educational video lesson. While transcript is not available, I can help you with:
-- General questions about ${category} based on the title
-- Creating practice questions for the subject
-- Explaining related concepts and fundamentals
-- Providing examples and applications in ${category}
-
-For more specific content-based questions, please describe what was covered in the video or provide key topics.`;
+NOTE: Transcript unavailable. Base questions on the Title and general knowledge of the subject.`;
   }
 }
