@@ -5,7 +5,7 @@ import Link from "next/link";
 import toast, { Toaster } from "react-hot-toast";
 import {
     Plus, Search, BookOpen, Clock, Tag, Edit3, Trash2, Eye, TrendingUp,
-    CheckCircle, XCircle, AlertCircle, LayoutGrid, List,
+    CheckCircle, XCircle, AlertCircle, LayoutGrid, List, RefreshCw
 } from "lucide-react";
 
 interface Blog {
@@ -319,8 +319,8 @@ export default function BlogPage() {
         fetchBlogs();
     }, []);
 
-    const fetchBlogs = async () => {
-        setLoading(true);
+    const fetchBlogs = async (silent = false) => {
+        if (!silent) setLoading(true);
         try {
             const token = localStorage.getItem("token");
             const res = await fetch("/api/blogs", { headers: { Authorization: `Bearer ${token}` } });
@@ -426,11 +426,20 @@ export default function BlogPage() {
                         )}
                     </p>
                 </div>
-                {/* ✅ Header এ শুধু Create Blog */}
-                <Link href="/dashboard/blog/create"
-                    className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-[13.5px] text-white no-underline bg-gradient-to-r from-purple-600 to-pink-500 hover:opacity-90 transition-opacity shadow-lg shadow-purple-500/25 self-start sm:self-auto flex-shrink-0">
-                    <Plus size={16} /> Create Blog
-                </Link>
+                <div className="flex items-center gap-2">
+                    <button
+                        onClick={() => fetchBlogs(true)}
+                        disabled={loading}
+                        className="btn btn-sm btn-ghost gap-1.5 cursor-pointer"
+                    >
+                        <RefreshCw size={14} className={loading ? "animate-spin" : ""} />
+                        <span className="text-xs">Refresh</span>
+                    </button>
+                    <Link href="/dashboard/blog/create"
+                        className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-[13.5px] text-white no-underline bg-gradient-to-r from-purple-600 to-pink-500 hover:opacity-90 transition-opacity shadow-lg shadow-purple-500/25 self-start sm:self-auto flex-shrink-0">
+                        <Plus size={16} /> Create Blog
+                    </Link>
+                </div>
             </div>
 
             {/* ── Stats ── */}

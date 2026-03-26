@@ -52,8 +52,8 @@ export default function Indashboard() {
   const [loading, setLoading] = useState(true);
   const [chartYear, setChartYear] = useState(new Date().getFullYear());
 
-  const fetchDashboard = useCallback(async () => {
-    setLoading(true);
+  const fetchDashboard = useCallback(async (silent = false) => {
+    if (!silent) setLoading(true);
     try {
       const token = localStorage.getItem("token");
       const headers: Record<string, string> = { "Content-Type": "application/json" };
@@ -183,7 +183,7 @@ export default function Indashboard() {
           <p className="text-xs font-bold uppercase tracking-widest opacity-40 mb-0.5">Instructor Panel</p>
           <h1 className="text-xl font-black">Dashboard</h1>
         </div>
-        <button onClick={fetchDashboard} disabled={loading} className="btn btn-sm btn-ghost gap-1.5">
+        <button onClick={() => { fetchDashboard(true); }} disabled={loading} className="btn btn-sm btn-ghost gap-1.5">
           <RefreshCw size={14} className={loading ? "animate-spin" : ""} />
           <span className="text-xs">Refresh</span>
         </button>

@@ -30,6 +30,7 @@ export default function AdminUsersPage() {
   const [search, setSearch] = useState("");
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<User | null>(null);
   const [banTarget, setBanTarget] = useState<User | null>(null);
@@ -62,9 +63,10 @@ export default function AdminUsersPage() {
   }, [theme]);
 
   // ── Fetch users ──
-  const fetchUsers = useCallback(async () => {
+  const fetchUsers = useCallback(async (silent = false) => {
     try {
-      setLoading(true);
+      if (!silent) setLoading(true);
+      else setRefreshing(true);
       setError(null);
 
       // ✅ Add authorization header
@@ -83,6 +85,7 @@ export default function AdminUsersPage() {
       setError(err.message || "Failed to fetch users");
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
   }, []);
 
@@ -294,8 +297,8 @@ export default function AdminUsersPage() {
           <h1 className="text-3xl font-black tracking-tight">Users</h1>
           <p className="text-sm opacity-50 mt-1">Manage all platform users</p>
         </div>
-        <button onClick={fetchUsers} disabled={loading} className="btn btn-sm btn-ghost gap-1.5 mt-2">
-          <RefreshCw size={14} className={loading ? "animate-spin" : ""} />
+        <button onClick={() => { fetchUsers(true); }} disabled={loading || refreshing} className="btn btn-sm btn-ghost gap-1.5 mt-2 cursor-pointer">
+          <RefreshCw size={14} className={(loading || refreshing) ? "animate-spin" : ""} />
           <span className="text-xs">Refresh</span>
         </button>
       </div>
@@ -305,7 +308,7 @@ export default function AdminUsersPage() {
         <div className="alert alert-error mb-6 flex items-center gap-2 text-sm">
           <AlertCircle size={16} />
           <span>{error}</span>
-          <button className="ml-auto btn btn-xs" onClick={fetchUsers}>Retry</button>
+          <button className="ml-auto btn btn-xs" onClick={() => { fetchUsers(); }}>Retry</button>
         </div>
       )}
 
@@ -349,7 +352,7 @@ export default function AdminUsersPage() {
           <table className="table table-md w-full">
             <thead>
               <tr>
-                {["#", "User", "Role", "Courses", "Joined", "Status", "Action"].map(h => (
+                {["#", "User", "Role", "Courses", "Status", "Action"].map(h => (
                   <th key={h} className="text-xs font-bold uppercase tracking-wider opacity-50">{h}</th>
                 ))}
               </tr>
@@ -361,25 +364,25 @@ export default function AdminUsersPage() {
                   <td><div className="skeleton h-3 w-4 rounded" /></td>
                   <td>
                     <div className="flex items-center gap-2.5">
-                      <div className="skeleton w-8 h-8 rounded-full" />
-                      <div className="space-y-1">
-                        <div className="skeleton h-3 w-24 rounded" />
-                        <div className="skeleton h-2 w-32 rounded" />
+                      <div className="skeleton w-8 h-8 rounded-full flex-shrink-0" />
+                      <div className="space-y-1.5 flex-1">
+                        <div className="skeleton h-3.5 w-24 rounded" />
+                        <div className="skeleton h-2.5 w-32 rounded" />
+                        <div className="skeleton h-2 w-16 rounded opacity-40" />
                       </div>
                     </div>
                   </td>
                   <td><div className="skeleton h-5 w-16 rounded-full" /></td>
-                  <td><div className="skeleton h-3 w-6 rounded" /></td>
-                  <td><div className="skeleton h-3 w-20 rounded" /></td>
+                  <td><div className="skeleton h-4 w-6 mx-auto rounded" /></td>
                   <td><div className="skeleton h-5 w-14 rounded-full" /></td>
-                  <td><div className="flex gap-1"><div className="skeleton h-6 w-6 rounded" /><div className="skeleton h-6 w-6 rounded" /></div></td>
+                  <td><div className="flex gap-1.5"><div className="skeleton h-7 w-7 rounded-lg" /><div className="skeleton h-7 w-7 rounded-lg" /></div></td>
                 </tr>
               ))}
 
               {/* Empty */}
               {!loading && filtered.length === 0 && (
                 <tr>
-                  <td colSpan={7} className="text-center py-12 opacity-40 text-sm font-semibold">
+                  <td colSpan={6} className="text-center py-12 opacity-40 text-sm font-semibold">
                     {error ? "Failed to load users" : "No users found"}
                   </td>
                 </tr>
@@ -413,9 +416,12 @@ export default function AdminUsersPage() {
                         >
                           {u.name?.charAt(0) ?? "?"}
                         </div>
-                        <div>
-                          <p className="font-bold text-sm leading-tight">{u.name}</p>
-                          <p className="text-xs opacity-40">{u.email}</p>
+                        <div className="flex-1 min-w-0">
+                          <p className="font-bold text-sm leading-tight truncate">{u.name}</p>
+                          <p className="text-[11px] font-medium opacity-50 mt-0.5 truncate">{u.email}</p>
+                          <p className="text-[9px] font-black uppercase tracking-tight opacity-30 mt-1 whitespace-nowrap">
+                            🗓️ Joined {formatDate(u.createdAt)}
+                          </p>
                         </div>
                       </div>
                     </td>
@@ -427,8 +433,7 @@ export default function AdminUsersPage() {
                       </span>
                     </td>
 
-                    <td className="text-sm font-bold opacity-60">{getCourseCount(u)}</td>
-                    <td className="text-xs opacity-50 whitespace-nowrap">{formatDate(u.createdAt)}</td>
+                    <td className="text-sm font-bold opacity-60 text-center">{getCourseCount(u)}</td>
 
                     {/* Status */}
                     <td>

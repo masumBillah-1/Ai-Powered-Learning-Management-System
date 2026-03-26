@@ -16,6 +16,28 @@ declare global { var mongooseCache: MongooseCache; }
 const cached: MongooseCache = global.mongooseCache || { conn: null, promise: null };
 global.mongooseCache = cached;
 
+// ✅ Connection event listeners (শুধু একবার setup করো)
+if (!global.mongooseCache.conn) {
+  mongoose.connection.on("connected", () => {
+    console.log("✅ Mongoose connected to MongoDB");
+  });
+
+  mongoose.connection.on("error", (err) => {
+    console.error("❌ Mongoose connection error:", err.message);
+  });
+
+  mongoose.connection.on("disconnected", () => {
+    console.warn("⚠️ Mongoose disconnected from MongoDB");
+  });
+
+  // Graceful shutdown
+  process.on("SIGINT", async () => {
+    await mongoose.connection.close();
+    console.log("✅ Mongoose connection closed due to app termination");
+    process.exit(0);
+  });
+}
+
 export async function connectDB() {
   // ✅ Connection alive হলে সরাসরি return
   if (cached.conn && mongoose.connection.readyState === 1) {
@@ -32,11 +54,13 @@ export async function connectDB() {
     cached.promise = mongoose
       .connect(MONGODB_URI, {
         bufferCommands: false,
-        serverSelectionTimeoutMS: 10000, // 30s থেকে 10s — faster fail
+        serverSelectionTimeoutMS: 10000,
         socketTimeoutMS: 45000,
         connectTimeoutMS: 10000,
-        family: 4,                        // ✅ Force IPv4
-        maxPoolSize: 10,
+        family: 4,
+        maxPoolSize: 50,              // ✅ 10 থেকে 50 — more connections
+        minPoolSize: 5,               // ✅ Minimum pool size
+        maxIdleTimeMS: 60000,         // ✅ Close idle connections after 60s
         retryWrites: true,
         dbName: "learning-management",
       })

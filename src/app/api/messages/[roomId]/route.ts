@@ -15,14 +15,26 @@ export async function GET(
     await connectDB();
 
     const token = req.cookies.get("token")?.value;
-    if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    if (!token) {
+      console.error("❌ GET /api/messages/[roomId]: No token found");
+      return NextResponse.json({ error: "Unauthorized - Please login again" }, { status: 401 });
+    }
 
-    const decoded: any = jwt.verify(token, JWT_SECRET);
+    let decoded: any;
+    try {
+      decoded = jwt.verify(token, JWT_SECRET);
+    } catch (jwtErr: any) {
+      console.error("❌ GET /api/messages/[roomId]: JWT verification failed:", jwtErr.message);
+      return NextResponse.json({ error: "Invalid token - Please login again" }, { status: 401 });
+    }
+
     const { roomId } = await params;
 
     const messages = await Message.find({ roomId })
       .populate("senderId", "name photoURL role")
-      .sort({ createdAt: 1 });
+      .sort({ createdAt: 1 })
+      .lean()
+      .maxTimeMS(10000);
 
     return NextResponse.json(
       { success: true, messages },
@@ -33,8 +45,13 @@ export async function GET(
       }
     );
   } catch (err: any) {
-    console.error("❌ GET /api/messages/[roomId] error:", err.message);
-    return NextResponse.json({ error: err.message }, { status: 500 });
+    console.error("❌ GET /api/messages/[roomId] error:", err.message, err.stack);
+    
+    if (err.name === 'MongooseError' || err.name === 'MongoError') {
+      return NextResponse.json({ error: "Database connection issue. Please try again." }, { status: 503 });
+    }
+    
+    return NextResponse.json({ error: "Server error. Please try again." }, { status: 500 });
   }
 }
 
@@ -47,9 +64,19 @@ export async function PUT(
     await connectDB();
 
     const token = req.cookies.get("token")?.value;
-    if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    if (!token) {
+      console.error("❌ PUT /api/messages/[roomId]: No token found");
+      return NextResponse.json({ error: "Unauthorized - Please login again" }, { status: 401 });
+    }
 
-    const decoded: any = jwt.verify(token, JWT_SECRET);
+    let decoded: any;
+    try {
+      decoded = jwt.verify(token, JWT_SECRET);
+    } catch (jwtErr: any) {
+      console.error("❌ PUT /api/messages/[roomId]: JWT verification failed:", jwtErr.message);
+      return NextResponse.json({ error: "Invalid token - Please login again" }, { status: 401 });
+    }
+
     const userId = decoded.userId;
     const { roomId } = await params;
 
@@ -57,16 +84,22 @@ export async function PUT(
     await Message.updateMany(
       { roomId, receiverId: userId, isRead: false },
       { $set: { isRead: true, readAt: new Date() } }
-    );
+    ).maxTimeMS(5000);
 
     // 2. Reset unread count for this user in the conversation
     await Conversation.findOneAndUpdate(
       { roomId },
       { $set: { [`unreadCount.${userId}`]: 0 } }
-    );
+    ).maxTimeMS(5000);
 
     return NextResponse.json({ success: true });
   } catch (err: any) {
-    return NextResponse.json({ error: err.message }, { status: 500 });
+    console.error("❌ PUT /api/messages/[roomId] error:", err.message, err.stack);
+    
+    if (err.name === 'MongooseError' || err.name === 'MongoError') {
+      return NextResponse.json({ error: "Database connection issue. Please try again." }, { status: 503 });
+    }
+    
+    return NextResponse.json({ error: "Server error. Please try again." }, { status: 500 });
   }
 }

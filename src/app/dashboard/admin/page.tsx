@@ -43,12 +43,14 @@ export default function AdminDashboard() {
   const [transactions, setTrans]  = useState<IRecentTransaction[]>([]);
   const [pendingCourses, setPending] = useState<IPendingCourse[]>([]);
   const [loading, setLoading]     = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [mounted, setMounted]     = useState(false);
 
   useEffect(() => { setMounted(true); }, []);
 
-  const fetchAll = useCallback(async () => {
-    setLoading(true);
+  const fetchAll = useCallback(async (silent = false) => {
+    if (!silent) setLoading(true);
+    else setRefreshing(true);
     try {
       const token = localStorage.getItem("token");
       const headers = token ? { Authorization: `Bearer ${token}` } : undefined;
@@ -145,6 +147,7 @@ export default function AdminDashboard() {
       console.error("Dashboard fetch error:", err);
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
   }, []);
 
@@ -234,8 +237,9 @@ export default function AdminDashboard() {
               </div>
             </React.Fragment>
           ))}
-          <button onClick={fetchAll} disabled={loading} className="ml-3 btn btn-xs btn-ghost btn-circle opacity-40 hover:opacity-100">
-            <RefreshCw size={12} className={loading ? "animate-spin" : ""} />
+          <button onClick={() => fetchAll(true)} disabled={loading || refreshing} title="Refresh Dashboard" className="ml-3 btn btn-xs btn-ghost gap-1 px-2 opacity-50 hover:opacity-100 cursor-pointer">
+            <RefreshCw size={12} className={(loading || refreshing) ? "animate-spin" : ""} />
+            <span className="text-[10px] font-bold">Refresh</span>
           </button>
         </div>
       </div>

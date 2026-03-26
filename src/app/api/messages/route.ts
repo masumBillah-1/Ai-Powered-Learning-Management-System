@@ -7,19 +7,36 @@ import mongoose from "mongoose";
 const JWT_SECRET = process.env.JWT_SECRET as string;
 const STAFF_ROLES = ["admin", "instructor"];
 
-// GET /api/messages - Fetch conversation list
+// GET /api/messages - Fetch conversation list (OPTIMIZED)
 export async function GET(req: NextRequest) {
   try {
     await connectDB();
 
     const token = req.cookies.get("token")?.value;
-    if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    if (!token) {
+      console.error("❌ GET /api/messages: No token found");
+      return NextResponse.json({ error: "Unauthorized - Please login again" }, { status: 401 });
+    }
 
-    const decoded: any = jwt.verify(token, JWT_SECRET);
+    let decoded: any;
+    try {
+      decoded = jwt.verify(token, JWT_SECRET);
+    } catch (jwtErr: any) {
+      console.error("❌ GET /api/messages: JWT verification failed:", jwtErr.message);
+      return NextResponse.json({ error: "Invalid token - Please login again" }, { status: 401 });
+    }
+
     const userId = decoded.userId;
+    if (!userId) {
+      console.error("❌ GET /api/messages: No userId in token");
+      return NextResponse.json({ error: "Invalid token format" }, { status: 401 });
+    }
 
-    const user = await User.findById(userId);
-    if (!user) return NextResponse.json({ error: "User not found" }, { status: 404 });
+    const user = await User.findById(userId).select("role").lean().maxTimeMS(3000);
+    if (!user) {
+      console.error("❌ GET /api/messages: User not found:", userId);
+      return NextResponse.json({ error: "User not found" }, { status: 404 });
+    }
 
     let query: any = { participants: userId };
 
@@ -33,14 +50,24 @@ export async function GET(req: NextRequest) {
       };
     }
 
+    // ✅ OPTIMIZED: Limit to 50 recent conversations, lean query, select only needed fields
     const conversations = await Conversation.find(query)
       .populate("participants", "name photoURL role")
-      .sort({ lastMessageAt: -1 });
+      .sort({ lastMessageAt: -1 })
+      .limit(50)
+      .lean()
+      .maxTimeMS(10000); // 10 second timeout
 
     return NextResponse.json({ success: true, conversations });
   } catch (err: any) {
-    console.error("❌ GET /api/messages ERROR:", err.message);
-    return NextResponse.json({ error: "Server connection failed. Try again." }, { status: 500 });
+    console.error("❌ GET /api/messages ERROR:", err.message, err.stack);
+    
+    // Better error messages
+    if (err.name === 'MongooseError' || err.name === 'MongoError') {
+      return NextResponse.json({ error: "Database connection issue. Please try again." }, { status: 503 });
+    }
+    
+    return NextResponse.json({ error: "Server error. Please refresh and try again." }, { status: 500 });
   }
 }
 
@@ -50,10 +77,24 @@ export async function POST(req: NextRequest) {
     await connectDB();
 
     const token = req.cookies.get("token")?.value;
-    if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    if (!token) {
+      console.error("❌ POST /api/messages: No token found");
+      return NextResponse.json({ error: "Unauthorized - Please login again" }, { status: 401 });
+    }
 
-    const decoded: any = jwt.verify(token, JWT_SECRET);
+    let decoded: any;
+    try {
+      decoded = jwt.verify(token, JWT_SECRET);
+    } catch (jwtErr: any) {
+      console.error("❌ POST /api/messages: JWT verification failed:", jwtErr.message);
+      return NextResponse.json({ error: "Invalid token - Please login again" }, { status: 401 });
+    }
+
     const senderId = decoded.userId;
+    if (!senderId) {
+      console.error("❌ POST /api/messages: No userId in token");
+      return NextResponse.json({ error: "Invalid token format" }, { status: 401 });
+    }
 
     const { content, roomId, receiverId, messageType = "text" } = await req.json();
 
@@ -92,11 +133,16 @@ export async function POST(req: NextRequest) {
         $inc: receiverId ? { [`unreadCount.${receiverId}`]: 1 } : {}
       },
       { upsert: true, new: true }
-    );
+    ).maxTimeMS(5000);
 
     return NextResponse.json({ success: true, message, conversation });
   } catch (err: any) {
-    console.error("❌ POST /api/messages ERROR:", err.message);
-    return NextResponse.json({ error: "Failed to send message." }, { status: 500 });
+    console.error("❌ POST /api/messages ERROR:", err.message, err.stack);
+    
+    if (err.name === 'MongooseError' || err.name === 'MongoError') {
+      return NextResponse.json({ error: "Database connection issue. Please try again." }, { status: 503 });
+    }
+    
+    return NextResponse.json({ error: "Failed to send message. Please try again." }, { status: 500 });
   }
 }

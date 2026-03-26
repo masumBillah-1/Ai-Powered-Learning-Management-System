@@ -212,6 +212,24 @@ export default function LearnPage() {
     return () => clearInterval(timer);
   }, []);
 
+
+
+  // ── Dynamic Page Title ────────────────────────────────────────────────────────
+  useEffect(() => {
+    if (activeLesson && course) {
+      document.title = `${activeLesson.title} | ${course.title}`;
+    } else if (course) {
+      document.title = `Learning: ${course.title} | CareerCanvas`;
+    } else {
+      document.title = "CareerCanvas | Learning";
+    }
+
+    // Cleanup when component unmounts
+    return () => {
+      document.title = "CareerCanvas";
+    };
+  }, [activeLesson?._id, activeLesson?.title, course?.title]);
+
   // ── Polling for New Content (Instructor adding lessons) ────────────────────
   useEffect(() => {
     if (!courseId) return;
