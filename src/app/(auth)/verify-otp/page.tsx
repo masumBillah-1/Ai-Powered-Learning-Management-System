@@ -1,12 +1,12 @@
 "use client";
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import toast from "react-hot-toast";
 import Link from "next/link";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 
-export default function VerifyOtpPage() {
+function VerifyOtpContent() {
   const searchParams = useSearchParams();
   const email = searchParams.get("email") || "";
   const mode = searchParams.get("mode") || ""; // "login" হলে dashboard এ যাবে
@@ -221,5 +221,20 @@ export default function VerifyOtpPage() {
       </div>
       <Footer />
     </>
+  );
+}
+
+export default function VerifyOtpPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-white dark:bg-[#05010D] flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-16 h-16 border-4 border-purple-500 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+          <p className="text-gray-600 dark:text-gray-400">Loading...</p>
+        </div>
+      </div>
+    }>
+      <VerifyOtpContent />
+    </Suspense>
   );
 }

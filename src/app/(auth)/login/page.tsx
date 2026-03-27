@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useForm } from "react-hook-form";
 import { useSearchParams, useRouter } from "next/navigation";
 import { FiEye, FiEyeOff } from "react-icons/fi";
@@ -34,7 +34,7 @@ const GitHubIcon = () => (
   </svg>
 );
 
-const LoginPage = () => {
+function LoginContent() {
   const { register, handleSubmit, formState: { errors } } = useForm<LoginFormData>();
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -374,6 +374,19 @@ const LoginPage = () => {
       <Footer />
     </>
   );
-};
+}
 
-export default LoginPage;
+export default function LoginPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-white dark:bg-[#05010D] flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-16 h-16 border-4 border-purple-500 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+          <p className="text-gray-600 dark:text-gray-400">Loading...</p>
+        </div>
+      </div>
+    }>
+      <LoginContent />
+    </Suspense>
+  );
+}

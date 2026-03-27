@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 
-export default function AuthCallback() {
+function CallbackContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -25,7 +25,7 @@ export default function AuthCallback() {
       } else if (userData.role === "instructor") {
         router.replace("/dashboard/instructor");
       } else {
-        router.replace("/dashboard/admin");
+        router.replace("/dashboard/student");
       }
     } else {
       router.replace("/login?error=auth_failed");
@@ -39,5 +39,20 @@ export default function AuthCallback() {
         <p className="text-gray-600 dark:text-gray-400">Completing authentication...</p>
       </div>
     </div>
+  );
+}
+
+export default function AuthCallback() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-white dark:bg-[#05010D] flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-16 h-16 border-4 border-purple-500 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+          <p className="text-gray-600 dark:text-gray-400">Loading...</p>
+        </div>
+      </div>
+    }>
+      <CallbackContent />
+    </Suspense>
   );
 }
