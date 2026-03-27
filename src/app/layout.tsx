@@ -137,7 +137,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
 
         {children}
 
-        {/* FloatingChat — Login হলে সব page এ দেখাবে
+        FloatingChat — Login হলে সব page এ দেখাবে
         {user && (
           <FloatingChat
             userId={user.id}
@@ -145,10 +145,10 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             userRole={user.role}
             userAvatar={user.image}
           />
-        )} */}
+        )}
 
 
-        <ChatWidget/>
+        {/* <ChatWidget/> */}
 
       </body>
     </html>
