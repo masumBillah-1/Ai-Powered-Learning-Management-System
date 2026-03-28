@@ -23,7 +23,15 @@ export interface IMessageDocument extends Document {
   
   // System message fields
   systemMessageType?: "enrollment" | "course_update" | "payment" | "certificate";
-  
+
+  // ✅ Course recommendation cards
+  recommendedCourses?: Array<{
+    id: string;
+    title: string;
+    thumbnail?: string;
+    price?: number;
+  }>;
+
   createdAt: Date;
   updatedAt: Date;
 }
@@ -96,6 +104,14 @@ const MessageSchema = new Schema<IMessageDocument>(
       type: String,
       enum: ["enrollment", "course_update", "payment", "certificate"],
     },
+
+    // ✅ Course recommendation cards
+    recommendedCourses: [{
+      id: { type: String },
+      title: { type: String },
+      thumbnail: { type: String },
+      price: { type: Number },
+    }],
   },
   {
     timestamps: true,

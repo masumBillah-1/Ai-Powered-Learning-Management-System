@@ -52,7 +52,7 @@ const Footer = () => {
 
             {/* Support Card - Dark Mode Contrast Fix */}
             <div className="bg-white dark:bg-[#1e293b] p-5 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700">
-              <p className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase mb-2">যেকোন জিজ্ঞাসায় ফোন করো</p>
+              <p className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase mb-2">Call for any query</p>
               <div className="flex items-center gap-3">
                 <div className="p-2 bg-gray-50 dark:bg-gray-800 rounded-full">
                   <FaPhoneAlt className="text-gray-700 dark:text-gray-300" />
@@ -68,7 +68,7 @@ const Footer = () => {
 
           {/* Column 2: Links */}
           <div className="lg:pl-10">
-            <h4 className="font-bold text-gray-900 dark:text-white mb-6 text-lg">লিঙ্কসমূহ</h4>
+            <h4 className="font-bold text-gray-900 dark:text-white mb-6 text-lg">Quick Links</h4>
             <ul className="space-y-4 text-sm font-medium">
               {footerLinks.map((item) => (
                 <li key={item.name}>
@@ -85,7 +85,7 @@ const Footer = () => {
 
           {/* Column 3: Social Media with Dark Mode Icons */}
           <div>
-            <h4 className="font-bold text-gray-900 dark:text-white mb-6 text-lg">সোশ্যাল মিডিয়া</h4>
+            <h4 className="font-bold text-gray-900 dark:text-white mb-6 text-lg">Social Media</h4>
             <div className="space-y-4">
               <a
                 href="https://www.facebook.com/"
@@ -94,7 +94,7 @@ const Footer = () => {
                 <div className="w-8 h-8 flex items-center justify-center bg-blue-100 dark:bg-blue-900/30 rounded-full text-blue-600 dark:text-blue-400 group-hover:scale-110 transition-transform">
                   <FaFacebook />
                 </div>{" "}
-                ফেসবুক
+                Facebook
               </a>
               <a
                 href="https://www.instagram.com/?hl=en"
@@ -103,7 +103,7 @@ const Footer = () => {
                 <div className="w-8 h-8 flex items-center justify-center bg-pink-100 dark:bg-pink-900/30 rounded-full text-pink-600 dark:text-pink-400 group-hover:scale-110 transition-transform">
                   <FaInstagram />
                 </div>{" "}
-                ইন্সটাগ্রাম
+                Instagram
               </a>
               <a
                 href="https://www.youtube.com/"
@@ -112,7 +112,7 @@ const Footer = () => {
                 <div className="w-8 h-8 flex items-center justify-center bg-red-100 dark:bg-red-900/30 rounded-full text-red-600 dark:text-red-400 group-hover:scale-110 transition-transform">
                   <FaYoutube />
                 </div>{" "}
-                ইউটিউব
+                Youtube
               </a>
               <a
                 href="https://www.linkedin.com/feed/"
@@ -121,14 +121,14 @@ const Footer = () => {
                 <div className="w-8 h-8 flex items-center justify-center bg-blue-50 dark:bg-blue-900/40 rounded-full text-blue-700 dark:text-blue-300 group-hover:scale-110 transition-transform">
                   <FaLinkedin />
                 </div>{" "}
-                লিঙ্কডইন
+                LinkedIn
               </a>
             </div>
           </div>
 
           {/* Column 4: App Download - Pure Dark Style as per Image */}
           <div>
-            <h4 className="font-bold text-gray-900 dark:text-white mb-6 text-lg">অ্যাপ ডাউনলোড করো</h4>
+            <h4 className="font-bold text-gray-900 dark:text-white mb-6 text-lg">Download Our App</h4>
             <div className="space-y-4">
               <button className="flex items-center gap-3 w-full max-w-[200px] bg-[#1a1a1a] dark:bg-black text-white p-3 rounded-xl hover:opacity-80 transition-all border border-gray-800">
                 <FaApple size={28} />

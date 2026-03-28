@@ -10,10 +10,16 @@ type LiveMsg = {
   senderRole?: string;
   content: string;
   createdAt?: string;
-  messageType?: string; // "text" | "bot" | "system" | "image" | "file"
+  messageType?: string;
   fileUrl?: string;
   fileName?: string;
   fileSize?: number;
+  recommendedCourses?: Array<{
+    id: string;
+    title: string;
+    thumbnail?: string;
+    price?: number;
+  }>;
   _optimistic?: boolean;
 };
 
@@ -29,6 +35,46 @@ type Props = {
   userName: string;
   userRole: string;
 };
+
+// ─────────────────────────────────────────────────────
+// Parse [COURSE:...] tags from message content (fallback)
+// Handles thumbnail URLs that contain colons (https://)
+// Format: [COURSE:ID:TITLE:THUMBNAIL_URL:PRICE]
+// ─────────────────────────────────────────────────────
+function parseCourseCards(content: string): {
+  cleanText: string;
+  courses: Array<{ id: string; title: string; thumbnail: string; price: number }>;
+} {
+  const courses: Array<{ id: string; title: string; thumbnail: string; price: number }> = [];
+  // ✅ Smart regex: ID (24 hex) + TITLE (no colon) + THUMBNAIL (greedy, stops before :DIGITS]) + PRICE
+  const pattern = /\[COURSE:([a-f0-9]{24}):([^:]+):(https?:\/\/[^:]+(?::[^:]+)*?):(\d+)(?:\s*BDT)?\]/gi;
+  let cleanText = content;
+  const matches = [...content.matchAll(pattern)];
+  for (const match of matches) {
+    courses.push({
+      id: match[1],
+      title: match[2].trim(),
+      thumbnail: match[3].trim(),
+      price: Number(match[4]),
+    });
+    cleanText = cleanText.replace(match[0], "");
+  }
+  // Fallback: non-http thumbnail (no URL colon issue)
+  if (courses.length === 0) {
+    const fallback = /\[COURSE:([a-f0-9]{24}):([^:]+):([^:]+):(\d+)(?:\s*BDT)?\]/gi;
+    const fb = [...content.matchAll(fallback)];
+    for (const match of fb) {
+      courses.push({
+        id: match[1],
+        title: match[2].trim(),
+        thumbnail: match[3].trim(),
+        price: Number(match[4]),
+      });
+      cleanText = cleanText.replace(match[0], "");
+    }
+  }
+  return { cleanText: cleanText.trim(), courses };
+}
 
 // ─────────────────────────────────────────────────────
 // Bot config — user এই নাম ও avatar দেখবে
@@ -991,8 +1037,82 @@ export default function LiveChat({ userId, userName, userRole }: Props) {
                         </button>
                       )}
 
-                      {/* ✅ Text message */}
-                      {msg.messageType === "text" && msg.content}
+                      {/* ✅ Text message + Course Cards */}
+                      {msg.messageType === "text" && (() => {
+                        // ✅ Use DB recommendedCourses if available, else parse from content
+                        const parsed = parseCourseCards(msg.content);
+                        const courses = (msg.recommendedCourses && msg.recommendedCourses.length > 0)
+                          ? msg.recommendedCourses
+                          : parsed.courses;
+                        const displayText = (msg.recommendedCourses && msg.recommendedCourses.length > 0)
+                          ? msg.content
+                          : parsed.cleanText;
+
+                        return (
+                          <div className="space-y-2">
+                            {/* Message text */}
+                            {displayText && (
+                              <div className="whitespace-pre-wrap leading-relaxed">{displayText}</div>
+                            )}
+
+                            {/* ✅ Course Cards */}
+                            {courses.length > 0 && (
+                              <div className="flex flex-col gap-2 pt-1">
+                                <p className="text-[10px] font-semibold uppercase tracking-widest text-violet-400 opacity-90">
+                                  📚 প্রস্তাবিত কোর্স
+                                </p>
+                                {courses.map((course) => (
+                                  <a
+                                    key={course.id}
+                                    href={`/courses/${course.id}`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="group flex flex-row items-stretch overflow-hidden rounded-xl border border-violet-700/40 bg-[#0e0c1e] hover:border-violet-500/80 hover:bg-[#16122e] hover:shadow-[0_0_20px_rgba(124,58,237,0.2)] transition-all duration-300 w-full max-w-[290px] no-underline"
+                                  >
+                                    {/* Thumbnail */}
+                                    <div className="relative w-[88px] min-h-[72px] flex-shrink-0 overflow-hidden bg-[#1a1535]">
+                                      {course.thumbnail ? (
+                                        <img
+                                          src={course.thumbnail}
+                                          alt={course.title}
+                                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                                          onError={(e) => {
+                                            const t = e.currentTarget;
+                                            t.style.display = "none";
+                                            const p = t.parentElement;
+                                            if (p) p.innerHTML = `<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:1.5rem">📖</div>`;
+                                          }}
+                                        />
+                                      ) : (
+                                        <div className="w-full h-full flex items-center justify-center text-2xl">📖</div>
+                                      )}
+                                      <div className="absolute inset-0 bg-gradient-to-r from-transparent to-[#0e0c1e]/40 pointer-events-none" />
+                                    </div>
+
+                                    {/* Course info */}
+                                    <div className="flex flex-col justify-between p-2.5 flex-1 min-w-0">
+                                      <p className="text-[12px] font-semibold text-gray-100 line-clamp-2 leading-snug">
+                                        {course.title}
+                                      </p>
+                                      <div className="flex items-center justify-between mt-1.5">
+                                        <span className="text-[13px] font-bold text-emerald-400">
+                                          ৳{course.price != null ? Number(course.price).toLocaleString() : "—"}
+                                        </span>
+                                        <span className="flex items-center gap-0.5 text-[10px] font-semibold text-violet-400 group-hover:text-violet-200 transition-colors">
+                                          দেখুন
+                                          <svg className="w-3 h-3 group-hover:translate-x-0.5 transition-transform duration-200" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                                            <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
+                                          </svg>
+                                        </span>
+                                      </div>
+                                    </div>
+                                  </a>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })()}
 
                       {msg._optimistic && <span className="ml-1 text-[10px] opacity-60">⏳</span>}
                     </div>

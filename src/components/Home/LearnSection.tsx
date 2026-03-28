@@ -2,94 +2,123 @@
 
 import React from 'react';
 import { motion } from 'framer-motion';
-import { FaCode, FaPalette, FaBullhorn, FaPlay, FaGlobeAmericas, FaMobileAlt, FaDatabase, FaRobot } from 'react-icons/fa';
+import { FaCode, FaPalette, FaBullhorn, FaPlay, FaGlobeAmericas, FaMobileAlt, FaDatabase, FaRobot, FaShieldAlt, FaRocket } from 'react-icons/fa';
 import { HiSparkles } from 'react-icons/hi2';
 
 const LearnSection = () => {
   const learningData = [
-    { title: "MERN Stack Dev", icon: <FaCode />, desc: "HTML, CSS থেকে React এবং Node.js পর্যন্ত শিখে হয়ে ওঠো ফুল-স্ট্যাক ডেভেলপার।", gradient: "#832388, #E3436B, #F0772F" },
-    { title: "App Development", icon: <FaMobileAlt />, desc: "Flutter ব্যবহার করে একই কোডে Android এবং iOS অ্যাপ তৈরি করা শিখুন।", gradient: "#10B981, #3B82F6, #10B981" },
-    { title: "UI/UX Design", icon: <FaPalette />, desc: "Figma ও Adobe XD দিয়ে মডার্ন ওয়েবসাইট ও অ্যাপ ইন্টারফেস ডিজাইন শিখুন।", gradient: "#F472B6, #DB2777, #F472B6" },
-    { title: "AI & Data Science", icon: <FaRobot />, desc: "Python ও Machine Learning দিয়ে ডেটা এনালাইসিস এবং AI মডেল তৈরি শিখুন।", gradient: "#F59E0B, #D97706, #F59E0B" },
-    { title: "Digital Marketing", icon: <FaBullhorn />, desc: "SEO, FB Ads এবং কন্টেন্ট মার্কেটিং দিয়ে ব্র্যান্ড গ্রোথ নিশ্চিত করার কৌশল।", gradient: "#3B82F6, #1D4ED8, #3B82F6" },
-    { title: "Video Editing", icon: <FaPlay />, desc: "Premiere Pro ও After Effects দিয়ে মোশন গ্রাফিক্স ও এডিটিংয়ের মাস্টারক্লাস।", gradient: "#EF4444, #B91C1C, #EF4444" },
-    { title: "AI Productivity", icon: <HiSparkles />, desc: "ChatGPT ও AI টুলস ব্যবহার করে আপনার দৈনন্দিন কাজকে ১০ গুণ দ্রুত করুন।", gradient: "#8B5CF6, #6D28D9, #8B5CF6" },
-    { title: "Graphic Design", icon: <FaPalette />, desc: "Photoshop ও Illustrator দিয়ে লোগো ও ব্র্যান্ড আইডেন্টিটি ডিজাইন শিখুন।", gradient: "#06B6D4, #0891B2, #06B6D4" },
-    { title: "Cyber Security", icon: <FaDatabase />, desc: "নেটওয়ার্ক সিকিউরিটি ও এথিক্যাল হ্যাকিংয়ের বেসিক থেকে অ্যাডভান্স।", gradient: "#4B5563, #1F2937, #4B5563" },
-    { title: "Freelancing", icon: <FaGlobeAmericas />, desc: "Upwork ও Fiverr-এ সফল ক্যারিয়ার গড়ার কমপ্লিট গাইডলাইন।", gradient: "#F97316, #C2410C, #F97316" }
+    { title: "MERN Stack Dev", icon: <FaCode />, desc: "Master full-stack web development from HTML/CSS to React and Node.js.", color: "#832388" },
+    { title: "App Development", icon: <FaMobileAlt />, desc: "Build cross-platform mobile apps for Android and iOS using Flutter.", color: "#3B82F6" },
+    { title: "UI/UX Design", icon: <FaPalette />, desc: "Design modern user interfaces and experiences with Figma and Adobe XD.", color: "#DB2777" },
+    { title: "AI & Data Science", icon: <FaRobot />, desc: "Learn Python, Machine Learning, and build advanced AI models.", color: "#F59E0B" },
+    { title: "Digital Marketing", icon: <FaBullhorn />, desc: "Grow brands using SEO, Facebook Ads, and content marketing strategies.", color: "#1D4ED8" },
+    { title: "Video Editing", icon: <FaPlay />, desc: "Master motion graphics and video storytelling with Premiere Pro.", color: "#EF4444" },
+    { title: "AI Productivity", icon: <HiSparkles />, desc: "Supercharge your workflow 10x faster using ChatGPT and AI tools.", color: "#8B5CF6" },
+    { title: "Graphic Design", icon: <FaPalette />, desc: "Create stunning visual identities and logos with Photoshop & Illustrator.", color: "#06B6D4" },
+    { title: "Cyber Security", icon: <FaShieldAlt />, desc: "Protect networks and learn the fundamentals of ethical hacking.", color: "#4B5563" },
+    { title: "Freelancing", icon: <FaGlobeAmericas />, desc: "Complete guide to building a successful career on Upwork and Fiverr.", color: "#F97316" }
   ];
 
   return (
-    <section className="py-12 md:py-20   w-full overflow-x-hidden">
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-full lg:max-w-[1440px]">
-        
-        <div className="text-center mb-12 md:mb-16">
-          <motion.h2 
+    <section className="py-24 bg-white dark:bg-slate-950 transition-colors duration-500 overflow-hidden">
+      <div className="container mx-auto px-4 max-w-7xl">
+
+        {/* Modern Header */}
+        <div className="flex flex-col items-center text-center mb-20">
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            className="flex items-center gap-2 px-4 py-1.5 rounded-full bg-slate-100 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 mb-6"
+          >
+            <FaRocket className="text-[#E3436B] text-xs" />
+            <span className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-500 dark:text-slate-400">
+              Future-Ready Skills
+            </span>
+          </motion.div>
+
+          <motion.h2
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            className="text-3xl sm:text-4xl md:text-6xl font-black text-slate-800 dark:text-white leading-tight"
+            className="text-4xl md:text-6xl font-black text-slate-800 dark:text-white leading-tight"
           >
-            আমাদের <span className="relative inline-block px-4 sm:px-8 py-2 text-white italic bg-gradient-to-r from-[#F0772F] via-[#E3436B] to-[#832388] rounded-full shadow-2xl text-xl sm:text-4xl md:text-5xl">কোর্সসমূহ_</span>
+            Explore Our <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#832388] via-[#E3436B] to-[#F0772F]">Premium Courses</span>
           </motion.h2>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-6 sm:gap-8">
+        {/* Unique Card Grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
           {learningData.map((item, index) => (
             <motion.div
               key={index}
               initial={{ opacity: 0, scale: 0.9 }}
               whileInView={{ opacity: 1, scale: 1 }}
               viewport={{ once: true }}
-              transition={{ duration: 0.5, delay: index * 0.05 }}
-             
-              className="relative p-[2px] group rounded-[2rem] sm:rounded-[2.5rem] overflow-hidden flex h-full w-full shadow-lg hover:shadow-[0_20px_50px_rgba(0,0,0,0.1)] dark:hover:shadow-[0_20px_50px_rgba(0,0,0,0.3)] transition-all duration-500"
+              transition={{ duration: 0.4, delay: index * 0.05 }}
+              whileHover={{ y: -10 }}
+              className="group relative h-full"
             >
-              <motion.div 
-                animate={{ rotate: 360 }}
-                transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
-                style={{
-                  background: `conic-gradient(from 0deg, transparent 50%, ${item.gradient.split(',')[0]} 80%, ${item.gradient.split(',')[1]} 100%)`,
-                }}
-                className="absolute inset-[-150%] opacity-30 group-hover:opacity-100 transition-opacity duration-500"
+              {/* Animated Glow Background */}
+              <div
+                className="absolute inset-0 blur-2xl opacity-0 group-hover:opacity-15 transition-opacity duration-500 rounded-3xl"
+                style={{ backgroundColor: item.color }}
               />
 
-              <div className="relative bg-white dark:bg-[#0b1120] p-6 sm:p-8 rounded-[1.9rem] sm:rounded-[2.4rem] h-full flex flex-col items-center text-center z-10 w-full group-hover:bg-white/95 dark:group-hover:bg-[#0f172a]/95 transition-colors duration-300">
-                
-                <div className="mb-6 sm:mb-8 relative h-20 w-20 sm:h-24 sm:w-24 flex items-center justify-center shrink-0">
-                  <motion.div 
-                    animate={{ rotate: 360 }}
-                    transition={{ duration: 8, repeat: Infinity, ease: "linear" }}
-                    className="absolute inset-0 rounded-full border-2 border-dashed opacity-0 group-hover:opacity-100 transition-opacity duration-500"
-                    style={{ borderColor: item.gradient.split(',')[1] }}
-                  />
-                  
-                  <motion.div 
-                    whileHover={{ scale: 1.15, rotate: [0, -5, 5, 0], y: -5 }}
-                    className="relative z-20 bg-slate-50 dark:bg-slate-800/80 p-4 sm:p-6 rounded-[15px] sm:rounded-[20px] text-4xl sm:text-5xl shadow-xl border border-white/20 text-slate-700 dark:text-white group-hover:shadow-2xl transition-all"
-                    style={{ color: item.gradient.split(',')[1] }}
-                  >
-                    <div className="absolute inset-0 blur-xl opacity-0 group-hover:opacity-30 rounded-full" style={{ backgroundColor: item.gradient.split(',')[1] }} />
-                    <span className="relative z-10 shrink-0">{item.icon}</span>
-                  </motion.div>
-                </div>
+              {/* Main Card */}
+              <div className="relative h-full bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 p-8 rounded-[2.5rem] flex flex-col items-start shadow-sm hover:shadow-2xl transition-all duration-500">
 
-                <h3 className="text-lg sm:text-xl font-black text-slate-800 dark:text-white mb-3 tracking-tight">
+                {/* Icon Box */}
+                <motion.div
+                  whileHover={{ rotate: [0, -10, 10, 0] }}
+                  className="w-16 h-16 rounded-2xl flex items-center justify-center text-2xl mb-8 relative transition-all duration-500 shadow-inner overflow-hidden"
+                  style={{ backgroundColor: `${item.color}10`, color: item.color }}
+                >
+                  {/* Floating Particle Effect Inside Icon Box */}
+                  <div className="absolute inset-0 opacity-20 bg-gradient-to-br from-transparent to-white" />
+                  <span className="relative z-10">{item.icon}</span>
+                </motion.div>
+
+                {/* Content */}
+                <h3 className="text-xl font-black text-slate-800 dark:text-white mb-3 tracking-tight group-hover:text-transparent group-hover:bg-clip-text" style={{ backgroundImage: `linear-gradient(to right, ${item.color}, #F0772F)` }}>
                   {item.title}
                 </h3>
 
-                <p className="text-slate-500 dark:text-slate-400 font-medium leading-relaxed text-xs sm:text-sm px-1">
+                <p className="text-slate-500 dark:text-slate-400 text-sm font-medium leading-relaxed">
                   {item.desc}
                 </p>
 
-                <div 
-                  className="mt-auto pt-6 w-10 sm:w-12 h-1.5 rounded-full transition-all duration-700 group-hover:w-full group-hover:shadow-[0_0_20px_rgba(227,67,107,0.5)]"
-                  style={{ background: `linear-gradient(to right, ${item.gradient})` }}
-                />
+                {/* Bottom Interactive Element */}
+                <div className="mt-8 flex items-center gap-2 group/btn cursor-pointer">
+                  <div className="w-8 h-[2px] bg-slate-200 dark:bg-slate-700 transition-all duration-500 group-hover:w-12 group-hover:bg-gradient-to-r" style={{ backgroundImage: `linear-gradient(to right, ${item.color}, transparent)` }} />
+                  <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 group-hover:text-slate-800 dark:group-hover:text-white transition-colors">
+                    View Details
+                  </span>
+                </div>
+
+                {/* Corner Decorative Number */}
+                <span className="absolute top-8 right-8 text-4xl font-black text-slate-50 dark:text-slate-800/30 pointer-events-none group-hover:opacity-10 transition-opacity">
+                  {index < 9 ? `0${index + 1}` : index + 1}
+                </span>
+
               </div>
             </motion.div>
           ))}
         </div>
+
+        {/* Bottom Call to Action */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          whileInView={{ opacity: 1 }}
+          className="mt-20 py-10 border-t border-slate-100 dark:border-slate-800 flex flex-col md:flex-row justify-between items-center gap-6"
+        >
+          <div className="text-left">
+            <h4 className="text-lg font-bold text-slate-800 dark:text-white">Confused about where to start?</h4>
+            <p className="text-slate-500 dark:text-slate-400 text-sm">Join 50,000+ students already learning with us.</p>
+          </div>
+          <button className="px-8 py-3 bg-slate-900 dark:bg-white text-white dark:text-slate-900 rounded-full font-black text-xs uppercase tracking-widest hover:scale-105 transition-all shadow-xl">
+            Get Free Consultation
+          </button>
+        </motion.div>
+
       </div>
     </section>
   );

@@ -117,16 +117,9 @@ function Sidebar({ items, collapsed, onToggle, mobileOpen, onMobileClose }: {
       <div className={`flex flex-col h-full overflow-hidden bg-gradient-to-b from-[#1a1a2e] via-[#16213e] to-[#0f3460] transition-all duration-300 ${w ? "w-64" : "w-[68px]"}`}>
         <div className={`h-16 flex items-center flex-shrink-0 border-b border-white/[0.07] ${w ? "px-4 justify-between" : "justify-center px-0"}`}>
           {w && (
-            <Link href="/" className="flex items-center gap-2 no-underline group min-w-0">
-              <img
-                src="/mortarboard.png"
-                alt="Logo"
-                className="w-12 h-12 flex-shrink-0 group-hover:rotate-6 transition-transform duration-300"
-              />
-              <span className="whitespace-nowrap text-[17px] font-black tracking-tight text-white">
-                Career<span className="bg-gradient-to-r from-[#FF0F7B] to-[#F89B29] bg-clip-text text-transparent">Canvas</span>
-              </span>
-            </Link>
+            <div className="flex items-center gap-2 no-underline group min-w-0">
+              <Logo size="sm" />
+            </div>
           )}
           {!forceWide ? (
             <button onClick={onToggle} className="w-7 h-7 rounded-md flex items-center justify-center bg-white/[0.08] text-white/55 hover:bg-white/15 transition-colors border-0 cursor-pointer flex-shrink-0">
