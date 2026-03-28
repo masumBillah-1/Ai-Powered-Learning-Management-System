@@ -34,6 +34,16 @@ export default function SettingsPage() {
   const [loadingWithdraw, setLoadingWithdraw] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
 
+  // Logo customization states
+  const [logoSettings, setLogoSettings] = useState({
+    logoImage: "/mortarboard.png",
+    logoName: "Career",
+    logoNameSecondary: "Canvas",
+    tagline1: "ELEVATE",
+    tagline2: "SKILLS"
+  });
+  const [logoUploading, setLogoUploading] = useState(false);
+
   // ── Dark/Light + Role sync ──
   useEffect(() => {
     const t = localStorage.getItem("theme") || "light";
@@ -93,6 +103,9 @@ export default function SettingsPage() {
   useEffect(() => {
     if (role === "admin" && activeTab === "Health") {
       fetchDBStatus();
+    }
+    if (role === "admin" && activeTab === "System") {
+      fetchSystemSettings();
     }
   }, [role, activeTab]);
 
@@ -190,6 +203,15 @@ export default function SettingsPage() {
       if (data.success && data.settings) {
         setShowDemoLogin(data.settings.showDemoLogin ?? true);
         setPlatformCommission(data.settings.platform_commission ?? 30);
+
+        // Load logo settings
+        setLogoSettings({
+          logoImage: data.settings.logoImage || "/mortarboard.png",
+          logoName: data.settings.logoName || "Career",
+          logoNameSecondary: data.settings.logoNameSecondary || "Canvas",
+          tagline1: data.settings.tagline1 || "ELEVATE",
+          tagline2: data.settings.tagline2 || "SKILLS"
+        });
       }
     } catch (error) {
       console.error("Failed to fetch settings:", error);
@@ -215,6 +237,13 @@ export default function SettingsPage() {
         // Update local state
         if (key === "showDemoLogin") setShowDemoLogin(value);
         if (key === "platform_commission") setPlatformCommission(value);
+
+        // Clear logo cache when logo settings change
+        if (key.startsWith("logo") || key.startsWith("tagline")) {
+          localStorage.removeItem("logoSettings");
+          // Trigger logo refresh by dispatching storage event
+          window.dispatchEvent(new Event("storage"));
+        }
       } else {
         toast.error("Failed to update setting");
       }
@@ -223,6 +252,48 @@ export default function SettingsPage() {
       toast.error("Failed to update setting");
     } finally {
       setSettingsLoading(false);
+    }
+  };
+
+  const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith("image/")) {
+      toast.error("Please upload an image file");
+      return;
+    }
+
+    // Validate file size (max 2MB)
+    if (file.size > 2 * 1024 * 1024) {
+      toast.error("Image size should be less than 2MB");
+      return;
+    }
+
+    setLogoUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+
+      const uploadRes = await fetch("/api/upload", {
+        method: "POST",
+        body: formData,
+      });
+
+      const uploadData = await uploadRes.json();
+      if (uploadData.url) {
+        await updateSystemSetting("logoImage", uploadData.url);
+        setLogoSettings(prev => ({ ...prev, logoImage: uploadData.url }));
+        toast.success("Logo uploaded successfully!");
+      } else {
+        toast.error("Failed to upload logo");
+      }
+    } catch (error) {
+      console.error("Logo upload error:", error);
+      toast.error("Failed to upload logo");
+    } finally {
+      setLogoUploading(false);
     }
   };
 
@@ -481,6 +552,142 @@ export default function SettingsPage() {
       {
         activeTab === "System" && role === "admin" && (
           <div className="space-y-6">
+
+            {/* Logo Customization */}
+            <div className="rounded-2xl bg-base-100 border border-base-300 p-6">
+              <p className="text-xs font-bold uppercase tracking-wider opacity-50 mb-1">Brand Identity</p>
+              <p className="text-xs opacity-50 mb-4">Customize your platform logo, name, and tagline</p>
+
+              {/* Logo Preview */}
+              <div className="flex items-center gap-4 p-4 rounded-xl bg-base-200 mb-4">
+                <div className="relative">
+                  <img
+                    src={logoSettings.logoImage}
+                    alt="Logo Preview"
+                    className="w-16 h-16 object-contain rounded-lg"
+                    onError={(e) => {
+                      const target = e.target as HTMLImageElement;
+                      target.src = "/mortarboard.png";
+                    }}
+                  />
+                  {logoUploading && (
+                    <div className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-lg">
+                      <span className="loading loading-spinner loading-sm text-white"></span>
+                    </div>
+                  )}
+                </div>
+                <div>
+                  <div className="flex items-center gap-1 mb-1">
+                    <span className="text-xl font-black">{logoSettings.logoName}</span>
+                    <span className="text-xl font-black bg-gradient-to-r from-[#FF0F7B] to-[#F89B29] bg-clip-text text-transparent">
+                      {logoSettings.logoNameSecondary}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-[9px] font-bold text-gray-400 tracking-[0.2em] uppercase">{logoSettings.tagline1}</span>
+                    <div className="w-1 h-1 rounded-full bg-gradient-to-r from-[#FF0F7B] to-[#F89B29]" />
+                    <span className="text-[9px] font-bold text-gray-400 tracking-[0.2em] uppercase">{logoSettings.tagline2}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Logo Upload */}
+              <div className="space-y-3">
+                <div>
+                  <label className="text-xs font-bold opacity-50 mb-2 block">Logo Image</label>
+                  <div className="flex gap-2">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleLogoUpload}
+                      disabled={logoUploading || settingsLoading}
+                      className="file-input file-input-sm file-input-bordered w-full max-w-xs"
+                    />
+                    {logoUploading && <span className="loading loading-spinner loading-sm"></span>}
+                  </div>
+                  <p className="text-xs opacity-40 mt-1">Recommended: 512x512px, PNG or SVG, max 2MB</p>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-xs font-bold opacity-50 mb-1 block">Brand Name (Part 1)</label>
+                    <input
+                      type="text"
+                      value={logoSettings.logoName}
+                      onChange={(e) => setLogoSettings(prev => ({ ...prev, logoName: e.target.value }))}
+                      className="input input-sm bg-base-200 border-base-300 w-full focus:outline-none"
+                      placeholder="Career"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs font-bold opacity-50 mb-1 block">Brand Name (Part 2)</label>
+                    <input
+                      type="text"
+                      value={logoSettings.logoNameSecondary}
+                      onChange={(e) => setLogoSettings(prev => ({ ...prev, logoNameSecondary: e.target.value }))}
+                      className="input input-sm bg-base-200 border-base-300 w-full focus:outline-none"
+                      placeholder="Canvas"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-xs font-bold opacity-50 mb-1 block">Tagline 1</label>
+                    <input
+                      type="text"
+                      value={logoSettings.tagline1}
+                      onChange={(e) => setLogoSettings(prev => ({ ...prev, tagline1: e.target.value }))}
+                      className="input input-sm bg-base-200 border-base-300 w-full focus:outline-none"
+                      placeholder="ELEVATE"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs font-bold opacity-50 mb-1 block">Tagline 2</label>
+                    <input
+                      type="text"
+                      value={logoSettings.tagline2}
+                      onChange={(e) => setLogoSettings(prev => ({ ...prev, tagline2: e.target.value }))}
+                      className="input input-sm bg-base-200 border-base-300 w-full focus:outline-none"
+                      placeholder="SKILLS"
+                    />
+                  </div>
+                </div>
+
+                <div className="flex gap-2 pt-2">
+                  <button
+                    onClick={async () => {
+                      await Promise.all([
+                        updateSystemSetting("logoName", logoSettings.logoName),
+                        updateSystemSetting("logoNameSecondary", logoSettings.logoNameSecondary),
+                        updateSystemSetting("tagline1", logoSettings.tagline1),
+                        updateSystemSetting("tagline2", logoSettings.tagline2),
+                      ]);
+                      toast.success("Logo settings updated!");
+                    }}
+                    disabled={settingsLoading}
+                    className="btn btn-sm text-white border-0"
+                    style={{ backgroundColor: "#832388" }}
+                  >
+                    {settingsLoading ? <span className="loading loading-spinner loading-xs"></span> : "Save Logo Settings"}
+                  </button>
+                  <button
+                    onClick={() => {
+                      setLogoSettings({
+                        logoImage: "/mortarboard.png",
+                        logoName: "Career",
+                        logoNameSecondary: "Canvas",
+                        tagline1: "ELEVATE",
+                        tagline2: "SKILLS"
+                      });
+                    }}
+                    className="btn btn-sm btn-ghost"
+                  >
+                    Reset to Default
+                  </button>
+                </div>
+              </div>
+            </div>
 
             {/* Demo Login Control */}
             <div className="rounded-2xl bg-base-100 border border-base-300 p-6">
