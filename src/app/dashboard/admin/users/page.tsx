@@ -446,6 +446,16 @@ export default function AdminUsersPage() {
                     {/* Actions */}
                     <td>
                       <div className="flex gap-1.5">
+                        {/* Message User */}
+                        <button
+                          onClick={() => window.location.href = `/dashboard/messages?userId=${u._id}`}
+                          className="btn btn-xs btn-square border-0 text-white cursor-pointer tooltip"
+                          data-tip="Send Message"
+                          style={{ backgroundColor: "#0EA5E9" }}
+                        >
+                          💬
+                        </button>
+
                         {/* Profile View - All users */}
                         <button
                           onClick={() => handleViewProfile(u)}

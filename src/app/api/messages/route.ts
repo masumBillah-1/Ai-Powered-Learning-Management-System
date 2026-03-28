@@ -96,7 +96,9 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Invalid token format" }, { status: 401 });
     }
 
-    const { content, roomId, receiverId, messageType = "text" } = await req.json();
+    const { content, roomId, receiverId, messageType = "text", fileUrl, fileName, fileSize } = await req.json();
+
+    console.log("📨 POST /api/messages:", { senderId, roomId, receiverId, messageType, contentLength: content?.length, hasFile: !!fileUrl });
 
     if (!content || !roomId) {
       return NextResponse.json({ error: "Content and RoomID are required" }, { status: 400 });
@@ -105,10 +107,15 @@ export async function POST(req: NextRequest) {
     // 1. Create the message
     const message = await Message.create({
       senderId,
-      receiverId,
+      ...(receiverId && receiverId !== "support" && mongoose.isValidObjectId(receiverId) 
+        ? { receiverId: new mongoose.Types.ObjectId(receiverId) } 
+        : {}), // ✅ Only add receiverId if it's a valid ObjectId
       content,
       roomId,
       messageType,
+      ...(fileUrl && { fileUrl }),
+      ...(fileName && { fileName }),
+      ...(fileSize && { fileSize }),
       isRead: false,
     });
 
@@ -134,6 +141,8 @@ export async function POST(req: NextRequest) {
       },
       { upsert: true, new: true }
     ).maxTimeMS(5000);
+
+    console.log("✅ Message sent successfully:", message._id);
 
     return NextResponse.json({ success: true, message, conversation });
   } catch (err: any) {

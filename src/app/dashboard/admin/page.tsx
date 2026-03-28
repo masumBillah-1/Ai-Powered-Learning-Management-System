@@ -37,14 +37,14 @@ interface IPendingCourse {
 
 export default function AdminDashboard() {
   const PRIMARY = "#C81D77";
-  const PURPLE  = "#832388";
+  const PURPLE = "#832388";
 
-  const [stats, setStats]         = useState<IDashboardStats | null>(null);
-  const [transactions, setTrans]  = useState<IRecentTransaction[]>([]);
+  const [stats, setStats] = useState<IDashboardStats | null>(null);
+  const [transactions, setTrans] = useState<IRecentTransaction[]>([]);
   const [pendingCourses, setPending] = useState<IPendingCourse[]>([]);
-  const [loading, setLoading]     = useState(true);
+  const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [mounted, setMounted]     = useState(false);
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => { setMounted(true); }, []);
 
@@ -55,73 +55,75 @@ export default function AdminDashboard() {
       const token = localStorage.getItem("token");
       const headers = token ? { Authorization: `Bearer ${token}` } : undefined;
 
-      // ✅ Get profile stats
-      const profileRes = await fetch("/api/profile", { headers });
-      const profileData = await profileRes.json();
-      const adminStats = profileData.user?.stats || {};
+      // ⚡ Parallel fetch all APIs at once
+      const [profileRes, coursesRes, dashRes, txRes] = await Promise.all([
+        fetch("/api/profile", { headers }),
+        fetch("/api/courses", { headers }),
+        fetch("/api/dashboard", { headers }),
+        fetch("/api/admin/earnings", { headers }).catch(() => null),
+      ]);
 
-      const coursesRes  = await fetch("/api/courses", { headers });
-      const coursesData = await coursesRes.json();
-      const courses     = coursesData.courses || [];
+      const [profileData, coursesData, dashData] = await Promise.all([
+        profileRes.json(),
+        coursesRes.json(),
+        dashRes.json(),
+      ]);
+
+      const adminStats = profileData.user?.stats || {};
+      const courses = coursesData.courses || [];
+      const dbStats = dashData.stats || {};
 
       // ✅ Status count
-      const published  = courses.filter((c: any) => c.status === "published").length;
-      const pending    = courses.filter((c: any) => c.status === "pending").length;
-      const rejected   = courses.filter((c: any) => c.status === "rejected").length;
+      const published = courses.filter((c: any) => c.status === "published").length;
+      const pending = courses.filter((c: any) => c.status === "pending").length;
+      const rejected = courses.filter((c: any) => c.status === "rejected").length;
 
-      // ✅ Enrollment count (DB field: enrollmentCount)
+      // ✅ Enrollment count
       const totalEnroll = courses.reduce((a: number, c: any) => a + (c.enrollmentCount || 0), 0);
 
-      // ✅ Get real stats from dashboard API
-      const dashRes = await fetch("/api/dashboard", { headers });
-      const dashData = await dashRes.json();
-      const dbStats = dashData.stats || {};
-      
       const revenue = dbStats.totalRevenue || 0;
       const profit = dbStats.totalProfit || 0;
 
-      // ✅ Pending courses - show all if pending, else show first 4 published
+      // ✅ Pending courses
       let pendingList: IPendingCourse[] = courses
         .filter((c: any) => c.status === "pending")
         .slice(0, 4)
         .map((c: any) => ({
-          _id:          c._id,
-          title:        c.title,
+          _id: c._id,
+          title: c.title,
           instructorId: c.instructorId,
-          createdAt:    c.createdAt,
+          createdAt: c.createdAt,
         }));
 
-      // If no pending, show published courses as sample
       if (pendingList.length === 0) {
         pendingList = courses.slice(0, 4).map((c: any) => ({
-          _id:          c._id,
-          title:        c.title,
+          _id: c._id,
+          title: c.title,
           instructorId: c.instructorId,
-          createdAt:    c.createdAt,
+          createdAt: c.createdAt,
         }));
       }
       setPending(pendingList);
 
-      // ✅ Recent transactions (fetch from real payments)
+      // ✅ Recent transactions
       let txList: IRecentTransaction[] = [];
-      try {
-        const txRes = await fetch("/api/admin/earnings", { headers });
-        if (txRes.ok) {
+      if (txRes) {
+        try {
           const txData = await txRes.json();
           const statements = txData.statements || [];
           txList = statements.slice(0, 4).map((t: any) => ({
-            _id:        t._id,
-            studentId:  { name: t.student, photoURL: t.studentPhoto },
+            _id: t._id,
+            studentId: { name: t.student, photoURL: t.studentPhoto },
             courseName: t.course,
-            amount:     t.amount,
-            createdAt:  t.date,
-            status:     t.status,
+            amount: t.amount,
+            createdAt: t.date,
+            status: t.status,
           }));
-        }
-      } catch (_) {}
+        } catch (_) { }
+      }
       setTrans(txList);
 
-      // ✅ User counts (from courses data)
+      // ✅ User counts
       const instructorSet = new Set<string>();
       courses.forEach((c: any) => {
         if (c.instructorId?._id) {
@@ -129,17 +131,17 @@ export default function AdminDashboard() {
         }
       });
       const totalInstructors = instructorSet.size;
-      const totalStudents = adminStats.totalUsers || 0; // Fetched directly from profile stats
+      const totalStudents = adminStats.totalUsers || 0;
 
       setStats({
         totalStudents,
         totalInstructors,
-        totalCourses:     courses.length,
+        totalCourses: courses.length,
         publishedCourses: published,
-        pendingCourses:   pending,
-        rejectedCourses:  rejected,
-        totalRevenue:     revenue,
-        totalProfit:      profit,
+        pendingCourses: pending,
+        rejectedCourses: rejected,
+        totalRevenue: revenue,
+        totalProfit: profit,
         totalEnrollments: totalEnroll,
       });
 
@@ -155,55 +157,55 @@ export default function AdminDashboard() {
 
   const statCards = [
     {
-      label:   "Total Students",
-      value:   stats?.totalStudents    ?? 0,
-      change:  "+12%",
-      icon:    GraduationCap,
-      color:   PRIMARY,
-      glow:    "rgba(200,29,119,0.12)",
-      href:    "/dashboard/admin/students",
+      label: "Total Students",
+      value: stats?.totalStudents ?? 0,
+      change: "+12%",
+      icon: GraduationCap,
+      color: PRIMARY,
+      glow: "rgba(200,29,119,0.12)",
+      href: "/dashboard/admin/students",
     },
     {
-      label:   "Instructors",
-      value:   stats?.totalInstructors ?? 0,
-      change:  "+5%",
-      icon:    Users,
-      color:   PURPLE,
-      glow:    "rgba(131,35,136,0.12)",
-      href:    "/dashboard/admin/instructors",
+      label: "Instructors",
+      value: stats?.totalInstructors ?? 0,
+      change: "+5%",
+      icon: Users,
+      color: PURPLE,
+      glow: "rgba(131,35,136,0.12)",
+      href: "/dashboard/admin/instructors",
     },
     {
-      label:   "Total Courses",
-      value:   stats?.totalCourses     ?? 0,
-      change:  "+8%",
-      icon:    BookOpen,
-      color:   "#0EA5E9",
-      glow:    "rgba(14,165,233,0.12)",
-      href:    "/dashboard/admin/courses",
+      label: "Total Courses",
+      value: stats?.totalCourses ?? 0,
+      change: "+8%",
+      icon: BookOpen,
+      color: "#0EA5E9",
+      glow: "rgba(14,165,233,0.12)",
+      href: "/dashboard/admin/courses",
     },
     {
-      label:   "Platfrom Profit",
-      value:   `৳${(stats?.totalProfit ?? 0).toLocaleString()}`,
-      change:  "+15%",
-      icon:    ShieldCheck,
-      color:   "#E3436B",
-      glow:    "rgba(227,67,107,0.12)",
-      href:    "/dashboard/admin/earnings",
+      label: "Platfrom Profit",
+      value: `৳${(stats?.totalProfit ?? 0).toLocaleString()}`,
+      change: "+15%",
+      icon: ShieldCheck,
+      color: "#E3436B",
+      glow: "rgba(227,67,107,0.12)",
+      href: "/dashboard/admin/earnings",
     },
   ];
 
   const quickStats = [
-    { label: "Pending",    value: stats?.pendingCourses   ?? 0, color: "#F59E0B" },
-    { label: "Published",  value: stats?.publishedCourses ?? 0, color: "#00C48C" },
-    { label: "Enrollments",value: stats?.totalEnrollments ?? 0, color: PRIMARY   },
+    { label: "Pending", value: stats?.pendingCourses ?? 0, color: "#F59E0B" },
+    { label: "Published", value: stats?.publishedCourses ?? 0, color: "#00C48C" },
+    { label: "Enrollments", value: stats?.totalEnrollments ?? 0, color: PRIMARY },
   ];
 
   const formatDate = (d: string) => {
     const date = new Date(d);
-    const now  = new Date();
+    const now = new Date();
     const diff = now.getTime() - date.getTime();
     const mins = Math.floor(diff / 60000);
-    if (mins < 60)  return `${mins}m ago`;
+    if (mins < 60) return `${mins}m ago`;
     if (mins < 1440) return `${Math.floor(mins / 60)}h ago`;
     return date.toLocaleDateString("en-GB", { day: "2-digit", month: "short" });
   };
@@ -297,15 +299,15 @@ export default function AdminDashboard() {
           </div>
 
           {loading ? (
-            <div className="p-4 space-y-3">
-              {Array.from({ length: 4 }).map((_, i) => (
+            <div className="p-4 space-y-2">
+              {Array.from({ length: 3 }).map((_, i) => (
                 <div key={i} className="flex items-center gap-3">
                   <div className="skeleton w-10 h-10 rounded-xl flex-shrink-0" />
-                  <div className="flex-1 space-y-2">
-                    <div className="skeleton h-3 w-32 rounded" />
-                    <div className="skeleton h-2 w-24 rounded" />
+                  <div className="flex-1 space-y-1.5">
+                    <div className="skeleton h-3 w-28 rounded" />
+                    <div className="skeleton h-2 w-20 rounded" />
                   </div>
-                  <div className="skeleton h-4 w-16 rounded" />
+                  <div className="skeleton h-4 w-14 rounded" />
                 </div>
               ))}
             </div>
@@ -361,10 +363,10 @@ export default function AdminDashboard() {
                     <p className="text-xs opacity-40 font-semibold uppercase tracking-wider">Platform Summary</p>
                   </div>
                   {[
-                    { label: "Total Revenue",     value: `৳${(stats?.totalRevenue ?? 0).toLocaleString()}`,  color: PRIMARY,   icon: DollarSign  },
-                    { label: "Total Enrollments", value: `${stats?.totalEnrollments ?? 0}`,                  color: "#00C48C", icon: Users       },
-                    { label: "Published Courses", value: `${stats?.publishedCourses ?? 0}`,                  color: PURPLE,    icon: BookOpen    },
-                    { label: "Pending Review",    value: `${stats?.pendingCourses   ?? 0}`,                  color: "#F59E0B", icon: AlertCircle },
+                    { label: "Total Revenue", value: `৳${(stats?.totalRevenue ?? 0).toLocaleString()}`, color: PRIMARY, icon: DollarSign },
+                    { label: "Total Enrollments", value: `${stats?.totalEnrollments ?? 0}`, color: "#00C48C", icon: Users },
+                    { label: "Published Courses", value: `${stats?.publishedCourses ?? 0}`, color: PURPLE, icon: BookOpen },
+                    { label: "Pending Review", value: `${stats?.pendingCourses ?? 0}`, color: "#F59E0B", icon: AlertCircle },
                   ].map((item, i) => (
                     <div key={item.label} className="flex items-center gap-4 px-6 py-4 hover:bg-base-200/40 transition-colors">
                       <span className="text-xs font-black opacity-20 w-5 tabular-nums">{String(i + 1).padStart(2, "0")}</span>
@@ -407,15 +409,15 @@ export default function AdminDashboard() {
           </div>
 
           {loading ? (
-            <div className="p-4 space-y-3">
-              {Array.from({ length: 3 }).map((_, i) => (
+            <div className="p-4 space-y-2">
+              {Array.from({ length: 2 }).map((_, i) => (
                 <div key={i} className="flex items-center gap-3">
                   <div className="skeleton w-9 h-9 rounded-xl flex-shrink-0" />
-                  <div className="flex-1 space-y-2">
-                    <div className="skeleton h-3 w-28 rounded" />
-                    <div className="skeleton h-2 w-20 rounded" />
+                  <div className="flex-1 space-y-1.5">
+                    <div className="skeleton h-3 w-24 rounded" />
+                    <div className="skeleton h-2 w-16 rounded" />
                   </div>
-                  <div className="skeleton h-7 w-16 rounded-xl" />
+                  <div className="skeleton h-7 w-14 rounded-xl" />
                 </div>
               ))}
             </div>

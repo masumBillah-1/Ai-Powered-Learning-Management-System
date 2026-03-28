@@ -513,7 +513,7 @@ Visit: ${window.location.origin}
 
 
     return (
-        <div className="fixed bottom-9 right-4 z-[9999] flex flex-col items-start gap-3">
+        <div className="fixed bottom-9 left-4 z-[9999] flex flex-col items-start gap-3">
             {/* Hidden file input */}
             <input
                 ref={fileInputRef}

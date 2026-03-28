@@ -2,8 +2,8 @@ import mongoose, { Schema, Document } from "mongoose";
 
 // ─── Interfaces ───────────────────────────────────────────────────────────────
 export interface IMessageDocument extends Document {
-  senderId: mongoose.Types.ObjectId;
-  receiverId: mongoose.Types.ObjectId;
+  senderId: mongoose.Types.ObjectId | string; // ✅ Allow string for bot
+  receiverId?: mongoose.Types.ObjectId; // ✅ Optional for bot messages
   conversationId?: mongoose.Types.ObjectId;
   
   content: string;
@@ -32,8 +32,7 @@ export interface IMessageDocument extends Document {
 const MessageSchema = new Schema<IMessageDocument>(
   {
     senderId: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "User",
+      type: Schema.Types.Mixed, // ✅ Allow both ObjectId and String (for bot)
       required: true,
     },
     receiverId: {

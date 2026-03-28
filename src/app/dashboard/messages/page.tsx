@@ -19,6 +19,9 @@ interface Message {
   receiverId: string;
   content: string;
   messageType: "text" | "image" | "file" | "link";
+  fileUrl?: string;
+  fileName?: string;
+  fileSize?: number;
   roomId: string;
   createdAt: string;
 }
@@ -71,8 +74,31 @@ function SupportChatContent() {
   const [loading, setLoading] = useState(true);
   const [usersLoading, setUsersLoading] = useState(false);
   const [showEmoji, setShowEmoji] = useState(false);
+  const [imageModal, setImageModal] = useState<string | null>(null); // ✅ Image modal state
   const scrollRef = useRef<HTMLDivElement>(null);
   const emojiRef = useRef<HTMLDivElement>(null);
+
+  // ✅ Download handler with proper filename
+  const handleDownload = async (url: string, filename?: string) => {
+    try {
+      const response = await fetch(url);
+      const blob = await response.blob();
+      const blobUrl = window.URL.createObjectURL(blob);
+
+      const link = document.createElement('a');
+      link.href = blobUrl;
+      link.download = filename || 'download';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+      window.URL.revokeObjectURL(blobUrl);
+    } catch (error) {
+      console.error('Download failed:', error);
+      // Fallback: open in new tab
+      window.open(url, '_blank');
+    }
+  };
 
   // --- Functions (Defined before Use) ---
   const fetchAllUsers = async () => {
@@ -158,7 +184,7 @@ function SupportChatContent() {
     if (currentUser.role === 'student' || currentUser.role === 'admin') {
       const candidateUsers = currentUser.role === 'student'
         ? enrolledInstructors
-        : allUsers.filter(u => u.role === 'instructor');
+        : allUsers; // ✅ Admin can see ALL users (students + instructors)
 
       const extraChats = candidateUsers
         .filter(u => !existingConversations.some(conv =>
@@ -311,6 +337,17 @@ function SupportChatContent() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  // ✅ Close image modal on ESC key
+  useEffect(() => {
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && imageModal) {
+        setImageModal(null);
+      }
+    };
+    document.addEventListener('keydown', handleEscape);
+    return () => document.removeEventListener('keydown', handleEscape);
+  }, [imageModal]);
+
   const handleSend = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!input.trim() || !activeRoomId || !currentUser) return;
@@ -346,6 +383,52 @@ function SupportChatContent() {
 
   return (
     <div className={`flex h-[85vh] bg-base-100 text-base-content overflow-hidden rounded-2xl border ${theme.border} shadow-xl mx-auto`}>
+      {/* ✅ Image Modal/Lightbox */}
+      {imageModal && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/95 backdrop-blur-sm"
+          onClick={() => setImageModal(null)}
+        >
+          {/* Close button - Smaller with pointer cursor */}
+          <button
+            onClick={() => setImageModal(null)}
+            className="absolute top-4 right-4 z-[60] w-8 h-8 flex items-center justify-center rounded-full bg-black/80 hover:bg-black text-white transition-all hover:scale-110 shadow-lg border border-white/20 cursor-pointer"
+            title="Close (ESC)"
+          >
+            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+
+          {/* Download button - Smaller with pointer cursor */}
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              const filename = imageModal.split('/').pop()?.split('?')[0] || 'image.jpg';
+              handleDownload(imageModal, filename);
+            }}
+            className="absolute top-4 right-14 z-[60] w-8 h-8 flex items-center justify-center rounded-full bg-black/80 hover:bg-black text-white transition-all hover:scale-110 shadow-lg border border-white/20 cursor-pointer"
+            title="Download"
+          >
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+            </svg>
+          </button>
+
+          <div className="relative max-w-7xl max-h-[90vh] p-4" onClick={(e) => e.stopPropagation()}>
+            <img
+              src={imageModal}
+              alt="Full size image"
+              className="max-w-full max-h-[85vh] object-contain rounded-lg shadow-2xl"
+            />
+          </div>
+
+          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 text-white/60 text-xs">
+            Click outside or press ESC to close
+          </div>
+        </div>
+      )}
+
       <aside className="w-60 bg-base-200 border-r border-base-300 flex flex-col">
         <div className="p-5 border-b border-base-300">
           <div className="flex items-center justify-between mb-3">
@@ -518,6 +601,46 @@ function SupportChatContent() {
                           <div className="text-5xl leading-none drop-shadow-sm hover:scale-110 transition-transform duration-200 cursor-default">
                             {msg.content}
                           </div>
+                        ) : msg.messageType === "image" && msg.fileUrl ? (
+                          // ✅ Image message
+                          <div className={`rounded-2xl overflow-hidden shadow-lg border transition-all hover:scale-[1.02] cursor-pointer
+                            ${isMe ? 'border-white/20' : 'border-base-300'}`}
+                            onClick={() => setImageModal(msg.fileUrl!)}
+                          >
+                            <img
+                              src={msg.fileUrl}
+                              alt="Shared image"
+                              className="max-w-xs max-h-96 object-cover"
+                            />
+                            <div className={`px-3 py-1.5 text-[10px] font-medium ${isMe ? 'bg-white/10 text-white' : 'bg-base-200 text-base-content/70'}`}>
+                              📷 Image • Click to view
+                            </div>
+                          </div>
+                        ) : msg.messageType === "file" && msg.fileUrl ? (
+                          // ✅ File message
+                          <button
+                            onClick={() => handleDownload(msg.fileUrl!, msg.fileName || msg.content)}
+                            className={`flex items-center gap-3 py-3 px-4 rounded-2xl transition-all shadow-sm border hover:shadow-md cursor-pointer w-full text-left
+                              ${isMe
+                                ? 'bg-gradient-to-br from-[#f52e99] to-[#d42d87] text-white border-transparent'
+                                : 'bg-white dark:bg-neutral-800 text-slate-800 dark:text-neutral-50 border-base-300'
+                              }`}
+                          >
+                            <div className={`p-2 rounded-lg ${isMe ? 'bg-white/20' : 'bg-base-200'}`}>
+                              <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
+                                <path fillRule="evenodd" d="M8 4a3 3 0 00-3 3v4a5 5 0 0010 0V7a1 1 0 112 0v4a7 7 0 11-14 0V7a5 5 0 0110 0v4a3 3 0 11-6 0V7a1 1 0 012 0v4a1 1 0 102 0V7a3 3 0 00-3-3z" clipRule="evenodd" />
+                              </svg>
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-semibold truncate">{msg.fileName || msg.content}</p>
+                              <p className={`text-[10px] ${isMe ? 'text-white/70' : 'text-base-content/50'}`}>
+                                {msg.fileSize ? `${(msg.fileSize / 1024).toFixed(1)} KB • ` : ''}Click to download
+                              </p>
+                            </div>
+                            <svg className="w-5 h-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                            </svg>
+                          </button>
                         ) : (
                           <div className={`py-2.5 px-4 text-[13px] leading-relaxed rounded-2xl transition-all shadow-sm border
                             ${isMe
