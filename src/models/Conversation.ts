@@ -6,6 +6,7 @@ export interface IConversationDocument extends Document {
   lastMessage?: string;
   lastMessageAt?: Date;
   unreadCount: Map<string, number>; // userId -> count
+  adminTakenOver?: boolean; // ✅ Admin manually handling this conversation
   createdAt: Date;
   updatedAt: Date;
 }
@@ -35,6 +36,10 @@ const ConversationSchema = new Schema<IConversationDocument>(
       type: Map,
       of: Number,
       default: {},
+    },
+    adminTakenOver: {
+      type: Boolean,
+      default: false,
     },
   },
   {

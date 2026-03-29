@@ -2,6 +2,7 @@ import { createServer } from "http";
 import { Server } from "socket.io";
 import mongoose from "mongoose";
 import dns from "dns";
+import { connectDB } from "@/db/connect"; // ✅ Use shared connection
 
 
 // ✅ Force IPv4 — connect.ts এর মতোই
@@ -9,35 +10,7 @@ dns.setDefaultResultOrder("ipv4first");
 
 
 const PORT = process.env.SOCKET_PORT || 4000;
-const MONGODB_URI = process.env.MONGODB_URI as string;
 const CLIENT_URL = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
-
-
-if (!MONGODB_URI) {
-  throw new Error("MONGODB_URI missing in .env.local");
-}
-
-
-// ── MongoDB connect (connect.ts এর মতো same logic) ──────
-let isConnected = false;
-
-
-async function connectDB() {
-  if (isConnected) return;
-
-
-  await mongoose.connect(MONGODB_URI, {
-    bufferCommands: false,
-    serverSelectionTimeoutMS: 10000,
-    socketTimeoutMS: 45000,
-    family: 4, // ✅ Force IPv4
-    dbName: "learning-management", // ✅ Database name specify
-  });
-
-
-  isConnected = true;
-  console.log("✅ MongoDB connected (Socket Server)");
-}
 
 
 // ── Live Message Schema ──────────────────────────────────
@@ -86,7 +59,7 @@ const onlineUsers = new Map<
 
 // ── Main ─────────────────────────────────────────────────
 async function main() {
-  await connectDB();
+  await connectDB(); // ✅ Now using shared connection from @/db/connect
 
 
   const httpServer = createServer();

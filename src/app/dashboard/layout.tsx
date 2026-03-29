@@ -117,16 +117,9 @@ function Sidebar({ items, collapsed, onToggle, mobileOpen, onMobileClose }: {
       <div className={`flex flex-col h-full overflow-hidden bg-gradient-to-b from-[#1a1a2e] via-[#16213e] to-[#0f3460] transition-all duration-300 ${w ? "w-64" : "w-[68px]"}`}>
         <div className={`h-16 flex items-center flex-shrink-0 border-b border-white/[0.07] ${w ? "px-4 justify-between" : "justify-center px-0"}`}>
           {w && (
-            <Link href="/" className="flex items-center gap-2 no-underline group min-w-0">
-              <img
-                src="/mortarboard.png"
-                alt="Logo"
-                className="w-12 h-12 flex-shrink-0 group-hover:rotate-6 transition-transform duration-300"
-              />
-              <span className="whitespace-nowrap text-[17px] font-black tracking-tight text-white">
-                Career<span className="bg-gradient-to-r from-[#FF0F7B] to-[#F89B29] bg-clip-text text-transparent">Canvas</span>
-              </span>
-            </Link>
+            <div className="flex items-center gap-2 no-underline group min-w-0">
+              <Logo size="sm" />
+            </div>
           )}
           {!forceWide ? (
             <button onClick={onToggle} className="w-7 h-7 rounded-md flex items-center justify-center bg-white/[0.08] text-white/55 hover:bg-white/15 transition-colors border-0 cursor-pointer flex-shrink-0">
@@ -161,7 +154,7 @@ function Sidebar({ items, collapsed, onToggle, mobileOpen, onMobileClose }: {
 
   return (
     <>
-      <aside className={`fixed top-0 left-0 bottom-0 z-60 overflow-hidden transition-all duration-300 hidden md:block ${collapsed ? "w-[68px]" : "w-64"}`}>
+      <aside className={`fixed top-0  left-0 bottom-0 z-60 overflow-hidden transition-all duration-300 hidden md:block ${collapsed ? "w-[68px]" : "w-64 "}`}>
         <NavContent />
       </aside>
       {mobileOpen && (
@@ -231,7 +224,7 @@ function TopNavbar({ role, items, theme, toggleTheme, user, onLogout, onMobileMe
 
   return (
     <header className={`
-      fixed top-0 right-0 h-16 z-50 flex items-center justify-between px-4
+      fixed top-0 right-0 pl-5 h-16 z-50 flex items-center justify-between px-4
       bg-white dark:bg-[#0f172a]
       border-b border-gray-200 dark:border-gray-700/60
       shadow-sm transition-all duration-300
@@ -352,45 +345,45 @@ function TopNavbar({ role, items, theme, toggleTheme, user, onLogout, onMobileMe
                   </span>
                 )}
               </div>
-              
+
               <div className="max-h-80 overflow-y-auto">
                 {messageConversations.length === 0 ? (
                   <div className="px-4 py-8 text-center text-sm text-gray-400">কোনো ইনবক্স নেই</div>
                 ) : messageConversations.filter((c: any) => (c.unreadCount?.[(user as any)?._id || ""] || 0) > 0).length === 0 ? (
                   <div className="px-4 py-8 text-center text-sm text-gray-400">সব মেসেজ পড়া হয়েছে</div>
                 ) : messageConversations
-                    .filter((c: any) => (c.unreadCount?.[(user as any)?._id || ""] || 0) > 0)
-                    .slice(0, 5)
-                    .map((conv: any, idx) => {
-                      const otherUser = conv.participants.find((p: any) => p._id !== (user as any)?._id) || conv.participants[0];
-                      const unread = conv.unreadCount?.[(user as any)?._id || ""] || 0;
-                      
-                      return (
-                        <div key={idx} 
-                          onClick={() => {
-                            router.push(`/dashboard/messages?userId=${otherUser._id}`);
-                            setShowMsgPopup(false);
-                          }}
-                          className="flex gap-3 px-4 py-3 border-b border-gray-100 dark:border-gray-700 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors bg-blue-50/5 dark:bg-blue-900/10">
-                          <div className="w-10 h-10 rounded-full flex-shrink-0 overflow-hidden bg-gray-200 flex items-center justify-center">
-                            {otherUser.photoURL ? (
-                              <img src={otherUser.photoURL} alt="" className="w-full h-full object-cover" />
-                            ) : (
-                              <span className="text-sm font-bold text-gray-400">{otherUser.name?.[0]}</span>
-                            )}
-                          </div>
-                          <div className="min-w-0 flex-1">
-                            <div className="flex justify-between items-center mb-0.5">
-                              <p className="text-[13.5px] font-bold text-gray-900 dark:text-white truncate pr-2">{otherUser.name}</p>
-                              {unread > 0 && <span className="w-1.5 h-1.5 rounded-full bg-red-500 shadow-sm" />}
-                            </div>
-                            <p className="text-[11.5px] text-gray-500 dark:text-gray-400 truncate font-medium">
-                              {typeof conv.lastMessage === 'object' ? conv.lastMessage?.content : (conv.lastMessage || "নতুন মেসেজ...")}
-                            </p>
-                          </div>
+                  .filter((c: any) => (c.unreadCount?.[(user as any)?._id || ""] || 0) > 0)
+                  .slice(0, 5)
+                  .map((conv: any, idx) => {
+                    const otherUser = conv.participants.find((p: any) => p._id !== (user as any)?._id) || conv.participants[0];
+                    const unread = conv.unreadCount?.[(user as any)?._id || ""] || 0;
+
+                    return (
+                      <div key={idx}
+                        onClick={() => {
+                          router.push(`/dashboard/messages?userId=${otherUser._id}`);
+                          setShowMsgPopup(false);
+                        }}
+                        className="flex gap-3 px-4 py-3 border-b border-gray-100 dark:border-gray-700 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors bg-blue-50/5 dark:bg-blue-900/10">
+                        <div className="w-10 h-10 rounded-full flex-shrink-0 overflow-hidden bg-gray-200 flex items-center justify-center">
+                          {otherUser.photoURL ? (
+                            <img src={otherUser.photoURL} alt="" className="w-full h-full object-cover" />
+                          ) : (
+                            <span className="text-sm font-bold text-gray-400">{otherUser.name?.[0]}</span>
+                          )}
                         </div>
-                      );
-                    })}
+                        <div className="min-w-0 flex-1">
+                          <div className="flex justify-between items-center mb-0.5">
+                            <p className="text-[13.5px] font-bold text-gray-900 dark:text-white truncate pr-2">{otherUser.name}</p>
+                            {unread > 0 && <span className="w-1.5 h-1.5 rounded-full bg-red-500 shadow-sm" />}
+                          </div>
+                          <p className="text-[11.5px] text-gray-500 dark:text-gray-400 truncate font-medium">
+                            {typeof conv.lastMessage === 'object' ? conv.lastMessage?.content : (conv.lastMessage || "নতুন মেসেজ...")}
+                          </p>
+                        </div>
+                      </div>
+                    );
+                  })}
               </div>
               <div className="py-2.5 text-center bg-gray-50 dark:bg-gray-800/30">
                 <Link href="/dashboard/messages" onClick={() => setShowMsgPopup(false)} className="text-xs font-semibold text-[#832388]">Go to Messenger →</Link>
@@ -438,7 +431,7 @@ function TopNavbar({ role, items, theme, toggleTheme, user, onLogout, onMobileMe
               </Link>
               <Link href="/leaderboard" onClick={() => setShowUser(false)}
                 className="flex items-center gap-2.5 px-4 py-2.5 text-[13.5px] text-gray-700 dark:text-gray-300 border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors no-underline group">
-                <Trophy size={14} style={{ color: "#F89B29" }} /> 
+                <Trophy size={14} style={{ color: "#F89B29" }} />
                 <span>Leaderboard</span>
                 <span className="ml-auto text-[9px] font-black px-1.5 py-0.5 rounded-md" style={{ backgroundColor: "#F89B2920", color: "#F89B29", border: "1px solid #F89B2930" }}>🏆 NEW</span>
               </Link>
@@ -459,7 +452,7 @@ function PageLoader({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   useEffect(() => {
     setLoading(true);
-    const t = setTimeout(() => setLoading(false), 350);
+    const t = setTimeout(() => setLoading(false), 150); // ⚡ Faster loading - 350ms → 150ms
     return () => clearTimeout(t);
   }, [pathname]);
 

@@ -147,7 +147,7 @@ const UserPreferencesSchema = new Schema<IUserPreferences>({
 const UserSchema = new Schema<IUserDocument>(
   {
     name:  { type: String, required: true, trim: true },
-    email: { type: String, required: true, unique: true, lowercase: true, trim: true },
+    email: { type: String, required: true, lowercase: true, trim: true },
 
     // ✅ phone — unique index নেই, duplicate নিয়ে মাথাব্যথা নেই
     // optional field, দিলেও হয় না দিলেও হয়

@@ -12,6 +12,7 @@ import { HiSparkles, HiOutlineArrowsPointingOut, HiMiniArrowsPointingIn } from "
 import Link from "next/link";
 import toast, { Toaster } from "react-hot-toast";
 import VideoAskAI from "@/components/VideoAskAI";
+import VideoQuiz from "@/components/VideoQuiz";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 interface Lesson {
@@ -211,6 +212,24 @@ export default function LearnPage() {
     return () => clearInterval(timer);
   }, []);
 
+
+
+  // ── Dynamic Page Title ────────────────────────────────────────────────────────
+  useEffect(() => {
+    if (activeLesson && course) {
+      document.title = `${activeLesson.title} | ${course.title}`;
+    } else if (course) {
+      document.title = `Learning: ${course.title} | CareerCanvas`;
+    } else {
+      document.title = "CareerCanvas | Learning";
+    }
+
+    // Cleanup when component unmounts
+    return () => {
+      document.title = "CareerCanvas";
+    };
+  }, [activeLesson?._id, activeLesson?.title, course?.title]);
+
   // ── Polling for New Content (Instructor adding lessons) ────────────────────
   useEffect(() => {
     if (!courseId) return;
@@ -220,15 +239,15 @@ export default function LearnPage() {
         const res = await fetch(`/api/courses/${courseId}`);
         if (!res.ok) return;
         const data = await res.json();
-        
+
         if (data.success && data.course && data.course.modules) {
           setCourse(prev => {
             if (!prev || !prev.modules) return data.course;
-            
+
             // Safer comparison with optional chaining
             const oldLessons = prev.modules.flatMap((m: Module) => m.lessons?.map((l: Lesson) => l._id) || []).filter(Boolean).join(",");
             const newLessons = data.course.modules.flatMap((m: Module) => m.lessons?.map((l: Lesson) => l._id) || []).filter(Boolean).join(",");
-            
+
             if (oldLessons !== newLessons) {
               return data.course;
             }
@@ -420,7 +439,7 @@ export default function LearnPage() {
               // YT.PlayerState.PLAYING = 1
               if (event.data === 1) {
                 playStartTimeRef.current = Date.now();
-              } 
+              }
               // PAUSED (2), ENDED (0), BUFFERING (3), CUED (5)
               else {
                 if (playStartTimeRef.current) {
@@ -475,7 +494,7 @@ export default function LearnPage() {
     if (!data.success) {
       const reverted = localCompletedRef.current.filter(id => id !== activeLesson._id);
       localCompletedRef.current = reverted; setLocalCompleted(reverted);
-    } else { 
+    } else {
       // Handle gamification response
       if (data.gamified) {
         if (data.gamified.xpGained > 0) {
@@ -492,7 +511,7 @@ export default function LearnPage() {
           setShowStreakAnim(true);
           setTimeout(() => setShowStreakAnim(false), 3000);
         }
-        
+
         // 🔥 Update local state immediately for instant feedback
         setUserStats(prev => prev ? ({
           ...prev,
@@ -503,7 +522,7 @@ export default function LearnPage() {
 
         fetchUserStats(); // Background refresh to ensure sync
       }
-      await silentRefreshEnrollment(); 
+      await silentRefreshEnrollment();
     }
     resetTimeTracking();
     setCompletingLesson(false);
@@ -569,27 +588,27 @@ export default function LearnPage() {
           // Update progress on server - no time tracking for assignments
           const timeSpent = 0; // Assignments don't track time
           const progData = await updateProgress(activeLesson._id, timeSpent, true);
-          
-          if (progData.success && progData.gamified) {
-             if (progData.gamified.xpGained > 0) {
-               setShowXPAnim(true);
-               setTimeout(() => setShowXPAnim(false), 3000);
-               toast.success(`+${progData.gamified.xpGained} XP Earned!`, { ...toastOk, icon: "✨" });
-             }
-             if (progData.gamified.streakIncremented) {
-               setShowStreakAnim(true);
-               setTimeout(() => setShowStreakAnim(false), 3000);
-             }
-             
-             // 🔥 Update local state immediately for instant feedback
-             setUserStats(prev => prev ? ({
-               ...prev,
-               totalXP: prev.totalXP + progData.gamified.xpGained,
-               level: progData.gamified.newLevel,
-               currentStreak: progData.gamified.streakIncremented ? prev.currentStreak + 1 : prev.currentStreak
-             }) : prev);
 
-             fetchUserStats();
+          if (progData.success && progData.gamified) {
+            if (progData.gamified.xpGained > 0) {
+              setShowXPAnim(true);
+              setTimeout(() => setShowXPAnim(false), 3000);
+              toast.success(`+${progData.gamified.xpGained} XP Earned!`, { ...toastOk, icon: "✨" });
+            }
+            if (progData.gamified.streakIncremented) {
+              setShowStreakAnim(true);
+              setTimeout(() => setShowStreakAnim(false), 3000);
+            }
+
+            // 🔥 Update local state immediately for instant feedback
+            setUserStats(prev => prev ? ({
+              ...prev,
+              totalXP: prev.totalXP + progData.gamified.xpGained,
+              level: progData.gamified.newLevel,
+              currentStreak: progData.gamified.streakIncremented ? prev.currentStreak + 1 : prev.currentStreak
+            }) : prev);
+
+            fetchUserStats();
           }
 
           if (!progData.success) {
@@ -670,20 +689,20 @@ export default function LearnPage() {
             {showXPAnim && xpAnimData && (
               <div className="fixed inset-0 z-[1000] pointer-events-none flex items-center justify-center">
                 <div className="w-96 h-96">
-                   <Lottie animationData={xpAnimData} loop={false} />
+                  <Lottie animationData={xpAnimData} loop={false} />
                 </div>
               </div>
             )}
             {showLevelAnim && levelAnimData && (
               <div className="fixed inset-0 z-[1001] pointer-events-none flex items-center justify-center bg-black/40 backdrop-blur-sm">
                 <div className="w-full max-w-lg">
-                   <Lottie animationData={levelAnimData} loop={false} />
+                  <Lottie animationData={levelAnimData} loop={false} />
                 </div>
               </div>
             )}
             {showStreakAnim && streakAnimData && (
               <div className="fixed bottom-10 left-10 z-[1000] pointer-events-none w-48 h-48">
-                 <Lottie animationData={streakAnimData} loop={false} />
+                <Lottie animationData={streakAnimData} loop={false} />
               </div>
             )}
           </AnimatePresence>
@@ -721,67 +740,67 @@ export default function LearnPage() {
       {/* Top Nav */}
       {!isFocusMode && (
         <header className="h-14 bg-[#161b22] border-b border-white/10 flex items-center justify-between px-4 z-50 sticky top-0">
-        <div className="flex items-center gap-3">
-          <button onClick={() => router.push("/dashboard/student/courses")}
-            className="flex cursor-pointer items-center gap-2 text-gray-400 hover:text-white transition-colors text-sm font-medium">
-            <FaArrowLeft className="text-xs" />
-            <span className="hidden sm:block">My Courses</span>
-          </button>
-          <span className="text-white/20">|</span>
-          <span className="text-white font-semibold text-sm truncate max-w-[120px] sm:max-w-xs">{course.title}</span>
-        </div>
-        
-        <div className="flex items-center gap-3 pr-2">
-          {/* XP & Level Status (Desktop/Tablet) */}
-          {userStats && (
-            <div className="hidden md:flex items-center gap-2 px-3 py-1.5 bg-[#1f2937]/50 border border-white/10 rounded-xl hover:border-white/20 transition-all cursor-default group">
-              <div className="flex items-center gap-1.5">
-                <div className="w-6 h-6 rounded-lg bg-gradient-to-tr from-yellow-400 to-orange-500 flex items-center justify-center text-xs font-black text-white shadow-xl shadow-orange-500/20 group-hover:scale-110 transition-transform">
-                  {userStats.level}
-                </div>
-                <div className="flex flex-col">
-                   <span className="text-[8px] font-black text-white/40 uppercase leading-none tracking-widest">Growth</span>
-                   <span className="text-[10px] font-black text-orange-400 tabular-nums leading-none mt-1">
-                     {userStats.totalXP % 500} / 500 <span className="text-white/40 font-bold ml-0.5">XP</span>
-                   </span>
-                </div>
-              </div>
-
-              {userStats.currentStreak > 0 && (
-                <div className="h-6 w-px bg-white/10 mx-1"></div>
-              )}
-              
-              {userStats.currentStreak > 0 && (
-                <div className="flex items-center gap-1">
-                  <span className="text-xs animate-bounce" style={{ animationDuration: '2s' }}>🔥</span>
-                  <span className="text-xs font-black text-orange-400 tabular-nums">{userStats.currentStreak}</span>
-                </div>
-              )}
-            </div>
-          )}
-
-          <div className="flex items-center gap-2 bg-[#1f2937]/50 rounded-xl px-3 py-1.5 border border-white/10">
-            <div className="hidden sm:block w-16 h-1.5 bg-white/10 rounded-full overflow-hidden">
-              <motion.div className="h-full rounded-full" animate={{ width: `${progressPct}%` }}
-                transition={{ duration: 0.5 }} style={{ background: "linear-gradient(90deg, #C81D77, #6710C2)" }} />
-            </div>
-            <span className="text-[10px] sm:text-xs text-blue-400 font-black tabular-nums">{progressPct}%</span>
+          <div className="flex items-center gap-3">
+            <button onClick={() => router.push("/dashboard/student/courses")}
+              className="flex cursor-pointer items-center gap-2 text-gray-400 hover:text-white transition-colors text-sm font-medium">
+              <FaArrowLeft className="text-xs" />
+              <span className="hidden sm:block">My Courses</span>
+            </button>
+            <span className="text-white/20">|</span>
+            <span className="text-white font-semibold text-sm truncate max-w-[120px] sm:max-w-xs">{course.title}</span>
           </div>
 
-          <button onClick={() => setIsFocusMode(true)}
-            className="w-9 h-9 rounded-xl bg-violet-500/10 border border-violet-500/20 flex items-center justify-center text-violet-400 hover:text-white hover:bg-violet-500 transition-all group relative"
-            title="Focus Mode">
-            <HiOutlineArrowsPointingOut size={18} className="group-hover:scale-125 transition-transform duration-300" />
-            <div className="absolute top-full mt-2 px-2 py-1 rounded bg-black/80 text-[8px] text-white font-bold opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-[60]">
-              FOCUS MODE
-            </div>
-          </button>
+          <div className="flex items-center gap-3 pr-2">
+            {/* XP & Level Status (Desktop/Tablet) */}
+            {userStats && (
+              <div className="hidden md:flex items-center gap-2 px-3 py-1.5 bg-[#1f2937]/50 border border-white/10 rounded-xl hover:border-white/20 transition-all cursor-default group">
+                <div className="flex items-center gap-1.5">
+                  <div className="w-6 h-6 rounded-lg bg-gradient-to-tr from-yellow-400 to-orange-500 flex items-center justify-center text-xs font-black text-white shadow-xl shadow-orange-500/20 group-hover:scale-110 transition-transform">
+                    {userStats.level}
+                  </div>
+                  <div className="flex flex-col">
+                    <span className="text-[8px] font-black text-white/40 uppercase leading-none tracking-widest">Growth</span>
+                    <span className="text-[10px] font-black text-orange-400 tabular-nums leading-none mt-1">
+                      {userStats.totalXP % 500} / 500 <span className="text-white/40 font-bold ml-0.5">XP</span>
+                    </span>
+                  </div>
+                </div>
 
-          <button onClick={() => setSidebarOpen(!sidebarOpen)}
-            className="w-9 h-9 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-gray-400 hover:text-white hover:bg-white/10 transition-all">
-            {sidebarOpen ? <FaTimes size={14} /> : <FaBars size={14} />}
-          </button>
-        </div>
+                {userStats.currentStreak > 0 && (
+                  <div className="h-6 w-px bg-white/10 mx-1"></div>
+                )}
+
+                {userStats.currentStreak > 0 && (
+                  <div className="flex items-center gap-1">
+                    <span className="text-xs animate-bounce" style={{ animationDuration: '2s' }}>🔥</span>
+                    <span className="text-xs font-black text-orange-400 tabular-nums">{userStats.currentStreak}</span>
+                  </div>
+                )}
+              </div>
+            )}
+
+            <div className="flex items-center gap-2 bg-[#1f2937]/50 rounded-xl px-3 py-1.5 border border-white/10">
+              <div className="hidden sm:block w-16 h-1.5 bg-white/10 rounded-full overflow-hidden">
+                <motion.div className="h-full rounded-full" animate={{ width: `${progressPct}%` }}
+                  transition={{ duration: 0.5 }} style={{ background: "linear-gradient(90deg, #C81D77, #6710C2)" }} />
+              </div>
+              <span className="text-[10px] sm:text-xs text-blue-400 font-black tabular-nums">{progressPct}%</span>
+            </div>
+
+            <button onClick={() => setIsFocusMode(true)}
+              className="w-9 h-9 rounded-xl bg-violet-500/10 border border-violet-500/20 flex items-center justify-center text-violet-400 hover:text-white hover:bg-violet-500 transition-all group relative"
+              title="Focus Mode">
+              <HiOutlineArrowsPointingOut size={18} className="group-hover:scale-125 transition-transform duration-300" />
+              <div className="absolute top-full mt-2 px-2 py-1 rounded bg-black/80 text-[8px] text-white font-bold opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-[60]">
+                FOCUS MODE
+              </div>
+            </button>
+
+            <button onClick={() => setSidebarOpen(!sidebarOpen)}
+              className="w-9 h-9 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-gray-400 hover:text-white hover:bg-white/10 transition-all">
+              {sidebarOpen ? <FaTimes size={14} /> : <FaBars size={14} />}
+            </button>
+          </div>
         </header>
       )}
 
@@ -1073,7 +1092,10 @@ export default function LearnPage() {
               {/* Submit form */}
               {(() => {
                 const sub = getSubmission(activeLesson._id);
-                const alreadySubmitted = sub && sub.status !== "graded";
+                // ✅ Hide the submission form if the assignment is already graded
+                if (sub && sub.status === "graded") return null;
+
+                const alreadySubmitted = !!sub;
                 const label = alreadySubmitted ? "Re-submit Assignment" : "Submit Assignment";
 
                 if (userRole !== "student") return null;
@@ -1195,6 +1217,25 @@ export default function LearnPage() {
             ))}
           </div>
 
+          {/* AI QUIZ SECTION */}
+          {activeLesson?.type === "video" && activeLesson.videoUrl && (
+            <div className="mx-5 my-8 max-w-2xl">
+              <VideoQuiz
+                videoUrl={activeLesson.videoUrl}
+                videoTitle={activeLesson.title}
+                courseId={courseId}
+                lessonId={activeLesson._id}
+                onSeekTo={(seconds) => {
+                  if (playerRef.current && playerRef.current.seekTo) {
+                    playerRef.current.seekTo(seconds, true);
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                    toast.success(`Jumping to ${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, '0')}`, { icon: '🎬' });
+                  }
+                }}
+              />
+            </div>
+          )}
+
           {/* CERTIFICATE */}
           {course?.isCertificateEnabled === true && enrollment?.certificate?.issued && (
             <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
@@ -1213,44 +1254,44 @@ export default function LearnPage() {
           {/* MOBILE SIDEBAR */}
           {!isFocusMode && (
             <div className="md:hidden px-5 py-4">
-            <h3 className="text-white font-bold text-sm mb-3">Course Content</h3>
-            <div className="space-y-2">
-              {course.modules.map((module, mIdx) => (
-                <div key={module._id} className="rounded-xl bg-[#161b22] border border-white/10 overflow-hidden">
-                  <button onClick={() => toggleModule(module._id)} className="w-full flex items-center justify-between p-3">
-                    <div className="flex items-center gap-2">
-                      <span className="w-6 h-6 rounded-lg flex items-center justify-center text-white text-xs font-black"
-                        style={{ background: "linear-gradient(135deg, #C81D77, #6710C2)" }}>{mIdx + 1}</span>
-                      <span className="text-gray-300 text-xs font-bold text-left">{module.title}</span>
-                    </div>
-                    {expandedModules.includes(module._id) ? <FaChevronUp size={10} className="text-gray-500" /> : <FaChevronDown size={10} className="text-gray-500" />}
-                  </button>
-                  <AnimatePresence>
-                    {expandedModules.includes(module._id) && (
-                      <motion.div initial={{ height: 0 }} animate={{ height: "auto" }} exit={{ height: 0 }} className="overflow-hidden divide-y divide-white/5">
-                        {module.lessons.map((lesson, lIdx) => {
-                          const done = isCompleted(lesson._id);
-                          const current = activeLesson?._id === lesson._id;
-                          const unlocked = isUnlocked(lesson._id);
-                          return (
-                            <button key={lesson._id} onClick={() => handleLessonSelect(lesson)}
-                              className={`w-full flex items-center gap-3 px-4 py-2.5 text-left transition-all ${current ? "bg-[#C81D77]/10" : unlocked ? "hover:bg-white/5" : "opacity-50 cursor-not-allowed"}`}>
-                              <div className={`w-6 h-6 rounded-lg flex items-center justify-center flex-shrink-0 ${done ? "bg-emerald-500/20 text-emerald-400" : !unlocked ? "bg-white/5 text-gray-600" : current ? "bg-[#C81D77]/20 text-[#C81D77]" : "bg-white/5 text-gray-500"}`}>
-                                {done ? <FaCheckCircle size={10} /> : !unlocked ? <FaLock size={9} /> : getLessonIcon(lesson.type)}
-                              </div>
-                              <span className={`text-xs font-medium ${current ? "text-white" : done ? "text-gray-400" : !unlocked ? "text-gray-600" : "text-gray-300"}`}>
-                                {lIdx + 1}. {lesson.title}
-                              </span>
-                            </button>
-                          );
-                        })}
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-                </div>
-              ))}
+              <h3 className="text-white font-bold text-sm mb-3">Course Content</h3>
+              <div className="space-y-2">
+                {course.modules.map((module, mIdx) => (
+                  <div key={module._id} className="rounded-xl bg-[#161b22] border border-white/10 overflow-hidden">
+                    <button onClick={() => toggleModule(module._id)} className="w-full flex items-center justify-between p-3">
+                      <div className="flex items-center gap-2">
+                        <span className="w-6 h-6 rounded-lg flex items-center justify-center text-white text-xs font-black"
+                          style={{ background: "linear-gradient(135deg, #C81D77, #6710C2)" }}>{mIdx + 1}</span>
+                        <span className="text-gray-300 text-xs font-bold text-left">{module.title}</span>
+                      </div>
+                      {expandedModules.includes(module._id) ? <FaChevronUp size={10} className="text-gray-500" /> : <FaChevronDown size={10} className="text-gray-500" />}
+                    </button>
+                    <AnimatePresence>
+                      {expandedModules.includes(module._id) && (
+                        <motion.div initial={{ height: 0 }} animate={{ height: "auto" }} exit={{ height: 0 }} className="overflow-hidden divide-y divide-white/5">
+                          {module.lessons.map((lesson, lIdx) => {
+                            const done = isCompleted(lesson._id);
+                            const current = activeLesson?._id === lesson._id;
+                            const unlocked = isUnlocked(lesson._id);
+                            return (
+                              <button key={lesson._id} onClick={() => handleLessonSelect(lesson)}
+                                className={`w-full flex items-center gap-3 px-4 py-2.5 text-left transition-all ${current ? "bg-[#C81D77]/10" : unlocked ? "hover:bg-white/5" : "opacity-50 cursor-not-allowed"}`}>
+                                <div className={`w-6 h-6 rounded-lg flex items-center justify-center flex-shrink-0 ${done ? "bg-emerald-500/20 text-emerald-400" : !unlocked ? "bg-white/5 text-gray-600" : current ? "bg-[#C81D77]/20 text-[#C81D77]" : "bg-white/5 text-gray-500"}`}>
+                                  {done ? <FaCheckCircle size={10} /> : !unlocked ? <FaLock size={9} /> : getLessonIcon(lesson.type)}
+                                </div>
+                                <span className={`text-xs font-medium ${current ? "text-white" : done ? "text-gray-400" : !unlocked ? "text-gray-600" : "text-gray-300"}`}>
+                                  {lIdx + 1}. {lesson.title}
+                                </span>
+                              </button>
+                            );
+                          })}
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </div>
+                ))}
+              </div>
             </div>
-          </div>
           )}
         </main>
 

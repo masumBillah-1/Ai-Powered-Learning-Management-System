@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import {
-  BookOpen, PlayCircle, CheckCircle, Heart, ChevronRight, Clock, TrendingUp, Calendar, Loader2
+  BookOpen, PlayCircle, CheckCircle, Heart, ChevronRight, TrendingUp, Calendar, Loader2, RefreshCw
 } from 'lucide-react';
 
 // ✅ theme state নেই — DashboardLayout data-theme set করে
@@ -57,9 +57,9 @@ const StudentDashboard = () => {
     fetchDashboardData();
   }, []);
 
-  const fetchDashboardData = async () => {
+  const fetchDashboardData = async (silent = false) => {
     try {
-      setLoading(true);
+      if (!silent) setLoading(true);
       setError(null);
       const token = localStorage.getItem("token");
 
@@ -118,7 +118,7 @@ const StudentDashboard = () => {
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <p className="text-lg font-bold mb-2">Failed to load dashboard</p>
-          <button onClick={fetchDashboardData} className="btn btn-sm" style={{ backgroundColor: '#832388', color: 'white' }}>
+          <button onClick={() => { fetchDashboardData(); }} className="btn btn-sm" style={{ backgroundColor: '#832388', color: 'white' }}>
             Retry
           </button>
         </div>
@@ -160,19 +160,24 @@ const StudentDashboard = () => {
                   <p className="text-sm opacity-60">Continue your learning journey</p>
                 </div>
               </div>
-              {stats.totalLearningTime && stats.totalLearningTime > 0 && (
-                <div className="flex items-center gap-2 text-sm opacity-60 mt-2">
-                  <Clock className="w-4 h-4" />
-                  <span>Total learning time: {Math.floor(stats.totalLearningTime / 60)}h {stats.totalLearningTime % 60}m</span>
-                </div>
-              )}
+
             </div>
-            <button
-              onClick={() => router.push('/courses')}
-              className="btn btn-md px-6 border-0 text-white whitespace-nowrap hover:opacity-90 transition-opacity"
-              style={{ background: '#832388' }}>
-              Browse Courses
-            </button>
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => { fetchDashboardData(true); }}
+                disabled={loading}
+                className="btn btn-sm btn-ghost gap-1.5 cursor-pointer"
+              >
+                <RefreshCw size={14} className={loading ? "animate-spin" : ""} />
+                <span className="text-xs">Refresh</span>
+              </button>
+              <button
+                onClick={() => router.push('/courses')}
+                className="btn btn-md px-6 border-0 text-white whitespace-nowrap hover:opacity-90 transition-opacity"
+                style={{ background: '#832388' }}>
+                Browse Courses
+              </button>
+            </div>
           </div>
         </div>
       </div>

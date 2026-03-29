@@ -30,11 +30,14 @@ export async function GET(req: NextRequest) {
     const deletedBy = url.searchParams.get("deletedBy");
     const bannedBy = url.searchParams.get("bannedBy");
 
-    let query: any = {};
+    let query: any = {
+      deletedAt: { $exists: false } // ✅ Exclude soft-deleted users
+    };
     
-    // ✅ Filter by admin who deleted users
+    // ✅ Filter by admin who deleted users (if explicitly requested)
     if (deletedBy && deletedBy !== "null") {
       query.deletedBy = deletedBy;
+      delete query.deletedAt; // Show deleted users when filtering by deletedBy
     }
     
     // ✅ Filter by admin who banned users

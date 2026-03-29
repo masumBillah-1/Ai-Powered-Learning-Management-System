@@ -148,6 +148,7 @@ export default function AdminCoursesPage() {
   const [viewMode, setViewMode] = useState<"table" | "card">("table");
   const [courses, setCourses] = useState<ICourse[]>([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
 
   const [dialog, setDialog] = useState<{
@@ -160,6 +161,7 @@ export default function AdminCoursesPage() {
 
   const fetchCourses = useCallback(async (silent = false) => {
     if (!silent) setLoading(true);
+    else setRefreshing(true);
     try {
       const res = await fetch("/api/courses");
       const data = await res.json();
@@ -167,7 +169,10 @@ export default function AdminCoursesPage() {
       setCourses(data.courses || []);
     } catch (err: any) {
       toast.error(`❌ ${err.message}`, tErr);
-    } finally { setLoading(false); }
+    } finally { 
+      setLoading(false); 
+      setRefreshing(false);
+    }
   }, []);
 
   useEffect(() => { fetchCourses(); }, [fetchCourses]);
@@ -367,9 +372,10 @@ export default function AdminCoursesPage() {
             <p className="text-sm opacity-50 mt-1">{courses.length} total courses on the platform</p>
           </div>
           <div className="flex items-center gap-3 flex-wrap">
-            <button onClick={() => fetchCourses(true)} disabled={loading}
-              className="btn btn-sm btn-ghost btn-circle opacity-50 hover:opacity-100">
-              <RefreshCw size={15} className={loading ? "animate-spin" : ""} />
+            <button onClick={() => fetchCourses(true)} disabled={loading || refreshing}
+              className="btn btn-sm btn-ghost gap-1.5 opacity-40 hover:opacity-100 cursor-pointer">
+              <RefreshCw size={14} className={(loading || refreshing) ? "animate-spin" : ""} />
+              <span className="text-xs">Refresh</span>
             </button>
             <div className="flex bg-base-100 border border-base-300 p-1 rounded-xl gap-1">
               <button onClick={() => setViewMode("table")}

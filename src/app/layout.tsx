@@ -7,6 +7,7 @@ import { cookies } from "next/headers";
 import "./globals.css";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
+import ChatWidget from "@/components/Home/ChatWidget";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -57,7 +58,7 @@ async function getUser() {
       id: payload.id ?? payload.userId ?? payload.sub ?? "user",
       name: payload.name ?? payload.username ?? "Student",
       role: payload.role ?? "student",   // ← JWT এ role থাকলে
-      image: payload.image ?? payload.avatar ?? undefined,
+      image: payload.photoURL ?? payload.image ?? payload.avatar ?? undefined,
     };
   } catch {
     return null;
@@ -136,7 +137,6 @@ export default async function RootLayout({ children }: { children: React.ReactNo
 
         {children}
 
-        {/* FloatingChat — Login হলে সব page এ দেখাবে */}
         {user && (
           <FloatingChat
             userId={user.id}
@@ -145,6 +145,9 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             userAvatar={user.image}
           />
         )}
+
+
+        {/* <ChatWidget /> */}
 
       </body>
     </html>

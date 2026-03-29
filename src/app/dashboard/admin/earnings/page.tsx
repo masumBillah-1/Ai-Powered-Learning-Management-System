@@ -116,6 +116,7 @@ export default function AdminEarningsPage() {
   const [activeTab, setActiveTab] = useState<Tab>("overview");
   const [theme, setTheme] = useState("light");
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [stats, setStats] = useState<IStats | null>(null);
   const [payouts, setPayouts] = useState<IPayout[]>([]);
   const [statements, setStatements] = useState<IStatement[]>([]);
@@ -142,9 +143,10 @@ export default function AdminEarningsPage() {
     fetchEarnings();
   }, []);
 
-  const fetchEarnings = async () => {
+  const fetchEarnings = async (silent = false) => {
     try {
-      setLoading(true);
+      if (!silent) setLoading(true);
+      else setRefreshing(true);
       const token = localStorage.getItem("token");
       const res = await fetch("/api/admin/earnings", {
         headers: token ? { Authorization: `Bearer ${token}` } : {},
@@ -163,6 +165,7 @@ export default function AdminEarningsPage() {
       console.error("Error fetching earnings:", err);
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
   };
 
@@ -229,12 +232,12 @@ export default function AdminEarningsPage() {
         </div>
         <div className="flex items-center gap-3">
           <button
-            onClick={fetchEarnings}
-            disabled={loading}
-            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-base-200 hover:bg-base-300 transition-colors text-xs font-bold cursor-pointer disabled:opacity-50"
+            onClick={() => fetchEarnings(true)}
+            disabled={loading || refreshing}
+            className="btn btn-sm btn-ghost gap-1.5 mt-2 cursor-pointer"
           >
-            <RotateCw size={13} className={loading ? "animate-spin" : ""} />
-            Refresh
+            <RotateCw size={14} className={(loading || refreshing) ? "animate-spin" : ""} />
+            <span className="text-xs">Refresh</span>
           </button>
           <div className="flex items-center gap-2 px-4 py-2 rounded-xl bg-base-200 text-xs font-semibold opacity-60">
             <Clock size={13} /> Last updated: just now

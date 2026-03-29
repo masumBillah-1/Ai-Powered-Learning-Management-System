@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useForm } from "react-hook-form";
 import { useSearchParams, useRouter } from "next/navigation";
 import { FiEye, FiEyeOff } from "react-icons/fi";
@@ -34,7 +34,7 @@ const GitHubIcon = () => (
   </svg>
 );
 
-const LoginPage = () => {
+function LoginContent() {
   const { register, handleSubmit, formState: { errors } } = useForm<LoginFormData>();
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -333,7 +333,7 @@ const LoginPage = () => {
             {/* Demo Login Buttons - Conditional */}
             {showDemoButtons && (
               <div className="mt-6 pt-6 border-t border-gray-200 dark:border-white/10">
-                <p className="text-center text-xs text-gray-600 dark:text-gray-400 mb-3 font-medium">
+                <p className="text-center text-md text-gray-600 dark:text-gray-400 mb-3 font-bold ">
                   Quick Demo Login
                 </p>
                 <div className="grid grid-cols-3 gap-2">
@@ -343,7 +343,6 @@ const LoginPage = () => {
                     disabled={loading}
                     className="flex flex-col items-center justify-center gap-1 py-3 px-2 rounded-lg border border-purple-300 dark:border-purple-500/30 bg-purple-50 dark:bg-purple-500/10 hover:bg-purple-100 dark:hover:bg-purple-500/20 transition text-purple-700 dark:text-purple-300 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    <span className="text-2xl">👨‍💼</span>
                     <span className="text-xs font-semibold">Admin</span>
                   </button>
 
@@ -353,7 +352,7 @@ const LoginPage = () => {
                     disabled={loading}
                     className="flex flex-col items-center justify-center gap-1 py-3 px-2 rounded-lg border border-blue-300 dark:border-blue-500/30 bg-blue-50 dark:bg-blue-500/10 hover:bg-blue-100 dark:hover:bg-blue-500/20 transition text-blue-700 dark:text-blue-300 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    <span className="text-2xl">👨‍�</span>
+
                     <span className="text-xs font-semibold">Instructor</span>
                   </button>
 
@@ -363,7 +362,7 @@ const LoginPage = () => {
                     disabled={loading}
                     className="flex flex-col items-center justify-center gap-1 py-3 px-2 rounded-lg border border-orange-300 dark:border-orange-500/30 bg-orange-50 dark:bg-orange-500/10 hover:bg-orange-100 dark:hover:bg-orange-500/20 transition text-orange-700 dark:text-orange-300 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    <span className="text-2xl">👨‍🎓</span>
+
                     <span className="text-xs font-semibold">Student</span>
                   </button>
                 </div>
@@ -375,6 +374,19 @@ const LoginPage = () => {
       <Footer />
     </>
   );
-};
+}
 
-export default LoginPage;
+export default function LoginPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-white dark:bg-[#05010D] flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-16 h-16 border-4 border-purple-500 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+          <p className="text-gray-600 dark:text-gray-400">Loading...</p>
+        </div>
+      </div>
+    }>
+      <LoginContent />
+    </Suspense>
+  );
+}

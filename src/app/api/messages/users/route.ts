@@ -10,12 +10,24 @@ export async function GET(req: NextRequest) {
     await connectDB();
 
     const token = req.cookies.get("token")?.value;
-    if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    if (!token) {
+      console.error("❌ GET /api/messages/users: No token found");
+      return NextResponse.json({ error: "Unauthorized - Please login again" }, { status: 401 });
+    }
 
-    const decoded: any = jwt.verify(token, JWT_SECRET);
-    const user = await User.findById(decoded.userId);
+    let decoded: any;
+    try {
+      decoded = jwt.verify(token, JWT_SECRET);
+    } catch (jwtErr: any) {
+      console.error("❌ GET /api/messages/users: JWT verification failed:", jwtErr.message);
+      return NextResponse.json({ error: "Invalid token - Please login again" }, { status: 401 });
+    }
 
-    if (!user) return NextResponse.json({ error: "User not found" }, { status: 404 });
+    const user = await User.findById(decoded.userId).select("role").lean().maxTimeMS(3000);
+    if (!user) {
+      console.error("❌ GET /api/messages/users: User not found:", decoded.userId);
+      return NextResponse.json({ error: "User not found" }, { status: 404 });
+    }
 
     // If student, they only see support (handled by messages API list)
     // If instructor or admin, they can see others to start conversation
@@ -26,13 +38,21 @@ export async function GET(req: NextRequest) {
     // Admins see everyone except themselves
     // Instructors see everyone (or maybe just students + admins?)
     // Let's allow staff to see all users for now
-    const users = await User.find({ _id: { $ne: user._id } })
+    const users = await User.find({ _id: { $ne: decoded.userId } })
       .select("name photoURL role email")
       .sort({ name: 1 })
-      .limit(50);
+      .limit(50)
+      .lean()
+      .maxTimeMS(10000);
 
     return NextResponse.json({ success: true, users });
   } catch (err: any) {
-    return NextResponse.json({ error: err.message }, { status: 500 });
+    console.error("❌ GET /api/messages/users ERROR:", err.message, err.stack);
+    
+    if (err.name === 'MongooseError' || err.name === 'MongoError') {
+      return NextResponse.json({ error: "Database connection issue. Please try again." }, { status: 503 });
+    }
+    
+    return NextResponse.json({ error: "Server error. Please try again." }, { status: 500 });
   }
 }

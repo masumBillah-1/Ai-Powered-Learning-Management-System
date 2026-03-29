@@ -2,8 +2,8 @@ import mongoose, { Schema, Document } from "mongoose";
 
 // ─── Interfaces ───────────────────────────────────────────────────────────────
 export interface IMessageDocument extends Document {
-  senderId: mongoose.Types.ObjectId;
-  receiverId: mongoose.Types.ObjectId;
+  senderId: mongoose.Types.ObjectId | string; // ✅ Allow string for bot
+  receiverId?: mongoose.Types.ObjectId; // ✅ Optional for bot messages
   conversationId?: mongoose.Types.ObjectId;
   
   content: string;
@@ -23,7 +23,15 @@ export interface IMessageDocument extends Document {
   
   // System message fields
   systemMessageType?: "enrollment" | "course_update" | "payment" | "certificate";
-  
+
+  // ✅ Course recommendation cards
+  recommendedCourses?: Array<{
+    id: string;
+    title: string;
+    thumbnail?: string;
+    price?: number;
+  }>;
+
   createdAt: Date;
   updatedAt: Date;
 }
@@ -32,8 +40,7 @@ export interface IMessageDocument extends Document {
 const MessageSchema = new Schema<IMessageDocument>(
   {
     senderId: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "User",
+      type: Schema.Types.Mixed, // ✅ Allow both ObjectId and String (for bot)
       required: true,
     },
     receiverId: {
@@ -97,6 +104,14 @@ const MessageSchema = new Schema<IMessageDocument>(
       type: String,
       enum: ["enrollment", "course_update", "payment", "certificate"],
     },
+
+    // ✅ Course recommendation cards
+    recommendedCourses: [{
+      id: { type: String },
+      title: { type: String },
+      thumbnail: { type: String },
+      price: { type: Number },
+    }],
   },
   {
     timestamps: true,

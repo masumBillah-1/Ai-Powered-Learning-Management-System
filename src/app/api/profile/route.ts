@@ -18,6 +18,29 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     const decoded: any = jwt.verify(token, JWT_SECRET);
+    
+    // ✅ Support fetching other user's basic info via userId query param
+    const { searchParams } = new URL(req.url);
+    const requestedUserId = searchParams.get("userId");
+    
+    // If userId is provided, return basic user info (name, photoURL only)
+    if (requestedUserId && requestedUserId !== decoded.userId) {
+      const requestedUser = await User.findById(requestedUserId).select("name photoURL role");
+      if (!requestedUser) {
+        return NextResponse.json({ error: "User not found" }, { status: 404 });
+      }
+      return NextResponse.json({ 
+        success: true, 
+        user: {
+          _id: requestedUser._id,
+          name: requestedUser.name,
+          photoURL: requestedUser.photoURL,
+          role: requestedUser.role
+        }
+      });
+    }
+    
+    // Otherwise, return full profile for logged-in user
     const user = await User.findById(decoded.userId).select("-password");
 
     if (!user)
