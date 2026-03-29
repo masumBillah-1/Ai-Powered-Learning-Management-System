@@ -154,7 +154,7 @@ function Sidebar({ items, collapsed, onToggle, mobileOpen, onMobileClose }: {
 
   return (
     <>
-      <aside className={`fixed top-0 left-0 bottom-0 z-60 overflow-hidden transition-all duration-300 hidden md:block ${collapsed ? "w-[68px]" : "w-64"}`}>
+      <aside className={`fixed top-0  left-0 bottom-0 z-60 overflow-hidden transition-all duration-300 hidden md:block ${collapsed ? "w-[68px]" : "w-64 "}`}>
         <NavContent />
       </aside>
       {mobileOpen && (
@@ -224,7 +224,7 @@ function TopNavbar({ role, items, theme, toggleTheme, user, onLogout, onMobileMe
 
   return (
     <header className={`
-      fixed top-0 right-0 h-16 z-50 flex items-center justify-between px-4
+      fixed top-0 right-0 pl-5 h-16 z-50 flex items-center justify-between px-4
       bg-white dark:bg-[#0f172a]
       border-b border-gray-200 dark:border-gray-700/60
       shadow-sm transition-all duration-300

@@ -1092,7 +1092,10 @@ export default function LearnPage() {
               {/* Submit form */}
               {(() => {
                 const sub = getSubmission(activeLesson._id);
-                const alreadySubmitted = sub && sub.status !== "graded";
+                // ✅ Hide the submission form if the assignment is already graded
+                if (sub && sub.status === "graded") return null;
+
+                const alreadySubmitted = !!sub;
                 const label = alreadySubmitted ? "Re-submit Assignment" : "Submit Assignment";
 
                 if (userRole !== "student") return null;

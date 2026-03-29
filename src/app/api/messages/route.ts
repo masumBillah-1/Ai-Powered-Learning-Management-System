@@ -96,7 +96,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Invalid token format" }, { status: 401 });
     }
 
-    const { content, roomId, receiverId, messageType = "text", fileUrl, fileName, fileSize } = await req.json();
+    const { content, roomId, receiverId, messageType = "text", fileUrl, fileName, fileSize, senderName, senderPhoto, senderRole } = await req.json();
 
     console.log("📨 POST /api/messages:", { senderId, roomId, receiverId, messageType, contentLength: content?.length, hasFile: !!fileUrl });
 
@@ -107,6 +107,9 @@ export async function POST(req: NextRequest) {
     // 1. Create the message
     const message = await Message.create({
       senderId,
+      senderName,
+      senderPhoto,
+      senderRole,
       ...(receiverId && receiverId !== "support" && mongoose.isValidObjectId(receiverId) 
         ? { receiverId: new mongoose.Types.ObjectId(receiverId) } 
         : {}), // ✅ Only add receiverId if it's a valid ObjectId

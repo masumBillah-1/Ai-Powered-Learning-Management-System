@@ -136,6 +136,9 @@ function SupportChatContent() {
   };
 
   const fetchConversations = async () => {
+    // ✅ Stop fetching if tab is hidden to save excessive API requests
+    if (typeof document !== 'undefined' && document.hidden) return;
+    
     try {
       const res = await axios.get('/api/messages', {
         timeout: 10000,
@@ -236,8 +239,18 @@ function SupportChatContent() {
       }, 500);
     }
 
-    const interval = setInterval(fetchConversations, 15000);
-    return () => clearInterval(interval);
+    const interval = setInterval(fetchConversations, 20000); // ✅ Increased to 20s
+    
+    // ✅ Re-fetch immediately when returning to tab
+    const handleVisibilityChange = () => {
+      if (!document.hidden) fetchConversations();
+    };
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
+    return () => {
+      clearInterval(interval);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
   }, []);
 
   const lastProcessedUserIdRef = useRef<string | null>(null);
@@ -283,6 +296,9 @@ function SupportChatContent() {
       markAsRead();
 
       const fetchMsgs = async () => {
+        // ✅ Stop polling if the browser tab is hidden to save requests!
+        if (document.hidden) return;
+
         try {
           const res = await axios.get(`/api/messages/${activeRoomId}`, { timeout: 10000, withCredentials: true });
           if (res.data.success) {
@@ -313,8 +329,18 @@ function SupportChatContent() {
         } catch (err: any) { console.error("❌ fetchMsgs error:", err.message); }
       };
       fetchMsgs();
-      const interval = setInterval(fetchMsgs, 5000);
-      return () => clearInterval(interval);
+
+      // ✅ Re-fetch immediately when returning to tab
+      const handleVisibilityChange = () => {
+        if (!document.hidden) fetchMsgs();
+      };
+      document.addEventListener("visibilitychange", handleVisibilityChange);
+
+      const interval = setInterval(fetchMsgs, 7000); // ✅ Increased to 7s
+      return () => {
+        clearInterval(interval);
+        document.removeEventListener("visibilitychange", handleVisibilityChange);
+      };
     } else {
       lastMessageIdRef.current = null;
       isInitialFetchRef.current = true;

@@ -58,7 +58,7 @@ async function getUser() {
       id: payload.id ?? payload.userId ?? payload.sub ?? "user",
       name: payload.name ?? payload.username ?? "Student",
       role: payload.role ?? "student",   // ← JWT এ role থাকলে
-      image: payload.image ?? payload.avatar ?? undefined,
+      image: payload.photoURL ?? payload.image ?? payload.avatar ?? undefined,
     };
   } catch {
     return null;
@@ -147,7 +147,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         )}
 
 
-        <ChatWidget />
+        {/* <ChatWidget /> */}
 
       </body>
     </html>
