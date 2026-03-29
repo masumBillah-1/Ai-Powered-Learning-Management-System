@@ -44,6 +44,9 @@ const ChatWidget = () => {
     const [selectedDevice, setSelectedDevice] = useState('mobile');
     const [showEmailModal, setShowEmailModal] = useState(false);
     const [emailAddress, setEmailAddress] = useState('');
+    const [isLoading, setIsLoading] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+    const [retryCount, setRetryCount] = useState(0);
     const [messages, setMessages] = useState([
         {
             id: 1,
@@ -160,60 +163,6 @@ const ChatWidget = () => {
                 console.log('Could not play sent message sound');
             }
         }
-    };
-
-
-    const handleSendMessage = () => {
-        if (!inputValue.trim()) return;
-
-
-        const userMessage = {
-            id: Date.now(),
-            sender: "user",
-            text: inputValue,
-            timestamp: new Date().toLocaleTimeString(),
-            type: "text"
-        };
-
-
-        setMessages((prev) => [...prev, userMessage]);
-        setInputValue("");
-
-        // Play sent message sound
-        playMessageSentSound();
-
-        // Simulate typing indicator
-        setIsTyping(true);
-
-        // Simulate bot response
-        setTimeout(() => {
-            const botResponses = [
-                "Thanks for your message! Our team will get back to you shortly.",
-                "I understand your concern. Let me help you with that.",
-                "That's a great question! Here's what I can tell you...",
-                "I've noted your request. Is there anything else I can help with?",
-                "Thank you for contacting CareerCanvas LMS support. How else can I assist you?",
-                "I'm here to help! Let me look into that for you.",
-                "Got it! I'll make sure to address your concern right away."
-            ];
-
-            const botReply = {
-                id: Date.now() + 1,
-                sender: "bot",
-                text: botResponses[Math.floor(Math.random() * botResponses.length)],
-                timestamp: new Date().toLocaleTimeString(),
-                type: "text"
-            };
-
-
-            setIsTyping(false);
-            setMessages((prev) => [...prev, botReply]);
-            playNotificationSound(); // Play notification for received message
-
-            if (!isChatOpen) {
-                setUnreadCount(prev => prev + 1);
-            }
-        }, 1500 + Math.random() * 2000);
     };
 
 
@@ -475,6 +424,110 @@ Visit: ${window.location.origin}
     };
 
 
+    // Send message to backend API
+    const sendMessageToBackend = async (userMessage: string): Promise<string> => {
+        try {
+            const response = await fetch('/api/chat', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    message: userMessage,
+                    history: messages
+                        .filter(msg => msg.sender !== 'system')
+                        .map(msg => ({ role: msg.sender === 'user' ? 'user' : 'assistant', content: msg.text })),
+                    context: { type: 'customer_support' },
+                }),
+            });
+
+            if (!response.ok) {
+                const text = await response.text();
+                console.error('Chat API non-ok body:', text);
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const data = await response.json();
+            if (data.error) {
+                console.warn('Chat API error response (still delivering message):', data.error);
+                // If backend includes fallback message, return it; show error notice in UI.
+                if (data.message) {
+                    // preserve error in caller to render error banner
+                    setError(data.error);
+                    return data.message;
+                }
+                throw new Error(data.error);
+            }
+
+            return data.message || data.response || "Thank you for your message. Our team will respond shortly.";
+        } catch (err) {
+            console.error('Chat API error:', err);
+            throw new Error(err instanceof Error ? err.message : 'Failed to send message. Please try again.');
+        }
+    };
+
+
+    const handleSendMessage = async () => {
+        if (!inputValue.trim() || isLoading) return;
+
+        const userMessageText = inputValue.trim();
+        setInputValue("");
+        setError(null);
+
+        const userMessage = {
+            id: Date.now(),
+            sender: "user",
+            text: userMessageText,
+            timestamp: new Date().toLocaleTimeString(),
+            type: "text"
+        };
+
+        setMessages((prev) => [...prev, userMessage]);
+
+        // Play sent message sound
+        playMessageSentSound();
+
+        // Show typing indicator
+        setIsTyping(true);
+        setIsLoading(true);
+
+        try {
+            const botResponse = await sendMessageToBackend(userMessageText);
+
+            const botReply = {
+                id: Date.now() + 1,
+                sender: "bot",
+                text: botResponse,
+                timestamp: new Date().toLocaleTimeString(),
+                type: "text"
+            };
+
+            setMessages((prev) => [...prev, botReply]);
+            setRetryCount(0); // Reset retry count on success
+
+            if (!isChatOpen) {
+                setUnreadCount(prev => prev + 1);
+            }
+        } catch (err) {
+            const errorMessage = err instanceof Error ? err.message : 'An unexpected error occurred';
+            setError(errorMessage);
+
+            // Add error message to chat
+            const errorReply = {
+                id: Date.now() + 1,
+                sender: "system",
+                text: `❌ ${errorMessage}`,
+                timestamp: new Date().toLocaleTimeString(),
+                type: "error"
+            };
+            setMessages((prev) => [...prev, errorReply]);
+        } finally {
+            setIsTyping(false);
+            setIsLoading(false);
+        }
+    };
+
+
     const handleVoiceRecord = () => {
         if (!isRecording) {
             setIsRecording(true);
@@ -513,7 +566,16 @@ Visit: ${window.location.origin}
 
 
     return (
-        <div className="fixed bottom-9 left-4 z-[9999] flex flex-col items-start gap-3">
+        <div className="fixed bottom-9 right-4 z-[9999] flex flex-col items-end gap-3">
+            {/* Screen Reader Announcements */}
+            <div aria-live="assertive" aria-atomic="true" className="sr-only">
+                {messages.length > 2 && messages[messages.length - 1]?.sender === 'bot' &&
+                    `New message from support: ${messages[messages.length - 1]?.text}`
+                }
+                {error && `Error: ${error}`}
+                {isLoading && "Sending message..."}
+            </div>
+
             {/* Hidden file input */}
             <input
                 ref={fileInputRef}
@@ -531,6 +593,9 @@ Visit: ${window.location.origin}
                         exit={{ opacity: 0, x: -20, scale: 0.96 }}
                         transition={{ duration: 0.28 }}
                         className="relative h-[620px] w-[360px] overflow-hidden rounded-[28px] bg-[#f3f3f5] shadow-[0_25px_60px_rgba(0,0,0,0.25)]"
+                        role="dialog"
+                        aria-labelledby="chat-title"
+                        aria-describedby="chat-status"
                     >
                         {/* Chat Header */}
                         <div className="flex h-[94px] items-center justify-between bg-[#e4002b] px-5 text-white">
@@ -546,8 +611,8 @@ Visit: ${window.location.origin}
                             </button>
 
                             <div className="flex flex-col items-center">
-                                <h3 className="text-[18px] font-extrabold">{chatName}</h3>
-                                <div className="flex items-center gap-1 text-xs opacity-90">
+                                <h3 id="chat-title" className="text-[18px] font-extrabold">{chatName}</h3>
+                                <div id="chat-status" className="flex items-center gap-1 text-xs opacity-90">
                                     <div className={`w-2 h-2 rounded-full ${onlineStatus ? 'bg-green-400' : 'bg-gray-400'}`} />
                                     <span>{onlineStatus ? 'Online' : 'Offline'}</span>
                                 </div>
@@ -555,8 +620,16 @@ Visit: ${window.location.origin}
 
                             <button
                                 onClick={() => setIsMenuOpen((prev) => !prev)}
+                                onKeyDown={(e) => {
+                                    if (e.key === 'Enter' || e.key === ' ') {
+                                        e.preventDefault();
+                                        setIsMenuOpen((prev) => !prev);
+                                    }
+                                }}
                                 className="text-xl hover:opacity-80 transition-opacity"
                                 aria-label="Menu"
+                                aria-expanded={isMenuOpen}
+                                aria-haspopup="true"
                             >
                                 <FaBars />
                             </button>
@@ -643,7 +716,12 @@ Visit: ${window.location.origin}
 
 
                         {/* Messages Area */}
-                        <div className="flex h-[406px] flex-col gap-3 overflow-y-auto px-4 py-5">
+                        <div
+                            className="flex h-[406px] flex-col gap-3 overflow-y-auto px-4 py-5"
+                            role="log"
+                            aria-live="polite"
+                            aria-label="Chat messages"
+                        >
                             {messages.map((msg) => (
                                 <div key={msg.id}>
                                     {msg.type === "system" ? (
@@ -653,8 +731,8 @@ Visit: ${window.location.origin}
                                     ) : (
                                         <div
                                             className={`max-w-[82%] rounded-2xl px-4 py-3 text-sm shadow-sm ${msg.sender === "user"
-                                                    ? "ml-auto bg-[#e4002b] text-white"
-                                                    : "bg-white text-[#3f3f46]"
+                                                ? "ml-auto bg-[#e4002b] text-white"
+                                                : "bg-white text-[#3f3f46]"
                                                 }`}
                                         >
                                             <div className="flex items-center gap-2 mb-1">
@@ -674,8 +752,8 @@ Visit: ${window.location.origin}
                                                     <button
                                                         onClick={() => playVoiceMessageSound()}
                                                         className={`flex items-center justify-center w-8 h-8 rounded-full transition-colors ${msg.sender === "user"
-                                                                ? "bg-white/20 hover:bg-white/30 text-white"
-                                                                : "bg-blue-100 hover:bg-blue-200 text-blue-600"
+                                                            ? "bg-white/20 hover:bg-white/30 text-white"
+                                                            : "bg-blue-100 hover:bg-blue-200 text-blue-600"
                                                             }`}
                                                     >
                                                         <FaPlay className="text-xs ml-0.5" />
@@ -710,6 +788,59 @@ Visit: ${window.location.origin}
 
                         {/* Enhanced Input Area */}
                         <div className="absolute bottom-0 left-0 w-full border-t border-[#e5e5e5] bg-[#f3f3f5] px-4 py-6">
+                            {/* Error Message */}
+                            {error && (
+                                <div className="mb-3 p-3 bg-red-50 border border-red-200 rounded-lg">
+                                    <div className="flex items-center justify-between">
+                                        <div className="flex items-center gap-2">
+                                            <span className="text-red-500">⚠️</span>
+                                            <span className="text-sm text-red-700">{error}</span>
+                                        </div>
+                                        <button
+                                            onClick={() => {
+                                                setError(null);
+                                                setRetryCount(0);
+                                            }}
+                                            className="text-red-500 hover:text-red-700 text-sm font-medium"
+                                            aria-label="Dismiss error"
+                                        >
+                                            ✕
+                                        </button>
+                                    </div>
+                                    {retryCount < 3 && (
+                                        <button
+                                            onClick={() => {
+                                                setError(null);
+                                                setRetryCount(prev => prev + 1);
+                                                // Retry the last message
+                                                const lastUserMessage = messages
+                                                    .filter(m => m.sender === 'user')
+                                                    .pop();
+                                                if (lastUserMessage) {
+                                                    setInputValue(lastUserMessage.text);
+                                                }
+                                            }}
+                                            className="mt-2 px-3 py-1 bg-red-600 text-white text-xs rounded hover:bg-red-700 transition-colors"
+                                            aria-label="Retry sending message"
+                                        >
+                                            Retry ({retryCount}/3)
+                                        </button>
+                                    )}
+                                </div>
+                            )}
+
+                            {/* Loading Indicator */}
+                            {isLoading && (
+                                <div className="mb-3 flex items-center gap-2 text-sm text-gray-600">
+                                    <div className="flex gap-1">
+                                        <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                                        <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                                        <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                                    </div>
+                                    <span>Sending message...</span>
+                                </div>
+                            )}
+
                             <div className="flex items-center gap-3 rounded-[30px] border border-[#dddddd] bg-[#efeff1] px-5 py-4">
                                 <input
                                     type="text"
@@ -723,6 +854,9 @@ Visit: ${window.location.origin}
                                     }}
                                     placeholder="Type your message..."
                                     className="flex-1 bg-transparent text-[16px] text-[#4a4a4a] outline-none placeholder:text-[#7d7d7d]"
+                                    aria-label="Type your message"
+                                    aria-describedby="send-button"
+                                    disabled={isLoading}
                                 />
 
                                 <button
@@ -730,6 +864,7 @@ Visit: ${window.location.origin}
                                     type="button"
                                     className="text-lg text-[#6f6f75] hover:text-[#e4002b] transition-colors"
                                     aria-label="Attach file"
+                                    disabled={isLoading}
                                 >
                                     <FaPaperclip />
                                 </button>
@@ -740,6 +875,7 @@ Visit: ${window.location.origin}
                                     type="button"
                                     className="text-lg text-[#6f6f75] hover:text-[#e4002b] transition-colors"
                                     aria-label="Insert link"
+                                    disabled={isLoading}
                                 >
                                     <FaLink />
                                 </button>
@@ -749,10 +885,11 @@ Visit: ${window.location.origin}
                                     onClick={handleVoiceRecord}
                                     type="button"
                                     className={`text-lg transition-colors ${isRecording
-                                            ? "text-red-500 animate-pulse"
-                                            : "text-[#6f6f75] hover:text-[#e4002b]"
+                                        ? "text-red-500 animate-pulse"
+                                        : "text-[#6f6f75] hover:text-[#e4002b]"
                                         }`}
                                     aria-label={isRecording ? "Stop recording" : "Start voice recording"}
+                                    disabled={isLoading}
                                 >
                                     {isRecording ? <FaStop /> : <FaMicrophone />}
                                 </button>
@@ -760,13 +897,15 @@ Visit: ${window.location.origin}
 
                                 <button
                                     onClick={handleSendMessage}
-                                    disabled={!inputValue.trim()}
+                                    disabled={!inputValue.trim() || isLoading}
                                     type="button"
-                                    className={`flex h-9 w-9 items-center justify-center rounded-full transition-all ${inputValue.trim()
-                                            ? "bg-[#e4002b] text-white hover:bg-[#c8001f] scale-100"
-                                            : "bg-gray-300 text-gray-500 scale-95"
+                                    id="send-button"
+                                    className={`flex h-9 w-9 items-center justify-center rounded-full transition-all ${inputValue.trim() && !isLoading
+                                        ? "bg-[#e4002b] text-white hover:bg-[#c8001f] scale-100"
+                                        : "bg-gray-300 text-gray-500 scale-95"
                                         }`}
                                     aria-label="Send message"
+                                    aria-disabled={!inputValue.trim() || isLoading}
                                 >
                                     <FaPaperPlane className="text-xs" />
                                 </button>
@@ -943,8 +1082,8 @@ Visit: ${window.location.origin}
                                     onClick={confirmEmailTranscript}
                                     disabled={!emailAddress.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailAddress.trim())}
                                     className={`flex-1 rounded-lg px-4 py-2.5 text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${emailAddress.trim() && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailAddress.trim())
-                                            ? 'bg-blue-600 text-white hover:bg-blue-700'
-                                            : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                                        ? 'bg-blue-600 text-white hover:bg-blue-700'
+                                        : 'bg-gray-300 text-gray-500 cursor-not-allowed'
                                         }`}
                                 >
                                     Send Email
@@ -1139,8 +1278,8 @@ Visit: ${window.location.origin}
                                     <button
                                         onClick={() => setSelectedDevice('mobile')}
                                         className={`px-3 py-2 rounded-lg text-xs font-medium shadow-sm transition-colors ${selectedDevice === 'mobile'
-                                                ? 'bg-blue-600 text-white'
-                                                : 'bg-white border border-gray-300 text-gray-600 hover:bg-gray-50'
+                                            ? 'bg-blue-600 text-white'
+                                            : 'bg-white border border-gray-300 text-gray-600 hover:bg-gray-50'
                                             }`}
                                     >
                                         📱 Mobile (320px)
@@ -1148,8 +1287,8 @@ Visit: ${window.location.origin}
                                     <button
                                         onClick={() => setSelectedDevice('tablet')}
                                         className={`px-3 py-2 rounded-lg text-xs font-medium transition-colors ${selectedDevice === 'tablet'
-                                                ? 'bg-blue-600 text-white'
-                                                : 'bg-white border border-gray-300 text-gray-600 hover:bg-gray-50'
+                                            ? 'bg-blue-600 text-white'
+                                            : 'bg-white border border-gray-300 text-gray-600 hover:bg-gray-50'
                                             }`}
                                     >
                                         📟 Tablet (768px)
@@ -1159,8 +1298,8 @@ Visit: ${window.location.origin}
                                     <button
                                         onClick={() => setSelectedDevice('desktop')}
                                         className={`px-3 py-2 rounded-lg text-xs font-medium transition-colors ${selectedDevice === 'desktop'
-                                                ? 'bg-blue-600 text-white'
-                                                : 'bg-white border border-gray-300 text-gray-600 hover:bg-gray-50'
+                                            ? 'bg-blue-600 text-white'
+                                            : 'bg-white border border-gray-300 text-gray-600 hover:bg-gray-50'
                                             }`}
                                     >
                                         💻 Desktop (1024px)
@@ -1168,8 +1307,8 @@ Visit: ${window.location.origin}
                                     <button
                                         onClick={() => setSelectedDevice('large')}
                                         className={`px-3 py-2 rounded-lg text-xs font-medium transition-colors ${selectedDevice === 'large'
-                                                ? 'bg-blue-600 text-white'
-                                                : 'bg-white border border-gray-300 text-gray-600 hover:bg-gray-50'
+                                            ? 'bg-blue-600 text-white'
+                                            : 'bg-white border border-gray-300 text-gray-600 hover:bg-gray-50'
                                             }`}
                                     >
                                         🖥️ Large (1440px)
@@ -1266,9 +1405,22 @@ Visit: ${window.location.origin}
                         setUnreadCount(0);
                     }
                 }}
+                onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        setIsChatOpen((prev) => !prev);
+                        setIsMenuOpen(false);
+                        if (!isChatOpen) {
+                            setUnreadCount(0);
+                        }
+                    }
+                }}
                 whileHover={{ scale: 1.06 }}
                 whileTap={{ scale: 0.94 }}
                 className="relative flex h-16 w-16 items-center justify-center rounded-full bg-[#e4002b] text-white shadow-[0_10px_35px_rgba(228,0,43,0.45)] hover:shadow-[0_15px_45px_rgba(228,0,43,0.6)] transition-all duration-300"
+                aria-label={`${isChatOpen ? 'Close' : 'Open'} chat with ${chatName}`}
+                aria-expanded={isChatOpen}
+                aria-describedby="chat-status-summary"
             >
                 {isChatOpen ? (
                     <FaTimes className="text-2xl" />
@@ -1295,6 +1447,12 @@ Visit: ${window.location.origin}
                     </>
                 )}
             </motion.button>
+
+            {/* Status Summary for Screen Readers */}
+            <div id="chat-status-summary" className="sr-only">
+                {onlineStatus ? 'Support is online' : 'Support is offline'}.
+                {unreadCount > 0 && `${unreadCount} unread message${unreadCount > 1 ? 's' : ''}`}.
+            </div>
         </div>
     );
 };

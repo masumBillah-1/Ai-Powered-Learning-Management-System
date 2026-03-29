@@ -31,15 +31,19 @@ export async function POST(req: NextRequest) {
   try {
     const { message, history, context } = await req.json();
 
-    if (!message) {
+    // PRODUCTION check for API key
+    if (!GEMINI_API_KEY) {
+      console.error("Missing GEMINI_API_KEY in environment");
+      return NextResponse.json({ error: "AI সার্ভিস সংযোগের জন্য API কী সেট করা হয়নি।" }, { status: 500 });
+    }
+
+    if (!message || typeof message !== "string" || !message.trim()) {
       return NextResponse.json({ error: "Message is required" }, { status: 400 });
     }
 
     // --- ADVANCED: Context Management ---
     let videoInfoText = "";
     if (context?.type === "video_lesson") {
-      // Logic: Only fetch context if history is empty or specifically requested
-      // To save time, we can pass a truncated version or cached version
       try {
         const videoContext = await generateVideoContext(context.videoUrl, context.videoTitle);
         videoInfoText = `\n\n[VIDEO CONTEXT ACTIVE]\n${videoContext}`;
@@ -49,7 +53,7 @@ export async function POST(req: NextRequest) {
     }
 
     // --- ADVANCED: Dynamic Prompt Construction ---
-    const contents = [
+    const contents: any[] = [
       {
         role: "user",
         parts: [{ text: `${SYSTEM_PROMPT}${videoInfoText}\n\nUser is asking about: ${context?.videoTitle || "General topics"}` }],
@@ -58,7 +62,6 @@ export async function POST(req: NextRequest) {
         role: "model",
         parts: [{ text: "Understood. I am ready to assist you in Bengali and English based on the rules." }],
       },
-      // Limit history to last 6 messages to save tokens and improve speed
       ...(history || []).slice(-6).map((m: any) => ({
         role: m.role === "assistant" ? "model" : "user",
         parts: [{ text: m.content }],
@@ -69,7 +72,6 @@ export async function POST(req: NextRequest) {
       },
     ];
 
-    // --- ADVANCED: API Call with Safety Settings ---
     const geminiRes = await fetch(GEMINI_URL, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -77,7 +79,7 @@ export async function POST(req: NextRequest) {
         contents,
         generationConfig: {
           maxOutputTokens: 2000,
-          temperature: 0.6, // Balanced creativity and accuracy
+          temperature: 0.6,
           topP: 0.8,
           stopSequences: [],
         },
@@ -89,24 +91,41 @@ export async function POST(req: NextRequest) {
     });
 
     if (!geminiRes.ok) {
-      const errorData = await geminiRes.json();
-      console.error("Gemini API Error:", errorData);
-      
-      const status = geminiRes.status === 429 ? 429 : 500;
-      const errorMsg = status === 429 
-        ? "AI এখন কিছুটা ব্যস্ত। ১ মিনিট পর আবার মেসেজ দিন।" 
-        : "দুঃখিত, আমি এই মুহূর্তে কানেক্ট হতে পারছি না।";
-        
-      return NextResponse.json({ error: errorMsg }, { status });
+      const status = geminiRes.status;
+      let errorData: any = null;
+      let errorText = null;
+
+      try {
+        errorData = await geminiRes.json();
+        errorText = errorData?.error || errorData?.message || JSON.stringify(errorData);
+      } catch (parseErr) {
+        console.error("Gemini response parse error:", parseErr);
+      }
+
+      console.error("Gemini API Error", { status, errorData });
+
+      const errorMsg = status === 429
+        ? "AI এখন ব্যস্ত। ১ মিনিট পরে আবার চেষ্টা করুন।"
+        : "দুঃখিত, AI সার্ভিস বর্তমানে অপ্রাপ্য। পরে চেষ্টা করুন।";
+
+      const localFallback = `দুঃখিত, AI সার্ভার এখন পাওয়া যাচ্ছে না (status=${status}, reason=${errorText || 'unknown'}). আজকের জন্য শীঘ্রই চেষ্টা করুন।`;
+
+      return NextResponse.json({
+        message: localFallback,
+        error: `${errorMsg} (${errorText || 'no detail'})`,
+        provider: "gemini",
+        status,
+      }, { status: 200 });
     }
 
     const geminiData = await geminiRes.json();
-    const assistantMessage = geminiData?.candidates?.[0]?.content?.parts?.[0]?.text || "আমি দুঃখিত, আমি আপনার প্রশ্নটি বুঝতে পারছি না।";
+    const assistantMessage = geminiData?.candidates?.[0]?.content?.parts?.[0]?.text
+      || "আমি দুঃখিত, আমি আপনার প্রশ্নটি বুঝতে পারছি না।";
 
-    return NextResponse.json({ message: assistantMessage });
+    return NextResponse.json({ message: assistantMessage, provider: "gemini" });
 
   } catch (error) {
     console.error("AI Server Error:", error);
-    return NextResponse.json({ error: "সার্ভারে সমস্যা হয়েছে। পুনরায় চেষ্টা করুন।" }, { status: 500 });
+    return NextResponse.json({ error: "সার্ভার ত্রুটি: পুনরায় চেষ্টা করুন।", message: "দুঃখিত, সিস্টেমে সাময়িক সমস্যা।" }, { status: 500 });
   }
 }

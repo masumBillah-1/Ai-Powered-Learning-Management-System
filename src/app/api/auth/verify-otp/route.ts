@@ -18,8 +18,8 @@ export async function POST(req: NextRequest) {
 
     const user = await User.findOne({
       email,
-      resetToken: otp,
-      resetTokenExpiry: { $gt: new Date() },
+      otp: otp,
+      otpExpiry: { $gt: new Date() },
     });
 
     if (!user) {
@@ -27,8 +27,8 @@ export async function POST(req: NextRequest) {
     }
 
     // ✅ OTP clear করো
-    user.resetToken = undefined;
-    user.resetTokenExpiry = undefined;
+    user.otp = undefined;
+    user.otpExpiry = undefined;
     await user.save();
 
     // ✅ Token তৈরি করো — login mode এ দরকার

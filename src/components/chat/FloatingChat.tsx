@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import AIChat from "./AIChat";
 import LiveChat from "./LiveChat";
 
 type Props = {
@@ -11,7 +10,7 @@ type Props = {
   userAvatar?: string;
 };
 
-type ActivePanel = null | "ai" | "live";
+type ActivePanel = null | "live";
 type PanelSize = "normal" | "large" | "fullscreen";
 
 export default function FloatingChat({
@@ -84,55 +83,19 @@ export default function FloatingChat({
           {/* Header */}
           <div className="flex items-center justify-between px-4 py-3 bg-base-100 border-b border-base-300 flex-shrink-0">
             <div className="flex items-center gap-2">
-              {activePanel === "ai" ? (
-                <>
-                  <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-violet-500 to-indigo-600 flex items-center justify-center flex-shrink-0">
-                    <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="white" strokeWidth={2}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" />
-                    </svg>
-                  </div>
-                  <div>
-                    <p className="text-sm font-semibold text-base-content leading-tight">AI Assistant</p>
-                    <p className="text-[10px] text-violet-500">MCQ • Code • Q&A</p>
-                  </div>
-                </>
-              ) : (
-                <>
-                  <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-emerald-400 to-teal-600 flex items-center justify-center flex-shrink-0">
-                    <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="white" strokeWidth={2}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-                    </svg>
-                  </div>
-                  <div>
-                    <p className="text-sm font-semibold text-base-content leading-tight">Live Support</p>
-                    <p className="text-[10px] text-emerald-500">Admin • Instructor</p>
-                  </div>
-                </>
-              )}
+              <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-emerald-400 to-teal-600 flex items-center justify-center flex-shrink-0">
+                <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="white" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                </svg>
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-base-content leading-tight">Live Support</p>
+                <p className="text-[10px] text-emerald-500">Admin • Instructor</p>
+              </div>
             </div>
 
             {/* Controls */}
             <div className="flex items-center gap-1">
-              <button
-                onClick={() => openPanel(activePanel === "ai" ? "live" : "ai")}
-                className="btn btn-ghost btn-xs gap-1 text-[10px] normal-case hidden sm:flex"
-              >
-                <svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M7.5 21L3 16.5m0 0L7.5 12M3 16.5h13.5m0-13.5L21 7.5m0 0L16.5 12M21 7.5H7.5" />
-                </svg>
-                {activePanel === "ai" ? "Live" : "AI"}
-              </button>
-
-              <button
-                onClick={() => openPanel(activePanel === "ai" ? "live" : "ai")}
-                className="btn btn-ghost btn-xs btn-circle sm:hidden"
-                title="Switch"
-              >
-                <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M7.5 21L3 16.5m0 0L7.5 12M3 16.5h13.5m0-13.5L21 7.5m0 0L16.5 12M21 7.5H7.5" />
-                </svg>
-              </button>
-
               <button
                 onClick={toggleSize}
                 className="btn btn-ghost btn-xs btn-circle"
@@ -151,14 +114,11 @@ export default function FloatingChat({
 
           {/* Content */}
           <div className={`flex-1 min-h-0 ${panelSize === "fullscreen"
-              ? "text-base [&_textarea]:text-base [&_.chat-bubble]:text-base [&_.text-sm]:text-base [&_.text-xs]:text-sm"
-              : panelSize === "large"
-                ? "text-sm [&_textarea]:text-sm [&_.chat-bubble]:text-sm"
-                : ""
+            ? "text-base [&_textarea]:text-base [&_.chat-bubble]:text-base [&_.text-sm]:text-base [&_.text-xs]:text-sm"
+            : panelSize === "large"
+              ? "text-sm [&_textarea]:text-sm [&_.chat-bubble]:text-sm"
+              : ""
             }`}>
-            {activePanel === "ai" && (
-              <AIChat userId={userId} userName={userName} userAvatar={userAvatar} />
-            )}
             {activePanel === "live" && (
               <LiveChat
                 userId={userId}
@@ -179,20 +139,6 @@ export default function FloatingChat({
             }`}>
             <div className="flex items-center gap-2">
               <span className="bg-neutral text-neutral-content text-xs px-3 py-1.5 rounded-full shadow font-medium whitespace-nowrap">
-                AI Assistant
-              </span>
-              <button
-                onClick={() => openPanel("ai")}
-                className="btn btn-circle btn-md shadow-lg border-0 bg-gradient-to-br from-violet-500 to-indigo-600 hover:from-violet-600 hover:to-indigo-700"
-              >
-                <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="white" strokeWidth={1.8}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" />
-                </svg>
-              </button>
-            </div>
-
-            <div className="flex items-center gap-2">
-              <span className="bg-neutral text-neutral-content text-xs px-3 py-1.5 rounded-full shadow font-medium whitespace-nowrap">
                 Live Support
               </span>
               <button
@@ -209,7 +155,7 @@ export default function FloatingChat({
           {/* Main FAB */}
           <div className="relative">
             {!fabOpen && !activePanel && (
-              <span className="absolute inset-0 rounded-full bg-indigo-400 opacity-25 animate-ping pointer-events-none" />
+              <span className="absolute inset-0 rounded-full bg-emerald-400 opacity-25 animate-ping pointer-events-none" />
             )}
             <button
               onClick={() => {
@@ -223,7 +169,7 @@ export default function FloatingChat({
               className={`btn btn-lg btn-circle shadow-xl border-0 transition-all duration-300
                 ${fabOpen || activePanel
                   ? "bg-base-300 hover:bg-base-400 rotate-45"
-                  : "bg-gradient-to-br from-violet-500 to-indigo-600 hover:from-violet-600 hover:to-indigo-700"
+                  : "bg-gradient-to-br from-emerald-400 to-teal-600 hover:from-emerald-500 hover:to-teal-700"
                 }`}
             >
               {fabOpen || activePanel ? (
@@ -232,7 +178,7 @@ export default function FloatingChat({
                 </svg>
               ) : (
                 <svg width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="white" strokeWidth={1.8}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
                 </svg>
               )}
             </button>

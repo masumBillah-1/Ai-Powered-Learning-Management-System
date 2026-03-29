@@ -39,6 +39,12 @@ if (!global.mongooseCache.conn) {
 }
 
 export async function connectDB() {
+  // ✅ Skip connection if dummy URI (for build time)
+  if (MONGODB_URI.includes('dummy')) {
+    console.log("⚠️ Skipping DB connection (dummy URI)");
+    return null;
+  }
+
   // ✅ Connection alive হলে সরাসরি return
   if (cached.conn && mongoose.connection.readyState === 1) {
     return cached.conn;

@@ -9,6 +9,8 @@ import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import ChatWidget from "@/components/Home/ChatWidget";
 
+export const dynamic = 'force-dynamic';
+
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
@@ -137,17 +139,19 @@ export default async function RootLayout({ children }: { children: React.ReactNo
 
         {children}
 
-        {user && (
+        {/* {user && (
           <FloatingChat
             userId={user.id}
             userName={user.name}
             userRole={user.role}
             userAvatar={user.image}
           />
-        )}
+        )} */}
 
 
-        {/* <ChatWidget /> */}
+        <ChatWidget 
+        
+        />
 
       </body>
     </html>
