@@ -14,6 +14,7 @@ export async function GET(req: NextRequest) {
     const status    = searchParams.get("status")   || "";
     const search    = searchParams.get("search")   || "";
     const authorId  = searchParams.get("authorId") || "";   // "my posts" ফিল্টার
+    const authorRole = searchParams.get("authorRole") || ""; // "admin posts" ফিল্টার
     const page      = parseInt(searchParams.get("page")  || "1");
     const limit     = parseInt(searchParams.get("limit") || "20");
     const skip      = (page - 1) * limit;
@@ -24,6 +25,7 @@ export async function GET(req: NextRequest) {
     if (postType) query.postType = postType;
     if (status)   query.status   = status;
     if (authorId) query["author.userId"] = authorId;
+    if (authorRole) query["author.role"] = authorRole;
     if (search)   query.$text = { $search: search };
 
     const [posts, total] = await Promise.all([

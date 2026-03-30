@@ -115,9 +115,14 @@ const Navbar = () => {
                       <Link key={link.name} href={link.href} className="hover:text-[#C81D77] transition-colors">{link.name}</Link>
                     ))}
                     {user && (
-                      <Link href={user.role === "instructor" ? "/dashboard/instructor/courses" : user.role === "admin" ? "/dashboard/admin/courses" : "/dashboard/student/courses"} className="hover:text-[#C81D77] transition-colors">
-                        {user.role === "instructor" ? "My Courses" : user.role === "admin" ? "All Courses" : "My Classes"}
-                      </Link>
+                      <>
+                        <Link href={user.role === "instructor" ? "/dashboard/instructor/courses" : user.role === "admin" ? "/dashboard/admin/courses" : "/dashboard/student/courses"} className="hover:text-[#C81D77] transition-colors">
+                          {user.role === "instructor" ? "My Courses" : user.role === "admin" ? "All Courses" : "My Classes"}
+                        </Link>
+                        <Link href="/helpdesk" className="hover:text-[#C81D77] transition-colors">
+                          HelpDesk
+                        </Link>
+                      </>
                     )}
                   </div>
 
@@ -238,8 +243,8 @@ const Navbar = () => {
                     <Link href={user.role === "instructor" ? "/dashboard/instructor/courses" : user.role === "admin" ? "/dashboard/admin/courses" : "/dashboard/student/courses"} className="flex justify-between items-center p-4 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-800 text-gray-800 dark:text-gray-200 font-bold no-underline" onClick={closeSidebar}>
                       {user.role === "instructor" ? "My Courses" : user.role === "admin" ? "All Courses" : "My Classes"} <FaChevronRight size={12} className="text-gray-400" />
                     </Link>
-                    <Link href="/help" className="flex justify-between items-center p-4 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-800 text-gray-800 dark:text-gray-200 font-bold no-underline" onClick={closeSidebar}>
-                      Helpdesk <FaChevronRight size={12} className="text-gray-400" />
+                    <Link href="/helpdesk" className="flex justify-between items-center p-4 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-800 text-gray-800 dark:text-gray-200 font-bold no-underline" onClick={closeSidebar}>
+                      HelpDesk <FaChevronRight size={12} className="text-gray-400" />
                     </Link>
                     <div className="h-px bg-gray-200 dark:bg-gray-700 my-3" />
                     <Link href="/dashboard/profile" className="flex items-center gap-3 p-4 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-800 text-gray-800 dark:text-gray-200 font-bold no-underline" onClick={closeSidebar}><FaUser size={16} className="text-purple-500" /><span>My Profile</span></Link>

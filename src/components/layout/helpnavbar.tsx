@@ -25,7 +25,7 @@ function getStoredUser(): UserData | null {
 
 const HelpNavbar = () => {
   const pathname = usePathname();
-  const [user,  setUser]  = useState<UserData | null>(null);
+  const [user, setUser] = useState<UserData | null>(null);
   const [theme, setTheme] = useState<string>("light");
 
   useEffect(() => {
@@ -54,10 +54,10 @@ const HelpNavbar = () => {
   const firstLetter = user?.name?.charAt(0).toUpperCase() || user?.email?.charAt(0).toUpperCase() || "?";
 
   const subLinks = [
-    { label: "All Post",         href: "/help/allpost", icon: <LuFileText /> },
-    { label: "Roadmap",          href: "/help/roadmap", icon: <LuMap />      },
-    { label: "Release log",      href: "/help/release", icon: <LuRocket />   },
-    { label: "Feature Requests", href: "/help/feature", icon: <LuListTodo /> },
+    { label: "All Post", href: "/helpdesk/allpost", icon: <LuFileText /> },
+    { label: "Roadmap", href: "/helpdesk/roadmap", icon: <LuMap /> },
+    { label: "Release log", href: "/helpdesk/release", icon: <LuRocket /> },
+    { label: "Feature Requests", href: "/helpdesk/feature", icon: <LuListTodo /> },
   ];
 
   return (
@@ -72,7 +72,15 @@ const HelpNavbar = () => {
 
         <div className="flex items-center gap-6">
           <span className="text-sm font-medium opacity-70 hover:opacity-100 transition-opacity">
-            <Link href="/dashboard/student/courses">My Classes</Link>
+            <Link href={
+              user?.role === "instructor"
+                ? "/dashboard/instructor/courses"
+                : user?.role === "admin"
+                  ? "/dashboard/admin/courses"
+                  : "/dashboard/student/courses"
+            }>
+              {user?.role === "instructor" ? "My Courses" : user?.role === "admin" ? "All Courses" : "My Classes"}
+            </Link>
           </span>
 
           <div className="flex items-center gap-5">
@@ -110,7 +118,7 @@ const HelpNavbar = () => {
                 onChange={toggleTheme}
                 checked={theme === "dark"}
               />
-              <FiSun  className="swap-on  text-yellow-500 text-xl" />
+              <FiSun className="swap-on  text-yellow-500 text-xl" />
               <FiMoon className="swap-off text-purple-500 text-xl" />
             </label>
           </div>
@@ -125,11 +133,10 @@ const HelpNavbar = () => {
             <Link
               key={link.label}
               href={link.href}
-              className={`flex items-center gap-2 pb-3 border-b-2 transition-all duration-300 group ${
-                isActive
-                  ? "border-secondary text-secondary"
-                  : "border-transparent opacity-60 hover:opacity-100"
-              }`}
+              className={`flex items-center gap-2 pb-3 border-b-2 transition-all duration-300 group ${isActive
+                ? "border-secondary text-secondary"
+                : "border-transparent opacity-60 hover:opacity-100"
+                }`}
             >
               <span className={`text-lg ${isActive ? "text-secondary" : "opacity-70 group-hover:opacity-100"}`}>
                 {link.icon}

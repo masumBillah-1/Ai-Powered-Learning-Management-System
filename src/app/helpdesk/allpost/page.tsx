@@ -36,11 +36,11 @@ const timeAgo = (d: string) => {
 };
 
 const TYPE_COLOR: Record<string, string> = {
-  "Courses Topics":   "text-red-400    bg-red-500/10    border-red-500/20",
-  "Bugs":             "text-yellow-400 bg-yellow-500/10 border-yellow-500/20",
+  "Courses Topics": "text-red-400    bg-red-500/10    border-red-500/20",
+  "Bugs": "text-yellow-400 bg-yellow-500/10 border-yellow-500/20",
   "Feature Requests": "text-pink-400   bg-pink-500/10   border-pink-500/20",
-  "Announcements":    "text-blue-400   bg-blue-500/10   border-blue-500/20",
-  "Others":           "text-purple-400 bg-purple-500/10 border-purple-500/20",
+  "Announcements": "text-blue-400   bg-blue-500/10   border-blue-500/20",
+  "Others": "text-purple-400 bg-purple-500/10 border-purple-500/20",
 };
 const STATUS_COLOR: Record<string, string> = {
   Open: "text-green-400 bg-green-500/10 border-green-500/20",
@@ -55,8 +55,10 @@ const CommentBox = ({ postId, user, onDone }: { postId: string; user: UserData; 
   const submit = async () => {
     if (!text.trim()) return; setLoading(true);
     try {
-      await fetch(`/api/help/posts/${postId}`, { method: "PATCH", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "comment", userId: user.email, userName: user.name, userImage: user.photoURL || "", content: text.trim() }) });
+      await fetch(`/api/help/posts/${postId}`, {
+        method: "PATCH", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "comment", userId: user.email, userName: user.name, userImage: user.photoURL || "", content: text.trim() })
+      });
       setText(""); onDone();
     } finally { setLoading(false); }
   };
@@ -165,24 +167,25 @@ const AllPost = () => {
     if (token) setUser(getStoredUser());
   }, []);
 
-  const [posts,        setPosts]        = useState<HelpPost[]>([]);
-  const [loading,      setLoading]      = useState(true);
-  const [modalOpen,    setModalOpen]    = useState(false);
-  const [search,       setSearch]       = useState("");
-  const [activeType,   setActiveType]   = useState("");
-  const [activeTab,    setActiveTab]    = useState<"all" | "my">("all");
-  const [typeCounts,   setTypeCounts]   = useState<SidebarCount[]>([]);
+  const [posts, setPosts] = useState<HelpPost[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [search, setSearch] = useState("");
+  const [activeType, setActiveType] = useState("");
+  const [activeTab, setActiveTab] = useState<"all" | "my" | "admin">("all");
+  const [typeCounts, setTypeCounts] = useState<SidebarCount[]>([]);
   const [statusCounts, setStatusCounts] = useState<SidebarCount[]>([]);
-  const [total,        setTotal]        = useState(0);
+  const [total, setTotal] = useState(0);
 
   const fetchPosts = useCallback(async () => {
     setLoading(true);
     try {
       const params = new URLSearchParams();
       if (activeType) params.set("postType", activeType);
-      if (search)     params.set("search",   search);
+      if (search) params.set("search", search);
       if (activeTab === "my" && user) params.set("authorId", user.email);
-      const res  = await fetch(`/api/help/posts?${params.toString()}`);
+      if (activeTab === "admin") params.set("authorRole", "admin");
+      const res = await fetch(`/api/help/posts?${params.toString()}`);
       const data = await res.json();
       setPosts(data.posts || []); setTotal(data.total || 0);
       setTypeCounts(data.typeCounts || []); setStatusCounts(data.statusCounts || []);
@@ -194,12 +197,12 @@ const AllPost = () => {
   useEffect(() => { const t = setTimeout(() => fetchPosts(), 400); return () => clearTimeout(t); }, [search]); // eslint-disable-line
 
   const sidebarItems = [
-    { icon: <BiCategory />,            label: "Courses Topics",   color: "text-red-400"    },
-    { icon: <MdOutlineBugReport />,    label: "Bugs",             color: "text-yellow-400" },
-    { icon: <MdOutlineLightbulb />,    label: "Feature Requests", color: "text-pink-400"   },
-    { icon: <FiMoreHorizontal />,      label: "Others",           color: "text-purple-400" },
-    { icon: <HiOutlineSpeakerphone />, label: "Announcements",    color: "text-blue-400"   },
-    { icon: <MdCheckCircleOutline />,  label: "Resolved",         color: "text-green-400"  },
+    { icon: <BiCategory />, label: "Courses Topics", color: "text-red-400" },
+    { icon: <MdOutlineBugReport />, label: "Bugs", color: "text-yellow-400" },
+    { icon: <MdOutlineLightbulb />, label: "Feature Requests", color: "text-pink-400" },
+    { icon: <FiMoreHorizontal />, label: "Others", color: "text-purple-400" },
+    { icon: <HiOutlineSpeakerphone />, label: "Announcements", color: "text-blue-400" },
+    { icon: <MdCheckCircleOutline />, label: "Resolved", color: "text-green-400" },
   ];
 
   const getCount = (label: string) => {
@@ -239,13 +242,12 @@ const AllPost = () => {
           {/* Tabs + Search */}
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div className="flex p-1 rounded-xl border border-white/5">
-              {(["all", "my"] as const).map((tab) => (
+              {(["all", "my", "admin"] as const).map((tab) => (
                 <button key={tab} onClick={() => setActiveTab(tab)}
                   className={`px-5 py-1.5 text-xs font-bold rounded-lg transition ${activeTab === tab ? "bg-purple-600/20 text-purple-400 border border-purple-500/30" : "text-gray-500 hover:text-white"}`}>
-                  {tab === "all" ? `All Posts (${total})` : "My Posts"}
+                  {tab === "all" ? `All Posts (${total})` : tab === "my" ? "My Posts" : "Admin Posts"}
                 </button>
               ))}
-              <Link href="/help/allpost" className="px-5 py-1.5 text-xs font-bold text-gray-500 hover:text-white">Admin Posts</Link>
             </div>
             <div className="flex items-center gap-2">
               <div className="border border-white/5 bg-[#1a1530] px-4 py-1.5 rounded-lg flex items-center gap-2">
