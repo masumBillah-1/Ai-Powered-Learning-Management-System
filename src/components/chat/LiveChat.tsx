@@ -235,9 +235,11 @@ export default function LiveChat({ userId, userName, userRole }: Props) {
     ? selectedUser.userId === "support"
       ? `support_${userId}`                          // student/instructor নিজের room
       : isAdmin
-        ? `support_${selectedUser.userId}`           // admin অন্যের room দেখছে
+        ? `support_${selectedUser.userId}`           // admin অন্যের support room দেখছে
         : [userId, selectedUser.userId].sort().join("_")
     : null;
+
+  console.log("🔍 LiveChat roomId:", { roomId, selectedUser: selectedUser?.userId, isAdmin, userId });
 
   // ── Fetch user list ──────────────────────────────────
   useEffect(() => {
@@ -252,6 +254,14 @@ export default function LiveChat({ userId, userName, userRole }: Props) {
         const usersData = await usersRes.json();
         const convsData = await convsRes.json();
 
+        console.log("🔍 LiveChat fetchUsers:", {
+          usersSuccess: usersData.success,
+          convsSuccess: convsData.success,
+          userRole,
+          isAdmin,
+          conversationsCount: convsData.conversations?.length
+        });
+
         if (!usersData.success) return;
 
         let filteredUsers: OnlineUser[] = [];
@@ -264,14 +274,20 @@ export default function LiveChat({ userId, userName, userRole }: Props) {
           // কিন্তু real name এর বদলে "User from Support" + index দেখাবে
           const convUserIds = new Set<string>();
           (convsData.conversations || []).forEach((conv: any) => {
+            console.log("🔍 Checking conversation:", { roomId: conv.roomId, participants: conv.participants?.map((p: any) => p._id) });
             if (conv.roomId?.startsWith("support_")) {
               const sid = conv.roomId.replace("support_", "");
-              if (sid && sid !== userId) convUserIds.add(sid);
+              if (sid && sid !== userId) {
+                convUserIds.add(sid);
+                console.log("✅ Added support user:", sid);
+              }
             }
             conv.participants?.forEach((p: any) => {
               if (p._id !== userId) convUserIds.add(p._id);
             });
           });
+
+          console.log("🔍 Admin convUserIds:", Array.from(convUserIds));
 
           filteredUsers = (usersData.users || [])
             .filter((u: any) => convUserIds.has(u._id))
@@ -282,6 +298,8 @@ export default function LiveChat({ userId, userName, userRole }: Props) {
               role: u.role,
               photoURL: "", // photo ও দেখাবে না
             }));
+
+          console.log("🔍 Admin filteredUsers:", filteredUsers);
         }
 
         setAllUsers(filteredUsers);
@@ -326,8 +344,15 @@ export default function LiveChat({ userId, userName, userRole }: Props) {
     // ✅ 2. Fetch from server and update cache
     const fetchMessages = async () => {
       try {
+        console.log("🔍 Fetching messages for roomId:", roomId);
         const res = await fetch(`/api/messages/${roomId}`);
         const data = await res.json();
+
+        console.log("🔍 Messages response:", {
+          success: data.success,
+          messageCount: data.messages?.length,
+          roomId
+        });
 
         if (data.success) {
           const newMsgs: LiveMsg[] = data.messages || [];
@@ -521,6 +546,9 @@ export default function LiveChat({ userId, userName, userRole }: Props) {
         content: type === "image" ? "📷 Image" : `📎 ${file.name}`,
         createdAt: new Date().toISOString(),
         messageType,
+        fileUrl: url,
+        fileName: file.name,
+        fileSize: file.size,
         _optimistic: true,
       };
 
@@ -958,6 +986,16 @@ export default function LiveChat({ userId, userName, userRole }: Props) {
                 const isFromBot = senderId === BOT_SENDER_ID;
                 const isSystem = msg.messageType === "system";
                 const isMe = senderId === userId;
+
+                // ✅ Debug log
+                if (i === messages.length - 1) {
+                  console.log("🔍 Message alignment check:", {
+                    senderId,
+                    userId,
+                    isMe,
+                    content: msg.content?.substring(0, 20)
+                  });
+                }
 
                 // ── System message (centered) ──
                 if (isSystem) {

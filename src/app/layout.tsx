@@ -1,13 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono, Hind_Siliguri } from "next/font/google";
 import { Toaster } from "react-hot-toast";
-
-import FloatingChat from "@/components/chat/FloatingChat";
-import { cookies } from "next/headers";
 import "./globals.css";
-import Navbar from "@/components/layout/Navbar";
-import Footer from "@/components/layout/Footer";
-import ChatWidget from "@/components/Home/ChatWidget";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -36,37 +30,7 @@ export const metadata: Metadata = {
   },
 };
 
-// ─────────────────────────────────────────────────────────
-// Cookie থেকে user বের করা
-// আপনার login route এ যে cookie নামে token save হয়
-// সেই নাম দিয়ে replace করুন
-// ─────────────────────────────────────────────────────────
-async function getUser() {
-  try {
-    const cookieStore = await cookies();
-    const token = cookieStore.get("token")?.value; // ← আপনার cookie নাম
-    if (!token) return null;
-
-    const base64Payload = token.split(".")[1];
-    if (!base64Payload) return null;
-
-    const payload = JSON.parse(
-      Buffer.from(base64Payload, "base64url").toString("utf-8")
-    );
-
-    return {
-      id: payload.id ?? payload.userId ?? payload.sub ?? "user",
-      name: payload.name ?? payload.username ?? "Student",
-      role: payload.role ?? "student",   // ← JWT এ role থাকলে
-      image: payload.photoURL ?? payload.image ?? payload.avatar ?? undefined,
-    };
-  } catch {
-    return null;
-  }
-}
-
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
-  const user = await getUser();
 
   return (
     <html lang="en" suppressHydrationWarning>
@@ -136,18 +100,6 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         />
 
         {children}
-
-        {user && (
-          <FloatingChat
-            userId={user.id}
-            userName={user.name}
-            userRole={user.role}
-            userAvatar={user.image}
-          />
-        )}
-
-
-        {/* <ChatWidget /> */}
 
       </body>
     </html>

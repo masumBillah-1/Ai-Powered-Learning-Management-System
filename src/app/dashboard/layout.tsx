@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import Logo from "@/components/layout/Logo";
+import FloatingChat from "@/components/chat/FloatingChat";
 import { usePathname, useRouter } from "next/navigation";
 import { useState, useEffect, useRef, useCallback } from "react";
 import {
@@ -12,7 +13,7 @@ import {
 import { FaSun, FaMoon, FaFacebookMessenger } from "react-icons/fa";
 
 type Role = "student" | "instructor" | "admin";
-interface UserData { name: string; email: string; photoURL?: string; role: Role; }
+interface UserData { _id?: string; name: string; email: string; photoURL?: string; role: Role; }
 
 // ✅ Poll interval বাড়ানো হয়েছে — 5s থেকে 60s
 // বারবার API call = বারবার MongoDB connection = timeout বেশি
@@ -728,6 +729,16 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           <PageLoader>{children}</PageLoader>
         </div>
       </main>
+
+      {/* ✅ FloatingChat - Only in Dashboard */}
+      {user && (
+        <FloatingChat
+          userId={user._id || user.email || "user"}
+          userName={user.name}
+          userRole={role}
+          userAvatar={user.photoURL}
+        />
+      )}
     </div>
   );
 }
