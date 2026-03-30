@@ -17,7 +17,7 @@ const SuccessSection = () => {
       left: "72%",
     },
     {
-      name: "রকমারি",
+      name: "ROKOMARI",
       logo: "https://via.placeholder.com/20?text=R",
       dotColor: "bg-[#10b981]",
       top: "45%",
@@ -52,18 +52,23 @@ const SuccessSection = () => {
 
       {/* Left Content - The Success Stats */}
       <div className="w-full md:w-1/2 z-10 text-left">
+        {/* Added a Heading for better visual hierarchy */}
+        <h2 className="text-3xl md:text-4xl font-black text-white leading-tight">
+          Beyond Just Coding
+        </h2>
+        
         <p className="mt-6 text-slate-400 text-base md:text-lg leading-relaxed max-w-lg">
-          শুধু কোড শেখানোই নয়, আমরা শেখাই সমস্যা সমাধান, টিমওয়ার্ক এবং
-          বাস্তব প্রজেক্টে কাজ করার দক্ষতা।
+          We don't just teach syntax; we focus on problem-solving, 
+          team collaboration, and building skills for real-world projects.
         </p>
 
         <p className="mt-4 text-slate-500 text-sm md:text-base max-w-lg">
-          ধারাবাহিক প্র্যাকটিস ও সঠিক গাইডলাইনের মাধ্যমে তুমি তৈরি হতে পারো
-          আগামী দিনের দক্ষ ডেভেলপার হিসেবে।
+          With consistent practice and professional mentorship, you can 
+          transform into a high-impact developer for the global tech industry.
         </p>
 
         <div className="flex flex-wrap gap-2 mt-8">
-          {["রিমোট জব", "লোকাল জব", "ইন্টারন্যাশনাল জব"].map((label) => (
+          {["Remote Jobs", "Local Tech", "Global Careers"].map((label) => (
             <button
               key={label}
               className="px-4 py-2 text-sm bg-[#1e293b]/60 hover:bg-[#334155] border border-white/10 rounded-lg text-slate-300 transition-all"
@@ -121,7 +126,7 @@ const SuccessSection = () => {
               />
             </div>
 
-            <div className="bg-white px-2 py-1.5 rounded-md flex items-center gap-2 shadow-xl">
+            <div className="bg-white px-2 py-1.5 rounded-md flex items-center gap-2 shadow-xl border border-gray-100">
               <div className="w-4 h-4 bg-slate-100 rounded flex-shrink-0" />{" "}
               <span className="text-[10px] md:text-[11px] font-bold text-slate-800 whitespace-nowrap uppercase tracking-tighter">
                 {company.name}
