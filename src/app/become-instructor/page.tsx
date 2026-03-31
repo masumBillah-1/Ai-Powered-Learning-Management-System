@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { FiEye, FiEyeOff } from "react-icons/fi";
 import toast from "react-hot-toast";
@@ -28,6 +29,7 @@ const GoogleIcon = () => (
 );
 
 const BecomeInstructor = () => {
+  const router = useRouter();
   const { register, handleSubmit, watch, formState: { errors } } = useForm<InstructorFormData>();
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -65,7 +67,7 @@ const BecomeInstructor = () => {
       localStorage.setItem("user", JSON.stringify(data.user));
 
       toast.success(data.message || "Welcome Instructor!");
-      setTimeout(() => { window.location.href = "/dashboard/instructor"; }, 1000);
+      setTimeout(() => { router.push("/dashboard/instructor"); }, 1000);
 
     } catch (err: any) {
       toast.error(err.message || "Google login failed");
@@ -102,7 +104,7 @@ const BecomeInstructor = () => {
       if (result.requireOtp) {
         toast.success("Registration successful! Check your email for OTP.");
         setTimeout(() => {
-          window.location.href = `/verify-otp?email=${encodeURIComponent(data.email)}&mode=register`;
+          router.push(`/verify-otp?email=${encodeURIComponent(data.email)}&mode=register`);
         }, 1000);
         return;
       }
@@ -112,7 +114,7 @@ const BecomeInstructor = () => {
         localStorage.setItem("token", result.token);
         localStorage.setItem("user", JSON.stringify(result.user));
         toast.success(result.message);
-        setTimeout(() => { window.location.href = "/dashboard/instructor"; }, 1000);
+        setTimeout(() => { router.push("/dashboard/instructor"); }, 1000);
         return;
       }
 

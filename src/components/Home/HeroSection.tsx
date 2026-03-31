@@ -215,9 +215,9 @@ const HeroSection = () => {
             initial={{ opacity: 0, scale: 0.9, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             transition={{ duration: 0.9, delay: 0.2, ease: [0.22, 1, 0.36, 1] }}
-            className="w-full lg:w-[48%] relative group order-1 lg:order-2 lg:mt-0"
+            className="w-full lg:w-[48%] relative group order-1 lg:order-2 lg:mt-0 lg:pt-12"
           >
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-48 h-48 md:w-80 md:h-80 bg-[#E3436B]/20 rounded-full blur-[80px] -z-10 pointer-events-none" />
+            <div className="absolute top-2/1 left-1/2 -translate-x-1/2 -translate-y-1/2 w-48 h-48 md:w-80 md:h-80 bg-[#E3436B]/20 rounded-full blur-[80px] -z-10 pointer-events-none" />
 
             <div className="relative rounded-2xl md:rounded-[32px] overflow-hidden border-[6px] md:border-[10px] border-white dark:border-slate-800 shadow-[0_20px_60px_rgba(131,35,136,0.18)] dark:shadow-[0_20px_60px_rgba(227,67,107,0.12)] aspect-video bg-black">
               {!isPlaying ? (

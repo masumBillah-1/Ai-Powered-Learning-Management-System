@@ -1,5 +1,6 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { FaBars, FaTimes, FaSun, FaMoon, FaThLarge, FaUser, FaSignOutAlt, FaChevronRight } from "react-icons/fa";
 import Logo from "./Logo";
@@ -16,6 +17,7 @@ function getStoredTheme(): string {
 }
 
 const Navbar = () => {
+  const router = useRouter();
   const [user, setUser] = useState<UserData | null>(null);
   const [theme, setTheme] = useState<string>("light");
   const [mounted, setMounted] = useState(false);
@@ -73,7 +75,7 @@ const Navbar = () => {
     await fetch("/api/auth/logout", { method: "POST" });
     localStorage.removeItem("user"); localStorage.removeItem("token");
     setUser(null); setShowMenu(false);
-    window.location.href = "/login";
+    router.push("/login");
   };
 
   const firstLetter = user?.name?.charAt(0).toUpperCase() || user?.email?.charAt(0).toUpperCase() || "?";

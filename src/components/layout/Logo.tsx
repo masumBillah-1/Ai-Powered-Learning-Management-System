@@ -51,23 +51,30 @@ const Logo = ({ size = "default" }: LogoProps) => {
       try {
         if (!inflightPromise) {
           inflightPromise = (async () => {
-            const res = await fetch("/api/admin/settings?keys=logoImage,logoName,logoNameSecondary,tagline1,tagline2");
-            const data = await res.json();
-            if (data.success && data.settings) {
-              const fresh = {
-                logoImage: data.settings.logoImage || defaultSettings.logoImage,
-                logoName: data.settings.logoName || defaultSettings.logoName,
-                logoNameSecondary: data.settings.logoNameSecondary || defaultSettings.logoNameSecondary,
-                tagline1: data.settings.tagline1 || defaultSettings.tagline1,
-                tagline2: data.settings.tagline2 || defaultSettings.tagline2,
-              };
-              localStorage.setItem("logoSettings", JSON.stringify(fresh));
-              localStorage.setItem("logoSettings_timestamp", Date.now().toString());
-              globalLogoSettings = fresh;
-              globalLogoSettings_timestamp = Date.now();
-              return fresh;
+            try {
+              const res = await fetch("/api/admin/settings?keys=logoImage,logoName,logoNameSecondary,tagline1,tagline2");
+              if (!res.ok) return null;
+              
+              const data = await res.json();
+              if (data.success && data.settings) {
+                const fresh = {
+                  logoImage: data.settings.logoImage || defaultSettings.logoImage,
+                  logoName: data.settings.logoName || defaultSettings.logoName,
+                  logoNameSecondary: data.settings.logoNameSecondary || defaultSettings.logoNameSecondary,
+                  tagline1: data.settings.tagline1 || defaultSettings.tagline1,
+                  tagline2: data.settings.tagline2 || defaultSettings.tagline2,
+                };
+                localStorage.setItem("logoSettings", JSON.stringify(fresh));
+                localStorage.setItem("logoSettings_timestamp", Date.now().toString());
+                globalLogoSettings = fresh;
+                globalLogoSettings_timestamp = Date.now();
+                return fresh;
+              }
+              return null;
+            } catch (err) {
+              console.warn("Logo settings fetch failed (network error). Using defaults.");
+              return null;
             }
-            return null;
           })();
         }
         const result = await inflightPromise;

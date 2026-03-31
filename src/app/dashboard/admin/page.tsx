@@ -172,7 +172,7 @@ export default function AdminDashboard() {
       icon: Users,
       color: PURPLE,
       glow: "rgba(131,35,136,0.12)",
-      href: "/dashboard/admin/instructors",
+      href: "/dashboard/admin/users",
     },
     {
       label: "Total Courses",

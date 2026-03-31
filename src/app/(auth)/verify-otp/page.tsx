@@ -1,12 +1,13 @@
 "use client";
 import { useState, useRef, useEffect, Suspense } from "react";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 import Link from "next/link";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 
 function VerifyOtpContent() {
+  const router = useRouter();
   const searchParams = useSearchParams();
   const email = searchParams.get("email") || "";
   const mode = searchParams.get("mode") || ""; // "login" হলে dashboard এ যাবে
@@ -72,9 +73,9 @@ function VerifyOtpContent() {
         localStorage.setItem("user", JSON.stringify(data.user));
         toast.success("Login successful!");
         setTimeout(() => {
-          if (data.user.role === "admin") window.location.href = "/dashboard/admin";
-          else if (data.user.role === "instructor") window.location.href = "/dashboard/instructor";
-          else window.location.href = "/dashboard/student";
+          if (data.user.role === "admin") router.push("/dashboard/admin");
+          else if (data.user.role === "instructor") router.push("/dashboard/instructor");
+          else router.push("/dashboard/student");
         }, 800);
         return;
       }

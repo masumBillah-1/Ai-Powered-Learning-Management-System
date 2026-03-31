@@ -1,5 +1,6 @@
 "use client";
 import { useState, useEffect, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import { Search, UserCheck, UserX, Trash2, Shield, GraduationCap, BookOpen, RefreshCw, AlertCircle, Eye, EyeOff, User as UserIcon } from "lucide-react";
 import toast, { Toaster } from "react-hot-toast";
 
@@ -25,6 +26,7 @@ const openModal = (id: string) => (document.getElementById(id) as HTMLDialogElem
 const closeModal = (id: string) => (document.getElementById(id) as HTMLDialogElement | null)?.close();
 
 export default function AdminUsersPage() {
+  const router = useRouter();
   const [theme, setTheme] = useState("light");
   const [filter, setFilter] = useState<"all" | Role>("all");
   const [search, setSearch] = useState("");
@@ -352,7 +354,7 @@ export default function AdminUsersPage() {
           <table className="table table-md w-full">
             <thead>
               <tr>
-                {["#", "User", "Role", "Courses", "Status", "Action"].map(h => (
+                {["#", "User", "Courses", "Status", "Action"].map(h => (
                   <th key={h} className="text-xs font-bold uppercase tracking-wider opacity-50">{h}</th>
                 ))}
               </tr>
@@ -372,7 +374,6 @@ export default function AdminUsersPage() {
                       </div>
                     </div>
                   </td>
-                  <td><div className="skeleton h-5 w-16 rounded-full" /></td>
                   <td><div className="skeleton h-4 w-6 mx-auto rounded" /></td>
                   <td><div className="skeleton h-5 w-14 rounded-full" /></td>
                   <td><div className="flex gap-1.5"><div className="skeleton h-7 w-7 rounded-lg" /><div className="skeleton h-7 w-7 rounded-lg" /></div></td>
@@ -382,7 +383,7 @@ export default function AdminUsersPage() {
               {/* Empty */}
               {!loading && filtered.length === 0 && (
                 <tr>
-                  <td colSpan={6} className="text-center py-12 opacity-40 text-sm font-semibold">
+                  <td colSpan={5} className="text-center py-12 opacity-40 text-sm font-semibold">
                     {error ? "Failed to load users" : "No users found"}
                   </td>
                 </tr>
@@ -417,20 +418,18 @@ export default function AdminUsersPage() {
                           {u.name?.charAt(0) ?? "?"}
                         </div>
                         <div className="flex-1 min-w-0">
-                          <p className="font-bold text-sm leading-tight truncate">{u.name}</p>
+                          <div className="flex items-center gap-2">
+                            <p className="font-bold text-sm leading-tight truncate">{u.name}</p>
+                            <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold ${r.bg} ${r.text}`}>
+                              {r.icon} {u.role}
+                            </span>
+                          </div>
                           <p className="text-[11px] font-medium opacity-50 mt-0.5 truncate">{u.email}</p>
                           <p className="text-[9px] font-black uppercase tracking-tight opacity-30 mt-1 whitespace-nowrap">
                             🗓️ Joined {formatDate(u.createdAt)}
                           </p>
                         </div>
                       </div>
-                    </td>
-
-                    {/* Role */}
-                    <td>
-                      <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold ${r.bg} ${r.text}`}>
-                        {r.icon} {u.role}
-                      </span>
                     </td>
 
                     <td className="text-sm font-bold opacity-60 text-center">{getCourseCount(u)}</td>
@@ -448,7 +447,7 @@ export default function AdminUsersPage() {
                       <div className="flex gap-1.5">
                         {/* Message User */}
                         <button
-                          onClick={() => window.location.href = `/dashboard/messages?userId=${u._id}`}
+                          onClick={() => router.push(`/dashboard/messages?userId=${u._id}`)}
                           className="btn btn-xs btn-square border-0 text-white cursor-pointer tooltip"
                           data-tip="Send Message"
                           style={{ backgroundColor: "#0EA5E9" }}

@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { FiEye, FiEyeOff } from "react-icons/fi";
 import toast from "react-hot-toast";
@@ -20,20 +21,21 @@ type RegisterFormData = {
 
 const GoogleIcon = () => (
   <svg width="18" height="18" viewBox="0 0 48 48">
-    <path fill="#FFC107" d="M43.6 20H24v8h11.3C33.6 33.3 29.3 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3 0 5.8 1.1 7.9 3l5.7-5.7C34.1 6.5 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20c11 0 19.7-8 19.7-20 0-1.3-.1-2.7-.1-4z"/>
-    <path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.5 15.1 18.9 12 24 12c3 0 5.8 1.1 7.9 3l5.7-5.7C34.1 6.5 29.3 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/>
-    <path fill="#4CAF50" d="M24 44c5.2 0 9.9-1.9 13.5-5l-6.2-5.2C29.4 35.6 26.8 36 24 36c-5.2 0-9.6-3.5-11.2-8.2l-6.5 5C9.5 39.6 16.2 44 24 44z"/>
-    <path fill="#1976D2" d="M43.6 20H24v8h11.3c-.9 2.4-2.5 4.4-4.6 5.8l6.2 5.2C40.8 35.8 44 30.3 44 24c0-1.3-.1-2.7-.4-4z"/>
+    <path fill="#FFC107" d="M43.6 20H24v8h11.3C33.6 33.3 29.3 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3 0 5.8 1.1 7.9 3l5.7-5.7C34.1 6.5 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20c11 0 19.7-8 19.7-20 0-1.3-.1-2.7-.1-4z" />
+    <path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.5 15.1 18.9 12 24 12c3 0 5.8 1.1 7.9 3l5.7-5.7C34.1 6.5 29.3 4 24 4 16.3 4 9.7 8.3 6.3 14.7z" />
+    <path fill="#4CAF50" d="M24 44c5.2 0 9.9-1.9 13.5-5l-6.2-5.2C29.4 35.6 26.8 36 24 36c-5.2 0-9.6-3.5-11.2-8.2l-6.5 5C9.5 39.6 16.2 44 24 44z" />
+    <path fill="#1976D2" d="M43.6 20H24v8h11.3c-.9 2.4-2.5 4.4-4.6 5.8l6.2 5.2C40.8 35.8 44 30.3 44 24c0-1.3-.1-2.7-.4-4z" />
   </svg>
 );
 
 const GitHubIcon = () => (
   <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
-    <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z"/>
+    <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z" />
   </svg>
 );
 
 const Register = () => {
+  const router = useRouter();
   const { register, handleSubmit, watch, formState: { errors } } = useForm<RegisterFormData>();
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -43,9 +45,9 @@ const Register = () => {
   const password = watch("password");
 
   const redirect = (role: string) => {
-    if (role === "admin") window.location.href = "/dashboard/admin";
-    else if (role === "instructor") window.location.href = "/dashboard/instructor";
-    else window.location.href = "/dashboard/student";
+    if (role === "admin") router.push("/dashboard/admin");
+    else if (role === "instructor") router.push("/dashboard/instructor");
+    else router.push("/dashboard/student");
   };
 
   // ✅ Google Login
@@ -82,22 +84,22 @@ const Register = () => {
         body: JSON.stringify({ name: data.name, email: data.email, phone: data.phone, password: data.password }),
       });
       const result = await res.json();
-      
+
       console.log("Register response:", { status: res.status, result });
-      
+
       if (!res.ok) {
         console.log("Register failed:", result.error);
-        
+
         if (result.error === "Email already exists") {
           toast.error("এই email দিয়ে আগেই account আছে! Login করুন।");
-          setTimeout(() => { window.location.href = "/login"; }, 2000);
+          setTimeout(() => { router.push("/login"); }, 2000);
           return;
         }
-        
+
         toast.error(result.error || "Registration failed");
         return;
       }
-      
+
       setRegistered(true);
       toast.success("Registration successful!");
     } catch (err: any) {
@@ -119,7 +121,7 @@ const Register = () => {
             <div className="bg-white/90 dark:bg-[#120B1E] border border-gray-200 dark:border-[#2D2438] p-10 rounded-2xl shadow-2xl flex flex-col items-center gap-5 transition-colors">
               <div className="w-20 h-20 rounded-full bg-gradient-to-br from-[#832388] to-[#F0772F] flex items-center justify-center">
                 <svg width="40" height="40" viewBox="0 0 24 24" fill="none">
-                  <path d="M5 13l4 4L19 7" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+                  <path d="M5 13l4 4L19 7" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
                 </svg>
               </div>
               <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Registration Complete!</h2>
@@ -178,7 +180,7 @@ const Register = () => {
                   <span className="text-gray-900 dark:text-white text-sm mr-2">🇧🇩 +880</span>
                   <input type="tel" inputMode="numeric" placeholder="1XXXXXXXXX"
                     className="bg-transparent flex-1 text-[13px] text-gray-900 dark:text-white outline-none placeholder-gray-500 dark:placeholder-gray-400"
-                    {...register("phone", { 
+                    {...register("phone", {
                       validate: (value) => {
                         if (!value) return true; // Optional
                         const digits = value.replace(/\D/g, "");

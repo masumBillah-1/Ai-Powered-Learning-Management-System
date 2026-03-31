@@ -4,14 +4,15 @@ import { connectDB } from "@/db/connect";
 import RoadmapTicket from "@/models/RoadmapTicket";
 import mongoose from "mongoose";
 
-type Params = { params: { id: string } };
+type Params = { params: Promise<{ id: string }> };
 
 // ─── PATCH: column পরিবর্তন (admin drag-drop বা status update) ───────────────
 export async function PATCH(req: NextRequest, { params }: Params) {
   try {
     await connectDB();
+    const { id } = await params;
 
-    if (!mongoose.Types.ObjectId.isValid(params.id)) {
+    if (!mongoose.Types.ObjectId.isValid(id)) {
       return NextResponse.json({ error: "Invalid id" }, { status: 400 });
     }
 
@@ -23,7 +24,7 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     }
 
     const ticket = await RoadmapTicket.findByIdAndUpdate(
-      params.id,
+      id,
       { $set: body },
       { new: true }
     );
@@ -40,16 +41,17 @@ export async function PATCH(req: NextRequest, { params }: Params) {
 export async function DELETE(req: NextRequest, { params }: Params) {
   try {
     await connectDB();
+    const { id } = await params;
 
     const { userId } = await req.json();
-    const ticket = await RoadmapTicket.findById(params.id);
+    const ticket = await RoadmapTicket.findById(id);
     if (!ticket) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
     if (ticket.user.userId !== userId) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    await RoadmapTicket.findByIdAndDelete(params.id);
+    await RoadmapTicket.findByIdAndDelete(id);
     return NextResponse.json({ success: true });
   } catch (err) {
     return NextResponse.json({ error: "Server error" }, { status: 500 });

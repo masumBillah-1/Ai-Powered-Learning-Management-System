@@ -4,14 +4,16 @@ import { connectDB } from "@/db/connect";
 import FeatureRequest from "@/models/FeatureRequest";
 import mongoose from "mongoose";
 
-type Params = { params: { id: string } };
+type Params = { params: Promise<{ id: string }> };
 
 // ─── PATCH: vote / comment / status ──────────────────────────────────────────
 export async function PATCH(req: NextRequest, { params }: Params) {
   try {
     await connectDB();
+    
+    const { id } = await params;
 
-    if (!mongoose.Types.ObjectId.isValid(params.id)) {
+    if (!mongoose.Types.ObjectId.isValid(id)) {
       return NextResponse.json({ error: "Invalid id" }, { status: 400 });
     }
 
@@ -23,7 +25,7 @@ export async function PATCH(req: NextRequest, { params }: Params) {
       const { userId } = body;
       if (!userId) return NextResponse.json({ error: "userId required" }, { status: 400 });
 
-      const feature = await FeatureRequest.findById(params.id);
+      const feature = await FeatureRequest.findById(id);
       if (!feature) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
       const alreadyVoted = feature.votes.includes(userId);
@@ -49,7 +51,7 @@ export async function PATCH(req: NextRequest, { params }: Params) {
       }
 
       const feature = await FeatureRequest.findByIdAndUpdate(
-        params.id,
+        id,
         {
           $push: {
             comments: {
@@ -76,7 +78,7 @@ export async function PATCH(req: NextRequest, { params }: Params) {
       }
 
       const feature = await FeatureRequest.findByIdAndUpdate(
-        params.id,
+        id,
         { $set: { status } },
         { new: true }
       );
@@ -94,16 +96,17 @@ export async function PATCH(req: NextRequest, { params }: Params) {
 export async function DELETE(req: NextRequest, { params }: Params) {
   try {
     await connectDB();
+    const { id } = await params;
 
     const { userId } = await req.json();
-    const feature = await FeatureRequest.findById(params.id);
+    const feature = await FeatureRequest.findById(id);
     if (!feature) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
     if (feature.user.userId !== userId) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    await FeatureRequest.findByIdAndDelete(params.id);
+    await FeatureRequest.findByIdAndDelete(id);
     return NextResponse.json({ success: true });
   } catch (err) {
     return NextResponse.json({ error: "Server error" }, { status: 500 });
