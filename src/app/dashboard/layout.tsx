@@ -483,6 +483,24 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const currentRoleRef = useRef<Role | null>(null);
   const lastFetchRef = useRef<number>(0);
 
+  // Update document title based on current route
+  useEffect(() => {
+    const items = menus[role] || [];
+    const currentItem = items.find(i =>
+      i.href === pathname || (!rootHrefs.includes(i.href) && pathname.startsWith(i.href))
+    );
+    
+    let pageName = currentItem?.label || "Dashboard";
+    
+    // Handle specific sub-routes that might have generic active menu items
+    if (pathname.includes("/courses/create")) pageName = "Create Course";
+    else if (pathname.includes("/blog/") && pathname !== "/dashboard/blog") pageName = "Read Blog";
+    else if (pathname.includes("/messages") && pathname !== "/dashboard/messages") pageName = "Chat";
+    
+    const roleCapitalized = role.charAt(0).toUpperCase() + role.slice(1);
+    document.title = `${pageName} - ${roleCapitalized} | SmartLMS`;
+  }, [pathname, role]);
+
   useEffect(() => {
     const saved = (localStorage.getItem("theme") as "dark" | "light") || "light";
     setTheme(saved);
