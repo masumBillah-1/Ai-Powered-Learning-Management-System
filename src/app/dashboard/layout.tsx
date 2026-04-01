@@ -119,7 +119,7 @@ function Sidebar({ items, collapsed, onToggle, mobileOpen, onMobileClose }: {
         <div className={`h-16 flex items-center flex-shrink-0 border-b border-white/[0.07] ${w ? "px-4 justify-between" : "justify-center px-0"}`}>
           {w && (
             <div className="flex items-center gap-2 no-underline group min-w-0">
-              <Logo size="sm" />
+              <Logo size="sm" variant="light" />
             </div>
           )}
           {!forceWide ? (

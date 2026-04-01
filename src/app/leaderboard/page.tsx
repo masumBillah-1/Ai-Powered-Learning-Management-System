@@ -305,7 +305,7 @@ export default function LeaderboardPage() {
             <ChevronLeft size={18} className="group-hover:-translate-x-0.5 transition-transform" />
             <span className="hidden sm:inline">Dashboard</span>
           </Link>
-          <Logo />
+          <Logo variant="light" />
           <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-black uppercase tracking-widest"
             style={{ backgroundColor: `${COLORS.pink}18`, border: `1px solid ${COLORS.pink}33`, color: COLORS.pink }}>
             <Crown size={12} /> Leaderboard

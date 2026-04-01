@@ -33,6 +33,7 @@ interface IPendingCourse {
   title: string;
   instructorId?: { name?: string; photoURL?: string };
   createdAt: string;
+  thumbnail?: string;
 }
 
 export default function AdminDashboard() {
@@ -47,6 +48,24 @@ export default function AdminDashboard() {
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => { setMounted(true); }, []);
+
+  // ── Cache-First Logic ──
+  useEffect(() => {
+    const cached = localStorage.getItem("admin_dashboard_cache");
+    if (cached) {
+      try {
+        const { stats: cStats, transactions: cTx, pending: cPending } = JSON.parse(cached);
+        if (cStats) {
+          setStats(cStats);
+          setTrans(cTx || []);
+          setPending(cPending || []);
+          setLoading(false); // ⚡ Show cached data instantly
+        }
+      } catch (e) {
+        console.error("Dashboard cache error:", e);
+      }
+    }
+  }, []);
 
   const fetchAll = useCallback(async (silent = false) => {
     if (!silent) setLoading(true);
@@ -93,6 +112,7 @@ export default function AdminDashboard() {
           title: c.title,
           instructorId: c.instructorId,
           createdAt: c.createdAt,
+          thumbnail: c.thumbnail,
         }));
 
       if (pendingList.length === 0) {
@@ -101,6 +121,7 @@ export default function AdminDashboard() {
           title: c.title,
           instructorId: c.instructorId,
           createdAt: c.createdAt,
+          thumbnail: c.thumbnail,
         }));
       }
       setPending(pendingList);
@@ -133,7 +154,7 @@ export default function AdminDashboard() {
       const totalInstructors = instructorSet.size;
       const totalStudents = adminStats.totalUsers || 0;
 
-      setStats({
+      const newStats: IDashboardStats = {
         totalStudents,
         totalInstructors,
         totalCourses: courses.length,
@@ -143,7 +164,16 @@ export default function AdminDashboard() {
         totalRevenue: revenue,
         totalProfit: profit,
         totalEnrollments: totalEnroll,
-      });
+      };
+
+      setStats(newStats);
+
+      // ✅ Update cache for instant next load
+      localStorage.setItem("admin_dashboard_cache", JSON.stringify({
+        stats: newStats,
+        transactions: txList,
+        pending: pendingList
+      }));
 
     } catch (err) {
       console.error("Dashboard fetch error:", err);
@@ -318,9 +348,13 @@ export default function AdminDashboard() {
                 return (
                   <div key={t._id} className="flex items-center gap-4 px-6 py-4 hover:bg-base-200/40 transition-colors border-b border-base-300 last:border-0">
                     <span className="text-xs font-black opacity-20 w-5 tabular-nums">{String(i + 1).padStart(2, "0")}</span>
-                    <div className="w-10 h-10 rounded-xl flex items-center justify-center text-white font-black text-sm flex-shrink-0 shadow-sm"
-                      style={{ background: `linear-gradient(135deg,${colors[i % colors.length]},${colors[i % colors.length]}99)` }}>
-                      {name.charAt(0).toUpperCase()}
+                    <div className="w-10 h-10 rounded-xl overflow-hidden flex items-center justify-center text-white font-black text-sm flex-shrink-0 shadow-sm"
+                      style={{ background: (t.studentId as any)?.photoURL ? "transparent" : `linear-gradient(135deg,${colors[i % colors.length]},${colors[i % colors.length]}99)` }}>
+                      {(t.studentId as any)?.photoURL ? (
+                        <img src={(t.studentId as any).photoURL} alt={name} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                      ) : (
+                        name.charAt(0).toUpperCase()
+                      )}
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-black leading-tight">{name}</p>
@@ -427,8 +461,12 @@ export default function AdminDashboard() {
                 const instName = (course.instructorId as any)?.name || "Instructor";
                 return (
                   <div key={course._id} className="flex items-center gap-3 px-5 py-4 hover:bg-base-200/40 transition-colors border-b border-base-300 last:border-0">
-                    <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0" style={{ backgroundColor: `${PRIMARY}12` }}>
-                      <BookOpen size={15} style={{ color: PRIMARY }} />
+                    <div className="w-10 h-10 rounded-xl overflow-hidden flex items-center justify-center flex-shrink-0" style={{ backgroundColor: course.thumbnail ? "transparent" : `${PRIMARY}12` }}>
+                      {course.thumbnail ? (
+                        <img src={course.thumbnail} alt={course.title} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                      ) : (
+                        <BookOpen size={16} style={{ color: PRIMARY }} />
+                      )}
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-1.5">

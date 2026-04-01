@@ -60,9 +60,25 @@ export default function AdminUsersPage() {
         setTheme(current);
         document.documentElement.setAttribute("data-theme", current);
       }
-    }, 100);
+    }, 500); // ⚡ Optimized from 100ms to 500ms for better performance
     return () => clearInterval(interval);
   }, [theme]);
+
+  // ── Cache-First Logic ──
+  useEffect(() => {
+    const cached = localStorage.getItem("admin_users_cache");
+    if (cached) {
+      try {
+        const parsed = JSON.parse(cached);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          setUsers(parsed);
+          setLoading(false); // ⚡ Show cached data instantly, skip skeleton
+        }
+      } catch (e) {
+        console.error("Cache parse error:", e);
+      }
+    }
+  }, []);
 
   // ── Fetch users ──
   const fetchUsers = useCallback(async (silent = false) => {
@@ -82,7 +98,11 @@ export default function AdminUsersPage() {
         throw new Error(err.message || `HTTP ${res.status}`);
       }
       const data = await res.json();
-      setUsers(data.users || []);
+      const freshUsers = data.users || [];
+      setUsers(freshUsers);
+      
+      // ✅ Persist to cache for instant next load
+      localStorage.setItem("admin_users_cache", JSON.stringify(freshUsers));
     } catch (err: any) {
       setError(err.message || "Failed to fetch users");
     } finally {
