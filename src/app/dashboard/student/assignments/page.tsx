@@ -4,7 +4,7 @@ import React, { useState, useEffect, useCallback } from "react";
 import {
   FileText, Calendar, Clock, Upload, Download,
   CheckCircle, AlertCircle, Search, X, Link2,
-  MessageSquare, Loader2, Star,
+  MessageSquare, Loader2, Star, RotateCw,
 } from "lucide-react";
 import toast, { Toaster } from "react-hot-toast";
 
@@ -31,11 +31,13 @@ const toastStyle = {
 };
 
 export default function StudentAssignmentsPage() {
-  const [activeTab, setActiveTab] = useState<"Pending" | "Submitted" | "Graded">("Pending");
+  const [activeTab, setActiveTab] = useState<"Pending" | "Submitted" | "Graded" | "Chart">("Chart");
   const [searchQuery, setSearchQuery] = useState("");
   const [theme, setTheme] = useState("light");
   const [assignments, setAssignments] = useState<Assignment[]>([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [selectedCourse, setSelectedCourse] = useState("All Courses");
 
   const [submitModal, setSubmitModal] = useState<Assignment | null>(null);
   const [submitData, setSubmitData] = useState({ textAnswer: "", linkUrl: "" });
@@ -56,15 +58,19 @@ export default function StudentAssignmentsPage() {
     return () => clearInterval(iv);
   }, [theme]);
 
-  const fetchAssignments = useCallback(async () => {
-    setLoading(true);
+  const fetchAssignments = useCallback(async (silent = false) => {
+    if (silent) setRefreshing(true);
+    else setLoading(true);
     try {
       const res = await fetch("/api/enrollments?view=my-assignments");
       const data = await res.json();
       if (data.success) setAssignments(data.assignments || []);
       else toast.error(data.error || "Failed to load", toastStyle.err);
     } catch { toast.error("Network error", toastStyle.err); }
-    finally { setLoading(false); }
+    finally {
+      if (silent) setRefreshing(false);
+      else setLoading(false);
+    }
   }, []);
 
   useEffect(() => { fetchAssignments(); }, [fetchAssignments]);
@@ -121,17 +127,34 @@ export default function StudentAssignmentsPage() {
     return Math.ceil(diff / (1000 * 60 * 60 * 24));
   };
 
-  const filtered = assignments.filter(
-    (a) => a.status === activeTab &&
+  // Course Filter Logic
+  const courseList = ["All Courses", ...Array.from(new Set(assignments.map(a => a.courseName)))];
+
+  const courseFiltered = selectedCourse === "All Courses" 
+    ? assignments 
+    : assignments.filter(a => a.courseName === selectedCourse);
+
+  const filtered = courseFiltered.filter(
+    (a) => (a.status === activeTab || activeTab === "Chart") &&
       (a.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
         a.courseName.toLowerCase().includes(searchQuery.toLowerCase()))
   );
 
   const counts = {
-    Pending: assignments.filter((a) => a.status === "Pending").length,
-    Submitted: assignments.filter((a) => a.status === "Submitted").length,
-    Graded: assignments.filter((a) => a.status === "Graded").length,
+    Pending: courseFiltered.filter((a) => a.status === "Pending").length,
+    Submitted: courseFiltered.filter((a) => a.status === "Submitted").length,
+    Graded: courseFiltered.filter((a) => a.status === "Graded").length,
   };
+
+  const gradedStats = courseFiltered
+    .filter((a) => a.status === "Graded")
+    .reduce(
+      (acc, a) => ({
+        obtained: acc.obtained + (a.score || 0),
+        total: acc.total + (a.totalMarks || 0),
+      }),
+      { obtained: 0, total: 0 }
+    );
 
   const pur = "#832388";
 
@@ -139,24 +162,35 @@ export default function StudentAssignmentsPage() {
     <div className="min-h-screen">
       <Toaster position="top-right" containerStyle={{ top: 80, right: 24 }} />
 
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold mb-1">My Assignments</h1>
-        <p className="opacity-50 text-sm">Manage and track your course assignments</p>
+      <div className="flex items-start justify-between mb-6">
+        <div>
+          <h1 className="text-2xl font-bold mb-1">My Assignments</h1>
+          <p className="opacity-50 text-sm">Manage and track your course assignments</p>
+        </div>
+        <button 
+          onClick={() => fetchAssignments(true)} 
+          disabled={refreshing || loading}
+          className="flex items-center gap-2 px-4 py-2 rounded-xl bg-base-200 hover:bg-base-300 border border-base-300 transition-all cursor-pointer font-bold text-sm"
+        >
+          <RotateCw className={`w-4 h-4 ${refreshing ? "animate-spin" : ""}`} />
+          <span>Refresh</span>
+        </button>
       </div>
 
       {/* Stats */}
       <div className="grid grid-cols-3 gap-4 mb-7">
         {[
-          { label: "Pending", count: counts.Pending, color: "#FF0F7B", bg: theme === "dark" ? "#2a1520" : "#fce7f3", Icon: AlertCircle },
-          { label: "Submitted", count: counts.Submitted, color: "#F89B29", bg: theme === "dark" ? "#2a1f15" : "#fef3c7", Icon: Clock },
-          { label: "Graded", count: counts.Graded, color: "#00C48C", bg: theme === "dark" ? "#0f2520" : "#d1fae5", Icon: CheckCircle },
-        ].map(({ label, count, color, bg, Icon }) => (
+          { label: "Pending", count: counts.Pending.toString(), sub: `${counts.Pending} assignments`, color: "#FF0F7B", bg: theme === "dark" ? "#2a1520" : "#fce7f3", Icon: AlertCircle },
+          { label: "Submitted", count: counts.Submitted.toString(), sub: `${counts.Submitted} assignments`, color: "#F89B29", bg: theme === "dark" ? "#2a1f15" : "#fef3c7", Icon: Clock },
+          { label: "Total Score", count: gradedStats.obtained.toString(), sub: `of ${gradedStats.total} Marks`, color: "#00C48C", bg: theme === "dark" ? "#0f2520" : "#d1fae5", Icon: CheckCircle },
+        ].map(({ label, count, sub, color, bg, Icon }) => (
           <div key={label} className="card bg-base-100 shadow-lg border border-base-300">
             <div className="card-body p-4 md:p-5">
               <div className="flex items-start justify-between">
                 <div>
                   <p className="text-xs font-bold uppercase tracking-wide opacity-50 mb-1">{label}</p>
-                  <h2 className="text-3xl font-bold">{count}</h2>
+                  <h2 className="text-3xl font-black">{count}</h2>
+                  <p className="text-[10px] font-bold opacity-40 mt-1">{sub}</p>
                 </div>
                 <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ backgroundColor: bg }}>
                   <Icon className="w-5 h-5" style={{ color }} />
@@ -167,34 +201,107 @@ export default function StudentAssignmentsPage() {
         ))}
       </div>
 
-      {/* Tabs */}
+      {/* Tabs & Filters */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-5">
-        <div className="relative flex-1 max-w-sm">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 opacity-40" />
-          <input type="text" placeholder="Search assignments..." value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="input input-bordered w-full pl-9 h-10 text-sm bg-base-100" />
+        <div className="flex flex-wrap items-center gap-3 flex-1">
+          <div className="relative flex-1 max-w-sm">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 opacity-40" />
+            <input type="text" placeholder="Search assignments..." value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="input input-bordered w-full pl-9 h-10 text-sm bg-base-100" />
+          </div>
+
+          <select 
+            value={selectedCourse} 
+            onChange={(e) => setSelectedCourse(e.target.value)}
+            className="select select-bordered select-sm h-10 rounded-xl bg-base-100 text-xs font-bold border-base-300 min-w-[180px] focus:outline-none focus:border-primary transition-all shadow-sm"
+          >
+            {courseList.map(name => (
+              <option key={name} value={name}>{name}</option>
+            ))}
+          </select>
         </div>
-        <div className="flex items-center gap-1.5 bg-base-200 p-1.5 rounded-full border border-base-300">
+
+        <div className="flex items-center gap-1.5 bg-base-200 p-1.5 rounded-full border border-base-300 overflow-x-auto">
           {[
+            { name: "Chart" as const, count: courseFiltered.filter(a => a.status === "Graded").length, color: "#832388" },
             { name: "Pending" as const, count: counts.Pending, color: "#FF0F7B" },
             { name: "Submitted" as const, count: counts.Submitted, color: "#F89B29" },
             { name: "Graded" as const, count: counts.Graded, color: "#00C48C" },
           ].map((tab) => (
             <button key={tab.name} onClick={() => setActiveTab(tab.name)}
-              className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer ${activeTab === tab.name ? "text-white shadow" : "hover:bg-base-300"}`}
+              className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer flex-shrink-0 ${activeTab === tab.name ? "text-white shadow" : "hover:bg-base-300"}`}
               style={{ backgroundColor: activeTab === tab.name ? tab.color : "transparent" }}>
-              {tab.name} ({tab.count})
+              {tab.name} {tab.name !== "Chart" && `(${tab.count})`}
             </button>
           ))}
         </div>
       </div>
 
-      {/* List */}
+      {/* List / Chart Content */}
       {loading ? (
         <div className="flex items-center justify-center py-24 gap-3">
           <Loader2 className="w-6 h-6 animate-spin" style={{ color: pur }} />
           <span className="opacity-50">Loading assignments...</span>
+        </div>
+      ) : activeTab === "Chart" ? (
+        <div className="max-w-full overflow-hidden">
+          <div className="p-4 bg-white/[0.02] dark:bg-white/[0.01] border border-white/5 rounded-[32px] backdrop-blur-md">
+            
+            <div className="relative h-[340px] md:h-[400px] pl-20 md:pl-28 pb-6 overflow-visible">
+              {/* Y-Axis Lines & Labels */}
+              {[60, 45, 30, 15, 0].map((mark) => (
+                <div key={mark} className="absolute w-full border-t border-dashed border-base-300/20" 
+                  style={{ bottom: `${(mark / 60) * 100}%` }}>
+                  <span className="absolute -left-20 md:-left-24 -top-2 text-[10px] md:text-xs font-black opacity-30 w-20 text-right">
+                    {mark} Marks
+                  </span>
+                </div>
+              ))}
+
+              {/* Bars Container — Scrollbar Hidden */}
+              <div className="flex items-end h-full gap-4 md:gap-8 overflow-x-auto pt-24 pb-0 justify-start scroll-smooth overflow-y-visible pl-6 md:pl-10"
+                style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+                <style jsx>{`
+                  div::-webkit-scrollbar { display: none; }
+                `}</style>
+                {courseFiltered.filter(a => a.status === "Graded").length > 0 ? (
+                  courseFiltered.filter(a => a.status === "Graded").map((a, i) => {
+                    const score = a.score || 0;
+                    const height = (score / 60) * 100;
+                    return (
+                      <div key={i} className="w-10 md:w-14 relative group h-full flex flex-col justify-end flex-shrink-0">
+                        {/* Bar */}
+                        <div className="relative rounded-t-lg transition-all duration-500 hover:scale-[1.03] flex justify-center items-center"
+                          style={{ 
+                            height: `${height}%`,
+                            background: "linear-gradient(180deg, #FF0F7B, #832388)",
+                            boxShadow: "0 10px 20px -5px rgba(131, 35, 136, 0.3)"
+                          }}>
+                          <span className="text-[10px] md:text-xs font-black text-white">{score}</span>
+                          
+                          {/* Tooltip on hover */}
+                          <div className="absolute -top-12 left-1/2 -translate-x-1/2 bg-black/80 text-white p-2 rounded-lg opacity-0 group-hover:opacity-100 transition duration-200 pointer-events-none z-[999] w-max max-w-[120px]">
+                            <p className="text-[8px] font-bold opacity-50 uppercase mb-0.5">{a.courseName}</p>
+                            <p className="text-[9px] font-black truncate">{a.title}</p>
+                          </div>
+                        </div>
+
+                        {/* X-Axis Label */}
+                        <div className="absolute -bottom-6 left-1/2 -translate-x-1/2 text-[10px] md:text-xs font-black opacity-50">
+                          {i + 1}
+                        </div>
+                      </div>
+                    );
+                  })
+                ) : (
+                  <div className="w-full flex items-center justify-center -mt-10">
+                    <p className="text-gray-400 font-bold">No graded assignments to visualize.</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
         </div>
       ) : filtered.length === 0 ? (
         <div className="text-center py-24">
