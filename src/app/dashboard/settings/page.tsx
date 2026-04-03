@@ -25,7 +25,7 @@ export default function SettingsPage() {
 
   // Database health states
   const [dbData, setDbData] = useState<any>(null);
-  const [dbLoading, setDbLoading] = useState(true);
+  const [dbLoading, setDbLoading] = useState(false);
 
   // Withdrawal states
   const [withdrawStats, setWithdrawStats] = useState({ available: 0, pending: 0, totalWithdrawn: 0 });
@@ -107,7 +107,22 @@ export default function SettingsPage() {
     if (role === "admin" && activeTab === "System") {
       fetchSystemSettings();
     }
+    if (role === "instructor" && activeTab === "Withdraw") {
+      fetchWithdrawStats();
+    }
   }, [role, activeTab]);
+
+  // Optimization: Load cached statistics if available to reduce perceived loading time
+  useEffect(() => {
+    const cachedStats = localStorage.getItem("withdrawStats");
+    if (cachedStats) {
+      try {
+        setWithdrawStats(JSON.parse(cachedStats));
+      } catch (e) {
+        console.error("Failed to parse cached withdraw stats");
+      }
+    }
+  }, []);
 
   const fetchDBStatus = async (silent = false) => {
     if (!silent) setDbLoading(true);
@@ -137,6 +152,8 @@ export default function SettingsPage() {
       const data = await res.json();
       if (data.withdrawStats) {
         setWithdrawStats(data.withdrawStats);
+        // Cache for faster subsequent loads
+        localStorage.setItem("withdrawStats", JSON.stringify(data.withdrawStats));
       }
     } catch (err) {
       console.error("Failed to fetch withdraw stats:", err);
@@ -197,6 +214,7 @@ export default function SettingsPage() {
   };
 
   const fetchSystemSettings = async () => {
+    setSettingsLoading(true);
     try {
       const res = await fetch("/api/admin/settings");
       const data = await res.json();
@@ -215,6 +233,8 @@ export default function SettingsPage() {
       }
     } catch (error) {
       console.error("Failed to fetch settings:", error);
+    } finally {
+      setSettingsLoading(false);
     }
   };
 

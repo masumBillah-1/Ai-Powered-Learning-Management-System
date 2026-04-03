@@ -23,8 +23,8 @@ const hindSiliguri = Hind_Siliguri({
 });
 
 export const metadata: Metadata = {
-  title: "CareerCanvas : Smart Online LMS Platform",
-  description: "CareerCanvas learning management system designed to deliver smart, personalized, and interactive online education experiences.",
+  title: "SmartLms-Pro : Smart Online LMS Platform",
+  description: "SmartLms-Pro learning management system designed to deliver smart, personalized, and interactive online education experiences.",
   icons: {
     icon: [{ url: "/favicon.svg", type: "image/svg+xml" }, { url: "/favicon.ico", sizes: "32x32" }],
   },
