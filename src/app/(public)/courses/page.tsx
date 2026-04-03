@@ -85,7 +85,7 @@ function getEnrolledCount(course: Course): number {
 }
 
 // ── CourseCard ────────────────────────────────────────────────────────────────
-const CourseCard = ({ course, index }: { course: Course; index: number }) => {
+const CourseCard = ({ course, index, isEnrolled }: { course: Course; index: number; isEnrolled: boolean }) => {
   const router   = useRouter();
   const coverUrl = getCoverUrl(course);
   const { isFree, regularPrice, salePrice, discountPercent } = getCoursePrice(course);
@@ -193,24 +193,40 @@ const CourseCard = ({ course, index }: { course: Course; index: number }) => {
                 </div>
               )}
 
-              <button
-                onClick={e => {
-                  e.preventDefault();
-                  const token = localStorage.getItem("token");
-                  if (!token) {
-                    router.push(`/login?redirect=/courses/${course._id}`);
-                  } else {
-                    router.push(`/enrollment/${course._id}`);
-                  }
-                }}
-                className="flex items-center gap-1.5 px-4 py-2 rounded-full bg-gradient-to-r from-[#C81D77] to-[#a0155e] text-white text-xs font-bold shadow-md shadow-[#C81D77]/30 group-hover:shadow-[#C81D77]/60 transition-all duration-300 group-hover:gap-2.5 cursor-pointer border-0"
-              >
-                Enroll
-                <svg className="w-3.5 h-3.5 transition-transform duration-300 group-hover:translate-x-0.5"
-                  fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" />
-                </svg>
-              </button>
+              {isEnrolled ? (
+                <button
+                  onClick={e => {
+                    e.preventDefault();
+                    router.push(`/learn/${course._id}`);
+                  }}
+                  className="flex items-center gap-1.5 px-4 py-2 rounded-full bg-gradient-to-r from-emerald-500 to-teal-600 text-white text-xs font-bold shadow-md shadow-emerald-500/30 group-hover:shadow-emerald-500/60 transition-all duration-300 group-hover:gap-2.5 cursor-pointer border-0"
+                >
+                  Continue
+                  <svg className="w-3.5 h-3.5 transition-transform duration-300 group-hover:translate-x-0.5"
+                    fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" />
+                  </svg>
+                </button>
+              ) : (
+                <button
+                  onClick={e => {
+                    e.preventDefault();
+                    const token = localStorage.getItem("token");
+                    if (!token) {
+                      router.push(`/login?redirect=/courses/${course._id}`);
+                    } else {
+                      router.push(`/enrollment/${course._id}`);
+                    }
+                  }}
+                  className="flex items-center gap-1.5 px-4 py-2 rounded-full bg-gradient-to-r from-[#C81D77] to-[#a0155e] text-white text-xs font-bold shadow-md shadow-[#C81D77]/30 group-hover:shadow-[#C81D77]/60 transition-all duration-300 group-hover:gap-2.5 cursor-pointer border-0"
+                >
+                  Enroll
+                  <svg className="w-3.5 h-3.5 transition-transform duration-300 group-hover:translate-x-0.5"
+                    fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" />
+                  </svg>
+                </button>
+              )}
             </div>
           </div>
 
@@ -224,6 +240,7 @@ const CourseCard = ({ course, index }: { course: Course; index: number }) => {
 // ── CoursesPage ───────────────────────────────────────────────────────────────
 const CoursesPage = () => {
   const [courses, setCourses] = useState<Course[]>([]);
+  const [enrolledIds, setEnrolledIds] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError]     = useState("");
 
@@ -232,16 +249,29 @@ const CoursesPage = () => {
   const fetchCourses = async () => {
     try {
       setLoading(true);
-      const res  = await fetch('/api/courses?status=published');
-      const data = await res.json();
+      
+      // Fetch courses and enrollments in parallel
+      const [coursesRes, enrollmentsRes] = await Promise.all([
+        fetch('/api/courses?status=published'),
+        fetch('/api/enrollments').then(res => res.json()).catch(() => ({ enrollments: [] }))
+      ]);
+      
+      const coursesData = await coursesRes.json();
 
-      if (data.courses) {
-        const publishedCourses = (data.courses as Course[]).filter(
+      if (coursesData.courses) {
+        const publishedCourses = (coursesData.courses as Course[]).filter(
           course => course.status === "published"
         );
         setCourses(publishedCourses);
       } else {
         setError("Failed to load courses");
+      }
+
+      if (enrollmentsRes.success && Array.isArray(enrollmentsRes.enrollments)) {
+        const ids = enrollmentsRes.enrollments.map((e: any) => 
+          typeof e.courseId === 'object' ? e.courseId._id : e.courseId
+        );
+        setEnrolledIds(ids.map(String));
       }
     } catch (err) {
       setError("Something went wrong");
@@ -341,7 +371,12 @@ const CoursesPage = () => {
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-7">
           {courses.map((course, index) => (
-            <CourseCard key={course._id} course={course} index={index} />
+            <CourseCard 
+              key={course._id} 
+              course={course} 
+              index={index} 
+              isEnrolled={enrolledIds.includes(course._id)} 
+            />
           ))}
         </div>
       </div>

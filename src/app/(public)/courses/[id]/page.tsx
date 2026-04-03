@@ -137,6 +137,7 @@ export default function CourseDetailsPage() {
   const courseId = params.id as string;
 
   const [course, setCourse]     = useState<Course | null>(null);
+  const [isEnrolled, setIsEnrolled] = useState(false);
   const [loading, setLoading]   = useState(true);
   const [error, setError]       = useState("");
   const [activeTab, setActiveTab] = useState("overview");
@@ -149,12 +150,20 @@ export default function CourseDetailsPage() {
   const fetchCourseDetails = async () => {
     try {
       setLoading(true);
-      const res  = await fetch(`/api/courses/${courseId}`);
-      const data = await res.json();
-      if (data.success) {
-        setCourse(data.course);
+      const [courseRes, enrollmentRes] = await Promise.all([
+        fetch(`/api/courses/${courseId}`),
+        fetch(`/api/enrollments?courseId=${courseId}`).then(res => res.json()).catch(() => ({ enrollments: [] }))
+      ]);
+
+      const courseData = await courseRes.json();
+      if (courseData.success) {
+        setCourse(courseData.course);
       } else {
-        setError(data.error || "Failed to load course");
+        setError(courseData.error || "Failed to load course");
+      }
+
+      if (enrollmentRes.success && enrollmentRes.enrollments?.length > 0) {
+        setIsEnrolled(true);
       }
     } catch (err) {
       setError("Something went wrong");
@@ -298,16 +307,29 @@ export default function CourseDetailsPage() {
 
               {/* CTA Buttons */}
               <div className="flex flex-wrap gap-4">
-                <Link href={`/enrollment/${courseId}`}>
-                  <motion.button
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                    className="px-8 py-4 rounded-2xl text-white font-black text-lg shadow-xl hover:shadow-2xl transition-all flex items-center gap-2"
-                    style={{ background: "linear-gradient(90deg, #C81D77, #6710C2)" }}
-                  >
-                    Enroll Now <FaArrowRight />
-                  </motion.button>
-                </Link>
+                {isEnrolled ? (
+                  <Link href={`/learn/${courseId}`}>
+                    <motion.button
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                      className="px-8 py-4 rounded-2xl text-white font-black text-lg shadow-xl hover:shadow-2xl transition-all flex items-center gap-2"
+                      style={{ background: "linear-gradient(90deg, #10b981, #059669)" }}
+                    >
+                      Continue Learning <FaArrowRight />
+                    </motion.button>
+                  </Link>
+                ) : (
+                  <Link href={`/enrollment/${courseId}`}>
+                    <motion.button
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                      className="px-8 py-4 rounded-2xl text-white font-black text-lg shadow-xl hover:shadow-2xl transition-all flex items-center gap-2"
+                      style={{ background: "linear-gradient(90deg, #C81D77, #6710C2)" }}
+                    >
+                      Enroll Now <FaArrowRight />
+                    </motion.button>
+                  </Link>
+                )}
                 {/* ✅ salesVideoUrl field থেকে video URL */}
                 {videoUrl && (
                   <button
@@ -631,15 +653,19 @@ export default function CourseDetailsPage() {
               <p className="text-xl text-white/90 mb-8 max-w-2xl mx-auto">
                 Join {enrolledCount}+ students already learning and building their dream career
               </p>
-              <Link href={`/enrollment/${courseId}`}>
+              <Link href={isEnrolled ? `/learn/${courseId}` : `/enrollment/${courseId}`}>
                 <motion.button
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
-                  className="px-12 py-5 rounded-2xl bg-white text-[#C81D77] font-black text-xl shadow-2xl hover:shadow-3xl transition-all"
+                  className={`px-12 py-5 rounded-2xl font-black text-xl shadow-2xl hover:shadow-3xl transition-all ${
+                    isEnrolled ? 'bg-white text-emerald-600' : 'bg-white text-[#C81D77]'
+                  }`}
                 >
-                  {pricing.isFree || pricing.price === 0
-                    ? "Enroll Now — Free"
-                    : `Enroll Now — ৳${pricing.discount ?? pricing.price}`}
+                  {isEnrolled 
+                    ? "Continue Learning" 
+                    : (pricing.isFree || pricing.price === 0
+                      ? "Enroll Now — Free"
+                      : `Enroll Now — ৳${pricing.discount ?? pricing.price}`)}
                 </motion.button>
               </Link>
               <p className="text-white/80 mt-4 text-sm">30-day money-back guarantee</p>
