@@ -2,7 +2,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { connectDB } from "@/db/connect";
 import mongoose from "mongoose";
-import { Course } from "@/models";
+import { Course, Enrollment } from "@/models";
 import jwt from "jsonwebtoken";
 
 const JWT_SECRET = process.env.JWT_SECRET as string;
@@ -169,7 +169,29 @@ export async function GET(req: NextRequest) {
       .populate("instructorId", "name email photoURL")
       .lean() as any[];
 
-    return NextResponse.json({ success: true, courses });
+    // ✅ Fetch sample student avatars for each course
+    const courseIds = courses.map(c => c._id);
+    
+    const enrollments = await Enrollment.find({ courseId: { $in: courseIds } })
+      .sort({ enrolledAt: -1 })
+      .limit(courseIds.length * 5) // Fetch enough to potentially have several per course
+      .populate("studentId", "photoURL name")
+      .lean() as any[];
+
+    const enrichedCourses = courses.map(course => {
+      const sampleStudents = enrollments
+        .filter(e => e.courseId.toString() === course._id.toString())
+        .map(e => e.studentId)
+        .filter(s => s && s.photoURL) // Ensure students have photos
+        .slice(0, 4);
+
+      return {
+        ...course,
+        sampleStudents
+      };
+    });
+
+    return NextResponse.json({ success: true, courses: enrichedCourses });
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
