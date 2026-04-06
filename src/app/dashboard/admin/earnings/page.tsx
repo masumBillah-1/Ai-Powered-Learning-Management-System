@@ -599,9 +599,9 @@ export default function AdminEarningsPage() {
                   </tbody>
                 </table>
                 <div className="flex justify-end items-center gap-3 px-6 py-4 border-t border-base-300 bg-base-200/50">
-                  <span className="text-xs opacity-50 font-semibold uppercase tracking-wider">Total Payouts:</span>
+                  <span className="text-xs opacity-50 font-semibold uppercase tracking-wider">Global Total Payouts:</span>
                   <span className="text-lg font-black" style={{ color: "#00C48C" }}>
-                    ৳{payouts.filter(p => p.status === "completed").reduce((a, p) => a + p.amount, 0).toLocaleString()}
+                    ৳{(stats?.instructorPayouts || 0).toLocaleString()}
                   </span>
                 </div>
               </>

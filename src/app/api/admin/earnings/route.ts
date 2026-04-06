@@ -68,20 +68,25 @@ export async function GET(req: NextRequest) {
       });
     }
 
-    // Total revenue
-    const totalRevenue = Array.from(courseRevenue.values()).reduce((sum, c) => sum + c.amount, 0);
+    // Calculate fallbacks from enrollments (Used if transactions are missing)
+    const totalEnrollmentRevenue = Array.from(courseRevenue.values()).reduce((sum, c) => sum + c.amount, 0);
     
-    // Calculate this month revenue
     const now = new Date();
     const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
     const thisMonthEnrollments = enrollments.filter(
       (e: any) => new Date(e.enrolledAt) >= firstDayOfMonth
     );
+    const thisMonthEnrollmentRevenue = thisMonthEnrollments.reduce((sum, e: any) => {
+      const enrollCourseId = typeof e.courseId === 'object' ? e.courseId?._id?.toString() : e.courseId?.toString();
+      const course = courses.find(c => c._id.toString() === enrollCourseId);
+      const price = course?.originalPrice || course?.price || 0;
+      return sum + price;
+    }, 0);
     
     const commissionSetting = await SystemSettings.findOne({ key: "platform_commission" });
     const commissionRate = commissionSetting ? Number(commissionSetting.value) / 100 : 0.3;
 
-    // Use transaction aggregation to get precise financial data
+    // Use transaction aggregation to get precise financial data for PLATFORM PROFIT & REVENUE
     const financialStats = await Transaction.aggregate([
       {
         $match: {
@@ -92,27 +97,57 @@ export async function GET(req: NextRequest) {
       {
         $group: {
           _id: null,
-          totalRevenue: { $sum: "$amount" },
+          totalPayments: { $sum: "$amount" },
           totalProfit: { $sum: "$platformFee" },
           totalNetAmount: { $sum: "$netAmount" },
         },
       },
     ]);
 
-    const statsFromDB = financialStats[0] || { totalRevenue: 0, totalProfit: 0, totalNetAmount: 0 };
+    // Monthly transaction revenue
+    const monthlyStats = await Transaction.aggregate([
+      {
+        $match: {
+          type: "payment",
+          status: "completed",
+          createdAt: { $gte: firstDayOfMonth },
+        },
+      },
+      {
+        $group: {
+          _id: null,
+          totalRevenue: { $sum: "$amount" },
+        },
+      },
+    ]);
+
+    // Use transaction aggregation to get actual PAID OUT amount
+    const payoutStats = await Transaction.aggregate([
+      {
+        $match: {
+          type: "payout",
+          status: "completed",
+        },
+      },
+      {
+        $group: {
+          _id: null,
+          totalPaid: { $sum: "$amount" },
+        },
+      },
+    ]);
+
+    const statsFromDB = financialStats[0] || { totalPayments: 0, totalProfit: 0, totalNetAmount: 0 };
+    const monthStatsFromDB = monthlyStats[0] || { totalRevenue: 0 };
+    const totalPaidOut = payoutStats[0]?.totalPaid || 0;
     
-    // Monthly calculation (fallback logic or combined)
-    const thisMonthRevenue = thisMonthEnrollments.reduce((sum, e: any) => {
-      const enrollCourseId = typeof e.courseId === 'object' ? e.courseId?._id?.toString() : e.courseId?.toString();
-      const course = courses.find(c => c._id.toString() === enrollCourseId);
-      const price = course?.originalPrice || course?.price || 0;
-      return sum + price;
-    }, 0);
-
-    const platformProfit = statsFromDB.totalProfit || Math.round(statsFromDB.totalRevenue * commissionRate);
-    const instructorPayouts = statsFromDB.totalNetAmount || (statsFromDB.totalRevenue - platformProfit);
-
-    // Revenue breakdown by course (top courses)
+    // Final calculations with fallbacks to ensure "REAL DATA" from transactions is prioritized
+    const finalTotalRevenue = statsFromDB.totalPayments || totalEnrollmentRevenue;
+    const thisMonthRevenue = monthStatsFromDB.totalRevenue || thisMonthEnrollmentRevenue;
+    const platformProfit = statsFromDB.totalProfit || Math.round(finalTotalRevenue * commissionRate);
+    const instructorPayouts = totalPaidOut; 
+    
+    // Revenue breakdown by course (top courses) - Keep enrollment based for visual breakdown if transactions aren't course-mapped deeply
     const breakdown = Array.from(courseRevenue.entries())
       .map(([courseId, data]) => ({
         courseId,
@@ -202,10 +237,11 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({
       success: true,
       stats: {
-        totalRevenue,
+        totalRevenue: finalTotalRevenue,
         thisMonthRevenue,
         instructorPayouts,
         platformProfit,
+        totalPaidOut,
       },
       breakdown,
       payouts: allPayouts.map((p: any) => ({
