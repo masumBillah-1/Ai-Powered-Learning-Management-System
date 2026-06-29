@@ -15,6 +15,13 @@
 <br/><br/>
 
 > **SmartLms-Pro** is a next-generation, AI-infused educational ecosystem built to redefine online learning. It delivers a seamless, interactive experience for students, powerful management tools for instructors, and comprehensive administrative oversight — all within a single, blazing-fast platform.
+ <div align="center">
+
+## 🌐 Live Demo
+
+### 🚀 https://smartlms-pro.vercel.app/
+
+</div>
 
 <br/>
 
